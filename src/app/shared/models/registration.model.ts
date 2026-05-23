@@ -5,6 +5,7 @@ export interface Registration {
   registered_by: string;
   registered_at: string;
   is_withdrawn: boolean;
+  plus_ones: number;
   player: {
     id: string;
     username: string;

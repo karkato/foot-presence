@@ -18,6 +18,10 @@ import { Player, getDisplayName } from '../../../shared/models/player.model';
 import { PlayerRowComponent } from './player-row/player-row.component';
 import { RegistrationModalComponent } from './registration-modal/registration-modal.component';
 
+type PresentEntry =
+  | { type: 'player'; reg: Registration; rank: number }
+  | { type: 'guest'; hostName: string; rank: number };
+
 @Component({
   selector: 'app-match-detail',
   standalone: true,
@@ -69,15 +73,22 @@ import { RegistrationModalComponent } from './registration-modal/registration-mo
               <p class="muted">Personne pour l'instant.</p>
             } @else {
               <ul class="player-list">
-                @for (reg of presentPlayers(); track reg.id; let i = $index) {
-                  <app-player-row
-                    [reg]="reg"
-                    [rank]="i + 1"
-                    [prefix]="String(i + 1) + '.'"
-                    [isCurrent]="isCurrentPlayer(reg)"
-                    [canWithdraw]="canWithdraw(reg)"
-                    (withdraw)="onWithdraw($event)"
-                  />
+                @for (entry of expandedPresent(); track entry.rank) {
+                  @if (entry.type === 'player') {
+                    <app-player-row
+                      [reg]="entry.reg"
+                      [rank]="entry.rank"
+                      [prefix]="String(entry.rank) + '.'"
+                      [isCurrent]="isCurrentPlayer(entry.reg)"
+                      [canWithdraw]="canWithdraw(entry.reg)"
+                      (withdraw)="onWithdraw($event)"
+                    />
+                  } @else {
+                    <li class="guest-row">
+                      <span class="guest-rank">{{ entry.rank }}.</span>
+                      <span class="guest-name">+1 de {{ entry.hostName }}</span>
+                    </li>
+                  }
                 }
               </ul>
             }
@@ -126,6 +137,17 @@ import { RegistrationModalComponent } from './registration-modal/registration-mo
                 + Inscrire quelqu'un ({{ proxyCount() }}/2)
               </button>
             }
+
+            @if (isRegistered() && !isWithdrawn()) {
+              <div class="plus-ones-control">
+                <span class="plus-ones-label">Invités</span>
+                <div class="plus-ones-stepper">
+                  <button (click)="onAdjustPlusOnes(-1)" [disabled]="myPlusOnes() === 0 || actionLoading()">−</button>
+                  <span>{{ myPlusOnes() }}</span>
+                  <button (click)="onAdjustPlusOnes(1)" [disabled]="actionLoading()">+</button>
+                </div>
+              </div>
+            }
           </div>
 
           @if (actionError()) {
@@ -164,6 +186,13 @@ import { RegistrationModalComponent } from './registration-modal/registration-mo
                   @if (isPlayerPresent(player.id)) { ✓ }
                 </span>
                 <span class="admin-name">{{ getDisplayName(player) }}</span>
+                @if (isPlayerPresent(player.id)) {
+                  <div class="admin-plus-stepper" (click)="$event.stopPropagation()">
+                    <button (click)="adminAdjustPlusOnes(player, -1)" [disabled]="getPlayerPlusOnes(player.id) === 0 || actionLoading()">−</button>
+                    <span>+{{ getPlayerPlusOnes(player.id) }}</span>
+                    <button (click)="adminAdjustPlusOnes(player, 1)" [disabled]="actionLoading()">+</button>
+                  </div>
+                }
               </li>
             }
           </ul>
@@ -225,6 +254,16 @@ import { RegistrationModalComponent } from './registration-modal/registration-mo
     .withdrawn-section { opacity: 0.75; }
     .player-list { list-style: none; padding: 0; margin: 0; }
     .muted { color: var(--text-muted); font-size: 0.9rem; padding: 0.5rem 0; }
+    .guest-row {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.55rem 0.75rem;
+      border-radius: 0.4rem;
+      opacity: 0.75;
+    }
+    .guest-rank { min-width: 2rem; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-align: right; }
+    .guest-name { font-size: 0.9rem; color: var(--text-muted); font-style: italic; }
 
     .actions {
       display: flex;
@@ -254,6 +293,33 @@ import { RegistrationModalComponent } from './registration-modal/registration-mo
     .btn-proxy:hover { background: var(--primary-light); }
     .btn-action:disabled { opacity: 0.6; cursor: not-allowed; }
     .action-error { color: var(--danger); font-size: 0.9rem; text-align: center; margin-top: 0.5rem; }
+
+    .plus-ones-control {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.65rem 1rem;
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 0.6rem;
+    }
+    .plus-ones-label { font-size: 0.95rem; font-weight: 600; }
+    .plus-ones-stepper { display: flex; align-items: center; gap: 1rem; }
+    .plus-ones-stepper span { font-size: 1.1rem; font-weight: 700; min-width: 1.5rem; text-align: center; }
+    .plus-ones-stepper button {
+      width: 2rem; height: 2rem;
+      border-radius: 50%;
+      border: 1.5px solid var(--border);
+      background: var(--bg);
+      font-size: 1.2rem;
+      line-height: 1;
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--text);
+      transition: border-color 0.15s;
+    }
+    .plus-ones-stepper button:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
+    .plus-ones-stepper button:disabled { opacity: 0.4; cursor: not-allowed; }
 
     .admin-freeze { margin-top: 1rem; }
     .btn-freeze {
@@ -324,7 +390,25 @@ import { RegistrationModalComponent } from './registration-modal/registration-mo
       color: white;
     }
     .admin-checkbox.checked { background: var(--success); border-color: var(--success); }
-    .admin-name { font-size: 0.9rem; }
+    .admin-name { font-size: 0.9rem; flex: 1; }
+    .admin-plus-stepper {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .admin-plus-stepper span { font-size: 0.85rem; font-weight: 700; color: var(--primary); min-width: 1.5rem; text-align: center; }
+    .admin-plus-stepper button {
+      width: 1.6rem; height: 1.6rem;
+      border-radius: 50%;
+      border: 1.5px solid var(--border);
+      background: var(--bg);
+      font-size: 1rem;
+      line-height: 1;
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .admin-plus-stepper button:disabled { opacity: 0.4; cursor: not-allowed; }
   `,
 })
 export class MatchDetailComponent implements OnInit, OnDestroy {
@@ -367,7 +451,27 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
       .sort((a, b) => new Date(a.registered_at).getTime() - new Date(b.registered_at).getTime())
   );
 
-  presentCount = computed(() => this.presentPlayers().length);
+  presentCount = computed(() =>
+    this.presentPlayers().reduce((sum, r) => sum + 1 + (r.plus_ones ?? 0), 0)
+  );
+
+  expandedPresent = computed(() => {
+    let rank = 0;
+    const entries: PresentEntry[] = [];
+    for (const reg of this.presentPlayers()) {
+      entries.push({ type: 'player', reg, rank: ++rank });
+      for (let i = 0; i < (reg.plus_ones ?? 0); i++) {
+        entries.push({ type: 'guest', hostName: getDisplayName(reg.player), rank: ++rank });
+      }
+    }
+    return entries;
+  });
+  myPlusOnes = computed(() => {
+    const reg = this.registrations().find(
+      (r) => r.player_id === this.currentPlayerId() && !r.is_withdrawn
+    );
+    return reg?.plus_ones ?? 0;
+  });
   isFull = computed(() => {
     const m = this.match();
     return m ? this.presentCount() >= m.max_players : false;
@@ -509,8 +613,14 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
   shareList(): void {
     const m = this.match();
     if (!m) return;
-    const present = this.presentPlayers()
-      .map((r, i) => `${i + 1}. ${r.player.display_name ?? r.player.username}`)
+    const present = this.expandedPresent()
+      .map((entry) => {
+        if (entry.type === 'player') {
+          return `${entry.rank}. ${getDisplayName(entry.reg.player)}`;
+        } else {
+          return `${entry.rank}. +1 de ${entry.hostName}`;
+        }
+      })
       .join('\n');
     const withdrawn = this.withdrawnPlayers()
       .map((r, i) => `D${i + 1}. ${r.player.display_name ?? r.player.username}`)
@@ -529,6 +639,21 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
       navigator.share({ text });
     } else {
       window.open(`https://wa.me/?text=${encoded}`, '_blank');
+    }
+  }
+
+  async onAdjustPlusOnes(delta: number): Promise<void> {
+    const player = this.auth.currentPlayer();
+    if (!player) return;
+    const newCount = Math.max(0, this.myPlusOnes() + delta);
+    this.actionLoading.set(true);
+    try {
+      await this.matchesService.setPlusOnes(this.matchId, player.id, newCount);
+      await this.loadRegistrations();
+    } catch {
+      this.actionError.set('Erreur lors de la mise à jour');
+    } finally {
+      this.actionLoading.set(false);
     }
   }
 
@@ -562,6 +687,24 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
 
   isPlayerPresent(playerId: string): boolean {
     return this.registrations().some((r) => r.player_id === playerId && !r.is_withdrawn);
+  }
+
+  getPlayerPlusOnes(playerId: string): number {
+    const reg = this.registrations().find((r) => r.player_id === playerId && !r.is_withdrawn);
+    return reg?.plus_ones ?? 0;
+  }
+
+  async adminAdjustPlusOnes(player: Player, delta: number): Promise<void> {
+    const newCount = Math.max(0, this.getPlayerPlusOnes(player.id) + delta);
+    this.actionLoading.set(true);
+    try {
+      await this.matchesService.setPlusOnes(this.matchId, player.id, newCount);
+      await this.loadRegistrations();
+    } catch {
+      this.actionError.set('Erreur lors de la mise à jour');
+    } finally {
+      this.actionLoading.set(false);
+    }
   }
 
   async adminToggle(player: Player): Promise<void> {

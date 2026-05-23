@@ -83,6 +83,7 @@ export interface Database {
           registered_by: string;
           registered_at: string;
           is_withdrawn: boolean;
+          plus_ones: number;
         };
         Insert: {
           id?: string;
@@ -91,6 +92,7 @@ export interface Database {
           registered_by: string;
           registered_at?: string;
           is_withdrawn?: boolean;
+          plus_ones?: number;
         };
         Update: {
           id?: string;
@@ -99,6 +101,7 @@ export interface Database {
           registered_by?: string;
           registered_at?: string;
           is_withdrawn?: boolean;
+          plus_ones?: number;
         };
         Relationships: [];
       };
@@ -134,6 +137,10 @@ export interface Database {
       update_player_profile: {
         Args: { p_player_id: string; p_display_name?: string | null; p_new_pin?: string | null };
         Returns: Json;
+      };
+      set_plus_ones: {
+        Args: { p_match_id: string; p_player_id: string; p_count: number };
+        Returns: undefined;
       };
       admin_remove_registration: {
         Args: { p_admin_id: string; p_match_id: string; p_player_id: string };
