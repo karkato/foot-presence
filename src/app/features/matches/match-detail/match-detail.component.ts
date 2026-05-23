@@ -132,6 +132,21 @@ import { RegistrationModalComponent } from './registration-modal/registration-mo
             <p class="action-error">{{ actionError() }}</p>
           }
         }
+
+        <!-- Action admin : figer / rouvrir -->
+        @if (isAdmin()) {
+          <div class="admin-freeze">
+            @if (!match()!.is_closed) {
+              <button class="btn-freeze" (click)="toggleClose()" [disabled]="actionLoading()">
+                Figer la liste
+              </button>
+            } @else {
+              <button class="btn-unfreeze" (click)="toggleClose()" [disabled]="actionLoading()">
+                Rouvrir les inscriptions
+              </button>
+            }
+          </div>
+        }
       </div>
 
       <!-- Section admin : gestion des présences -->
@@ -239,6 +254,35 @@ import { RegistrationModalComponent } from './registration-modal/registration-mo
     .btn-proxy:hover { background: var(--primary-light); }
     .btn-action:disabled { opacity: 0.6; cursor: not-allowed; }
     .action-error { color: var(--danger); font-size: 0.9rem; text-align: center; margin-top: 0.5rem; }
+
+    .admin-freeze { margin-top: 1rem; }
+    .btn-freeze {
+      width: 100%;
+      padding: 0.75rem;
+      background: var(--warning);
+      color: white;
+      border: none;
+      border-radius: 0.6rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: filter 0.15s;
+    }
+    .btn-freeze:hover:not(:disabled) { filter: brightness(1.1); }
+    .btn-unfreeze {
+      width: 100%;
+      padding: 0.75rem;
+      background: var(--card);
+      color: var(--primary);
+      border: 1.5px solid var(--primary);
+      border-radius: 0.6rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-unfreeze:hover:not(:disabled) { background: var(--primary-light); }
+    .btn-freeze:disabled, .btn-unfreeze:disabled { opacity: 0.6; cursor: not-allowed; }
 
     .admin-section {
       margin-top: 1.5rem;
@@ -485,6 +529,20 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
       navigator.share({ text });
     } else {
       window.open(`https://wa.me/?text=${encoded}`, '_blank');
+    }
+  }
+
+  async toggleClose(): Promise<void> {
+    const m = this.match();
+    if (!m) return;
+    this.actionLoading.set(true);
+    try {
+      await this.matchesService.updateMatch(m.id, { is_closed: !m.is_closed });
+      await this.loadMatch();
+    } catch {
+      this.actionError.set('Erreur lors de la mise à jour');
+    } finally {
+      this.actionLoading.set(false);
     }
   }
 
