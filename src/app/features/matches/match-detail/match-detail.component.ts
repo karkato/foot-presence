@@ -576,10 +576,12 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
   }
 
   async onWithdraw(playerId: string): Promise<void> {
+    const currentPlayer = this.auth.currentPlayer();
+    if (!currentPlayer) return;
     this.actionLoading.set(true);
     this.actionError.set('');
     try {
-      await this.matchesService.withdrawPlayer(this.matchId, playerId);
+      await this.matchesService.withdrawPlayer(this.matchId, playerId, currentPlayer.id);
       await this.loadRegistrations();
     } catch {
       this.actionError.set('Erreur lors du retrait');
@@ -659,10 +661,16 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
 
   async toggleClose(): Promise<void> {
     const m = this.match();
-    if (!m) return;
+    const player = this.auth.currentPlayer();
+    if (!m || !player) return;
     this.actionLoading.set(true);
     try {
-      await this.matchesService.updateMatch(m.id, { is_closed: !m.is_closed });
+      await this.matchesService.updateMatch(
+        m.id,
+        { is_closed: !m.is_closed },
+        player.id,
+        { title: m.title }
+      );
       await this.loadMatch();
     } catch {
       this.actionError.set('Erreur lors de la mise à jour');

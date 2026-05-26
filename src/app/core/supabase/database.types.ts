@@ -131,11 +131,11 @@ export interface Database {
         Returns: Json;
       };
       withdraw_player: {
-        Args: { p_match_id: string; p_player_id: string };
+        Args: { p_match_id: string; p_player_id: string; p_withdrawn_by: string };
         Returns: undefined;
       };
       update_player_profile: {
-        Args: { p_player_id: string; p_display_name?: string | null; p_new_pin?: string | null };
+        Args: { p_player_id: string; p_display_name?: string | null; p_new_pin?: string | null; p_actor_id?: string | null };
         Returns: Json;
       };
       set_plus_ones: {
@@ -153,7 +153,22 @@ export interface Database {
           p_pin: string;
           p_display_name?: string | null;
           p_is_admin?: boolean;
+          p_actor_id?: string | null;
         };
+        Returns: Json;
+      };
+      log_action: {
+        Args: {
+          p_actor_id: string;
+          p_action: string;
+          p_target_type: string;
+          p_target_id: string;
+          p_details?: Record<string, unknown>;
+        };
+        Returns: undefined;
+      };
+      get_audit_log: {
+        Args: { p_group_id: string; p_limit?: number };
         Returns: Json;
       };
     };

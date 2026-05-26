@@ -152,9 +152,9 @@ export class MatchFormComponent implements OnInit {
 
     try {
       if (this.isEdit()) {
-        await this.matchesService.updateMatch(this.matchId, payload);
+        await this.matchesService.updateMatch(this.matchId, payload, player.id, { title: payload.title });
       } else {
-        await this.matchesService.createMatch(payload);
+        await this.matchesService.createMatch(payload, player.id);
       }
       this.goBack();
     } catch {

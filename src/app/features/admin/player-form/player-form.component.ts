@@ -179,6 +179,7 @@ export class PlayerFormComponent implements OnInit {
           p_player_id: this.playerId,
           p_display_name: this.form.display_name.trim() || null,
           p_new_pin: this.form.pin || null,
+          p_actor_id: currentPlayer.id,
         });
         if (this.form.is_admin !== undefined) {
           await this.supabase
@@ -197,6 +198,7 @@ export class PlayerFormComponent implements OnInit {
           p_pin: this.form.pin,
           p_display_name: this.form.display_name.trim() || null,
           p_is_admin: this.form.is_admin,
+          p_actor_id: currentPlayer.id,
         });
       }
       this.goBack();

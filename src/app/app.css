@@ -1,4 +1,5 @@
-.navbar {
+/* ---- Header commun ---- */
+.header {
   position: sticky;
   top: 0;
   z-index: 50;
@@ -12,22 +13,26 @@
   gap: 1rem;
 }
 
-.nav-brand {
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
   font-size: 1rem;
   font-weight: 800;
   color: var(--primary);
   text-decoration: none;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.nav-links {
-  display: flex;
+/* ---- Desktop nav (caché sur mobile) ---- */
+.desktop-nav {
+  display: none;
   align-items: center;
   gap: 0.5rem;
-  overflow-x: auto;
 }
 
-.nav-link {
+.desktop-nav-link {
   padding: 0.4rem 0.7rem;
   border-radius: 0.4rem;
   font-size: 0.9rem;
@@ -37,8 +42,10 @@
   white-space: nowrap;
   transition: background 0.15s;
 }
-.nav-link:hover { background: var(--bg); }
+.desktop-nav-link:hover { background: var(--bg); }
+.desktop-nav-link.active { background: var(--bg); font-weight: 600; }
 .nav-admin { color: var(--warning); font-weight: 700; }
+.nav-admin.active { color: var(--warning); }
 
 .btn-logout {
   padding: 0.35rem 0.75rem;
@@ -50,8 +57,81 @@
   color: var(--text-muted);
   white-space: nowrap;
   transition: all 0.15s;
+  font-family: inherit;
 }
 .btn-logout:hover { border-color: var(--danger); color: var(--danger); }
 
+/* ---- Nom joueur (mobile uniquement) ---- */
+.header-player {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+.header-player:hover { color: var(--text); }
+
+/* ---- Bottom nav (mobile uniquement) ---- */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: var(--card);
+  border-top: 1.5px solid var(--border);
+  display: flex;
+  align-items: stretch;
+  height: 60px;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.bottom-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-decoration: none;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 0.15s;
+  padding: 0;
+}
+
+.bottom-nav-item:hover,
+.bottom-nav-item.active { color: var(--primary); }
+
+.bottom-nav-item.admin { color: var(--text-muted); }
+.bottom-nav-item.admin:hover,
+.bottom-nav-item.admin.active { color: var(--warning); }
+
+.bottom-nav-item.logout-btn:hover { color: var(--danger); }
+
+/* ---- Main ---- */
 main { min-height: 100vh; }
 main.with-nav { min-height: calc(100vh - 56px); }
+
+/* ---- Responsive : desktop >= 768px ---- */
+@media (min-width: 768px) {
+  .desktop-nav { display: flex; }
+  .header-player { display: none; }
+  .bottom-nav { display: none; }
+  main.with-nav { padding-bottom: 0; }
+}
+
+/* ---- Mobile : padding pour bottom nav ---- */
+@media (max-width: 767px) {
+  main.with-nav {
+    padding-bottom: calc(60px + env(safe-area-inset-bottom));
+  }
+}
