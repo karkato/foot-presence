@@ -10,6 +10,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { MatchesService } from '../matches.service';
 import { SupabaseService } from '../../../core/supabase/supabase.service';
 import { Match } from '../../../shared/models/match.model';
+import { MatchWithCount } from '../matches.service';
 
 @Component({
   selector: 'app-match-list',
@@ -32,7 +33,12 @@ import { Match } from '../../../shared/models/match.model';
                 <span class="match-date">{{ formatDate(match.match_date) }} à {{ formatTime(match.match_time) }}</span>
               </div>
               <div class="match-meta">
-                @if (match.is_closed) {
+                <span class="badge badge-count" [class.badge-full]="match.registration_count >= match.max_players">
+                  {{ match.registration_count }}/{{ match.max_players }}
+                </span>
+                @if (match.score_a !== null) {
+                  <span class="badge badge-finished">Terminé</span>
+                } @else if (match.is_closed) {
                   <span class="badge badge-closed">Fermé</span>
                 }
                 <span class="arrow">›</span>
@@ -65,13 +71,29 @@ import { Match } from '../../../shared/models/match.model';
     .match-title { font-weight: 700; font-size: 1rem; color: var(--text); }
     .match-date { font-size: 0.85rem; color: var(--text-muted); }
     .match-meta { display: flex; align-items: center; gap: 0.5rem; }
-    .badge-closed {
+    .badge {
       font-size: 0.75rem;
-      background: var(--border);
-      color: var(--text-muted);
       padding: 0.2rem 0.5rem;
       border-radius: 1rem;
       font-weight: 600;
+    }
+    .badge-count {
+      background: var(--primary-light);
+      color: var(--primary);
+      font-size: 0.9rem;
+      padding: 0.3rem 0.75rem;
+    }
+    .badge-count.badge-full {
+      background: #fef3c7;
+      color: #d97706;
+    }
+    .badge-finished {
+      background: var(--success);
+      color: white;
+    }
+    .badge-closed {
+      background: var(--border);
+      color: var(--text-muted);
     }
     .arrow { font-size: 1.5rem; color: var(--text-muted); line-height: 1; }
   `,
@@ -83,7 +105,7 @@ export class MatchListComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
-  matches = signal<Match[]>([]);
+  matches = signal<MatchWithCount[]>([]);
   loading = signal(true);
 
   readonly groupSlug = this.route.snapshot.params['groupSlug'] as string;

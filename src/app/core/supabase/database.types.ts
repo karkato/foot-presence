@@ -50,6 +50,13 @@ export interface Database {
           registration_deadline: string | null;
           is_closed: boolean;
           created_at: string;
+          score_a: number | null;
+          score_b: number | null;
+          score_a2: number | null;
+          score_b2: number | null;
+          mini_match_target: number | null;
+          team_a_name: string;
+          team_b_name: string;
         };
         Insert: {
           id?: string;
@@ -61,6 +68,13 @@ export interface Database {
           registration_deadline?: string | null;
           is_closed?: boolean;
           created_at?: string;
+          score_a?: number | null;
+          score_b?: number | null;
+          score_a2?: number | null;
+          score_b2?: number | null;
+          mini_match_target?: number | null;
+          team_a_name?: string;
+          team_b_name?: string;
         };
         Update: {
           id?: string;
@@ -70,8 +84,15 @@ export interface Database {
           match_time?: string;
           max_players?: number;
           registration_deadline?: string | null;
+          score_a2?: number | null;
+          score_b2?: number | null;
+          mini_match_target?: number | null;
           is_closed?: boolean;
           created_at?: string;
+          score_a?: number | null;
+          score_b?: number | null;
+          team_a_name?: string;
+          team_b_name?: string;
         };
         Relationships: [];
       };
@@ -84,6 +105,7 @@ export interface Database {
           registered_at: string;
           is_withdrawn: boolean;
           plus_ones: number;
+          team: number | null;
         };
         Insert: {
           id?: string;
@@ -93,6 +115,7 @@ export interface Database {
           registered_at?: string;
           is_withdrawn?: boolean;
           plus_ones?: number;
+          team?: number | null;
         };
         Update: {
           id?: string;
@@ -102,6 +125,7 @@ export interface Database {
           registered_at?: string;
           is_withdrawn?: boolean;
           plus_ones?: number;
+          team?: number | null;
         };
         Relationships: [];
       };
@@ -169,6 +193,22 @@ export interface Database {
       };
       get_audit_log: {
         Args: { p_group_id: string; p_limit?: number };
+        Returns: Json;
+      };
+      assign_team: {
+        Args: { p_match_id: string; p_player_id: string; p_team: number | null };
+        Returns: undefined;
+      };
+      set_match_score: {
+        Args: { p_match_id: string; p_score_a: number; p_score_b: number; p_actor_id: string };
+        Returns: undefined;
+      };
+      get_player_stats: {
+        Args: { p_player_id: string };
+        Returns: Json;
+      };
+      get_player_history: {
+        Args: { p_player_id: string };
         Returns: Json;
       };
     };

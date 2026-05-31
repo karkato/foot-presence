@@ -1,5 +1,6 @@
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   inject,
   OnInit,
@@ -105,7 +106,7 @@ import { Player, getDisplayName } from '../../../shared/models/player.model';
       border: 1.5px solid var(--border);
       border-radius: 0.5rem;
       font-size: 0.95rem;
-      background: var(--bg);
+      background: var(--card);
       color: var(--text);
     }
     input:focus { outline: none; border-color: var(--primary); }
@@ -137,6 +138,7 @@ export class PlayerFormComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   isEdit = signal(false);
   saving = signal(false);
@@ -161,8 +163,9 @@ export class PlayerFormComponent implements OnInit {
         .eq('id', id)
         .single();
       if (data) {
-        this.form.display_name = data.display_name ?? '';
+        this.form.display_name = data.display_name ?? data.username;
         this.form.is_admin = data.is_admin;
+        this.cdr.markForCheck();
       }
     }
   }

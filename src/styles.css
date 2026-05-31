@@ -27,6 +27,12 @@
     --border: #334155;
     --primary-light: #1e3a8a22;
   }
+
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator,
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+  }
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -43,7 +49,7 @@ html, body {
 
 a { color: inherit; }
 
-button { font-family: inherit; }
+button { font-family: inherit; color: inherit; }
 
 input, select, textarea { font-family: inherit; }
 

@@ -20,101 +20,111 @@ import { Player, getDisplayName } from '../../../shared/models/player.model';
     <div class="container">
       <h2>Administration</h2>
 
-      <!-- Matchs -->
-      <section class="section">
-        <div class="section-header">
-          <h3>Matchs</h3>
-          <button class="btn-add" (click)="router.navigate(['match/new'], { relativeTo: route })">
-            + Nouveau match
-          </button>
-        </div>
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab" [class.active]="activeTab() === 'matches'" (click)="activeTab.set('matches')">Matchs</button>
+        <button class="tab" [class.active]="activeTab() === 'players'" (click)="activeTab.set('players')">Joueurs</button>
+        <button class="tab" [class.active]="activeTab() === 'audit'" (click)="activeTab.set('audit')">Historique</button>
+      </div>
 
-        @if (loadingMatches()) {
-          <p class="muted">Chargement...</p>
-        } @else if (matches().length === 0) {
-          <p class="muted">Aucun match.</p>
-        } @else {
-          <ul class="item-list">
-            @for (match of matches(); track match.id) {
-              <li class="item-card">
-                <div class="item-info">
-                  <span class="item-title">{{ match.title }}</span>
-                  <span class="item-sub">{{ formatDate(match.match_date) }} · {{ formatTime(match.match_time) }}</span>
-                </div>
-                <div class="item-actions">
-                  @if (match.is_closed) {
-                    <span class="badge-closed">Fermé</span>
-                  } @else {
-                    <button class="btn-sm btn-warning" (click)="toggleClose(match)">Fermer</button>
-                  }
-                  <button class="btn-sm btn-edit" (click)="editMatch(match)">Modifier</button>
-                  <button class="btn-sm btn-danger" (click)="deleteMatch(match)">Supprimer</button>
-                </div>
-              </li>
-            }
-          </ul>
-        }
-      </section>
+      <!-- Matchs -->
+      @if (activeTab() === 'matches') {
+        <section class="section">
+          <div class="section-header">
+            <button class="btn-add" (click)="router.navigate(['match/new'], { relativeTo: route })">
+              + Nouveau match
+            </button>
+          </div>
+          @if (loadingMatches()) {
+            <p class="muted">Chargement...</p>
+          } @else if (matches().length === 0) {
+            <p class="muted">Aucun match.</p>
+          } @else {
+            <ul class="item-list">
+              @for (match of matches(); track match.id) {
+                <li class="item-card">
+                  <div class="item-info">
+                    <span class="item-title">{{ match.title }}</span>
+                    <span class="item-sub">{{ formatDate(match.match_date) }} · {{ formatTime(match.match_time) }}</span>
+                  </div>
+                  <div class="item-actions">
+                    @if (match.is_closed) {
+                      <span class="badge-closed">Fermé</span>
+                    } @else {
+                      <button class="btn-sm btn-warning" (click)="toggleClose(match)">Fermer</button>
+                    }
+                    <button class="btn-sm btn-edit" (click)="editMatch(match)">Modifier</button>
+                    <button class="btn-sm btn-danger" (click)="deleteMatch(match)">Supprimer</button>
+                  </div>
+                </li>
+              }
+            </ul>
+          }
+        </section>
+      }
 
       <!-- Joueurs -->
-      <section class="section">
-        <div class="section-header">
-          <h3>Joueurs</h3>
-          <button class="btn-add" (click)="router.navigate(['player/new'], { relativeTo: route })">
-            + Nouveau joueur
-          </button>
-        </div>
-
-        @if (loadingPlayers()) {
-          <p class="muted">Chargement...</p>
-        } @else if (players().length === 0) {
-          <p class="muted">Aucun joueur.</p>
-        } @else {
-          <ul class="item-list">
-            @for (player of players(); track player.id) {
-              <li class="item-card">
-                <div class="item-info">
-                  <span class="item-title">{{ getDisplayName(player) }}</span>
-                  <span class="item-sub">@{{ player.username }} @if (player.is_admin) { · admin }</span>
-                </div>
-                <div class="item-actions">
-                  <button class="btn-sm btn-edit" (click)="editPlayer(player)">Modifier</button>
-                </div>
-              </li>
-            }
-          </ul>
-        }
-      </section>
+      @if (activeTab() === 'players') {
+        <section class="section">
+          <div class="section-header">
+            <button class="btn-add" (click)="router.navigate(['player/new'], { relativeTo: route })">
+              + Nouveau joueur
+            </button>
+          </div>
+          @if (loadingPlayers()) {
+            <p class="muted">Chargement...</p>
+          } @else if (players().length === 0) {
+            <p class="muted">Aucun joueur.</p>
+          } @else {
+            <ul class="item-list">
+              @for (player of players(); track player.id) {
+                <li class="item-card">
+                  <div class="item-info">
+                    <span class="item-title">{{ getDisplayName(player) }}</span>
+                    <span class="item-sub">@{{ player.username }} @if (player.is_admin) { · admin }</span>
+                  </div>
+                  <div class="item-actions">
+                    <button class="btn-sm btn-edit" (click)="editPlayer(player)">Modifier</button>
+                  </div>
+                </li>
+              }
+            </ul>
+          }
+        </section>
+      }
 
       <!-- Historique -->
-      <section class="section">
-        <div class="section-header">
-          <h3>Historique</h3>
-          <button class="btn-refresh" (click)="reloadAudit()">Actualiser</button>
-        </div>
-
-        @if (loadingAudit()) {
-          <p class="muted">Chargement...</p>
-        } @else if (auditLog().length === 0) {
-          <p class="muted">Aucune activité enregistrée.</p>
-        } @else {
-          <ul class="audit-list">
-            @for (entry of auditLog(); track entry.id) {
-              <li class="audit-item">
-                <span class="audit-time">{{ timeAgo(entry.created_at) }}</span>
-                <span class="audit-desc">{{ formatAction(entry) }}</span>
-              </li>
-            }
-          </ul>
-        }
-      </section>
+      @if (activeTab() === 'audit') {
+        <section class="section">
+          <div class="section-header">
+            <button class="btn-refresh" (click)="reloadAudit()">Actualiser</button>
+          </div>
+          @if (loadingAudit()) {
+            <p class="muted">Chargement...</p>
+          } @else if (auditLog().length === 0) {
+            <p class="muted">Aucune activité enregistrée.</p>
+          } @else {
+            <ul class="audit-list">
+              @for (entry of auditLog(); track entry.id) {
+                <li class="audit-item">
+                  <span class="audit-time">{{ timeAgo(entry.created_at) }}</span>
+                  <span class="audit-desc">{{ formatAction(entry) }}</span>
+                </li>
+              }
+            </ul>
+          }
+        </section>
+      }
     </div>
   `,
   styles: `
     .container { padding: 1rem; max-width: 680px; margin: 0 auto; }
     h2 { margin-top: 0; }
+    .tabs { display: flex; gap: 0.25rem; background: var(--card); border: 1.5px solid var(--border); border-radius: 0.6rem; padding: 0.25rem; margin-bottom: 1.25rem; }
+    .tab { flex: 1; padding: 0.5rem; border: none; background: none; border-radius: 0.4rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; color: var(--text-muted); transition: all 0.15s; }
+    .tab.active { background: var(--primary); color: white; }
     .section { margin-bottom: 1.5rem; }
-    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+    .section-header { display: flex; align-items: center; justify-content: flex-end; margin-bottom: 0.75rem; }
     h3 { margin: 0; }
     .btn-add {
       padding: 0.45rem 0.9rem;
@@ -193,6 +203,8 @@ export class AdminDashboardComponent implements OnInit {
   readonly route = inject(ActivatedRoute);
 
   readonly getDisplayName = getDisplayName;
+
+  activeTab = signal<'matches' | 'players' | 'audit'>('matches');
 
   matches = signal<Match[]>([]);
   players = signal<Player[]>([]);

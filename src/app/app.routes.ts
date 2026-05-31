@@ -23,6 +23,12 @@ export const routes: Routes = [
       import('./features/profile/profile.component').then((m) => m.ProfileComponent),
   },
   {
+    path: ':groupSlug/history',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/history/history.component').then((m) => m.HistoryComponent),
+  },
+  {
     path: ':groupSlug',
     children: [...matchesRoutes, ...adminRoutes],
   },

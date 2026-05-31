@@ -97,7 +97,7 @@ import { AuthService } from '../../../core/auth/auth.service';
       border: 1.5px solid var(--border);
       border-radius: 0.5rem;
       font-size: 1rem;
-      background: var(--bg);
+      background: var(--card);
       color: var(--text);
       box-sizing: border-box;
       transition: border-color 0.2s;

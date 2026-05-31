@@ -1,12 +1,7 @@
 import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  OnDestroy,
-  OnInit,
-  signal,
+  ChangeDetectionStrategy, Component, computed, inject, OnDestroy, OnInit, signal,
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -26,178 +21,264 @@ type PresentEntry =
   selector: 'app-match-detail',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PlayerRowComponent, RegistrationModalComponent],
+  imports: [PlayerRowComponent, RegistrationModalComponent, FormsModule],
   template: `
     @if (loading()) {
-      <div class="loading-state">Chargement...</div>
+      <div class="center-msg">Chargement...</div>
     } @else if (!match()) {
-      <div class="loading-state">Match introuvable.</div>
+      <div class="center-msg">Match introuvable.</div>
     } @else {
       <div class="container">
 
-        <!-- En-tête du match -->
-        <div class="match-header">
-          <div class="match-title-row">
+        <!-- En-tête -->
+        <div class="header">
+          <div class="header-top">
             <h2>{{ match()!.title }}</h2>
-            @if (match()!.is_closed) {
+            @if (match()!.score_a !== null) {
+              <span class="badge-finished">Terminé</span>
+            } @else if (match()!.is_closed) {
               <span class="badge-closed">Fermé</span>
             }
           </div>
           <p class="match-meta">
             {{ formatDate(match()!.match_date) }} à {{ formatTime(match()!.match_time) }}
             &nbsp;·&nbsp;
-            <strong [class.full]="isFull()">{{ presentCount() }}/{{ match()!.max_players }}</strong>
+            <strong [class.text-danger]="isFull()">{{ presentCount() }}/{{ match()!.max_players }}</strong>
           </p>
-
-          <!-- Actions de partage -->
-          <div class="share-actions">
-            <button class="btn-share" (click)="copyMatchLink()">
-              🔗 Copier lien
-            </button>
-            <button class="btn-share" (click)="shareList()">
-              📤 Partager liste
-            </button>
+          <div class="action-row">
+            <button class="btn-stroked" (click)="copyMatchLink()">Copier lien</button>
+            <button class="btn-stroked" (click)="shareList()">Copier liste</button>
           </div>
           @if (copyFeedback()) {
-            <p class="copy-feedback">{{ copyFeedback() }}</p>
+            <p class="feedback-success">{{ copyFeedback() }}</p>
           }
         </div>
 
-        <!-- Listes -->
-        <div class="lists-grid">
+        <!-- Score affiché si existant -->
+        @if (match()!.score_a !== null && match()!.score_b !== null) {
+          <div class="score-display card">
+            <div class="score-team">
+              <span class="score-name">{{ match()!.team_a_name }}</span>
+              <span class="score-value">{{ match()!.score_a }}</span>
+            </div>
+            <span class="score-sep">–</span>
+            <div class="score-team">
+              <span class="score-name">{{ match()!.team_b_name }}</span>
+              <span class="score-value">{{ match()!.score_b }}</span>
+            </div>
+          </div>
+          @if (match()!.score_a2 !== null && match()!.score_b2 !== null) {
+            <div class="mini-match-display card">
+              <span class="mini-match-label">Mini-match (premier à {{ match()!.mini_match_target }})</span>
+              <div class="mini-match-score">
+                <span class="mini-score-name">{{ match()!.team_a_name }}</span>
+                <span class="mini-score-value">{{ match()!.score_a2 }} – {{ match()!.score_b2 }}</span>
+                <span class="mini-score-name">{{ match()!.team_b_name }}</span>
+              </div>
+            </div>
+          }
+        }
 
-          <!-- Présents -->
-          <section class="list-section">
-            <h3>Présents ({{ presentCount() }})</h3>
-            @if (presentPlayers().length === 0) {
-              <p class="muted">Personne pour l'instant.</p>
-            } @else {
+        <!-- Présents -->
+        <div class="card mb-sm">
+          <h3 class="section-label">Présents ({{ presentCount() }})</h3>
+          @if (presentPlayers().length === 0) {
+            <p class="muted">Personne pour l'instant.</p>
+          } @else {
+            <ul class="player-list">
+              @for (entry of starters(); track entry.rank) {
+                @if (entry.type === 'player') {
+                  <app-player-row [reg]="entry.reg" [rank]="entry.rank" [prefix]="String(entry.rank) + '.'"
+                    [isCurrent]="isCurrentPlayer(entry.reg)" [canWithdraw]="canWithdraw(entry.reg)"
+                    [team]="entry.reg.team" (withdraw)="onWithdraw($event)" />
+                } @else {
+                  <li class="guest-row">
+                    <span class="rank-label">{{ entry.rank }}.</span>
+                    <span class="muted italic">+1 de {{ entry.hostName }}</span>
+                  </li>
+                }
+              }
+            </ul>
+            @if (substitutes().length > 0) {
+              <div class="sub-divider">
+                <div class="divider-line"></div>
+                <span>Remplaçants ({{ substitutes().length }})</span>
+                <div class="divider-line"></div>
+              </div>
               <ul class="player-list">
-                @for (entry of expandedPresent(); track entry.rank) {
+                @for (entry of substitutes(); track entry.rank) {
                   @if (entry.type === 'player') {
-                    <app-player-row
-                      [reg]="entry.reg"
-                      [rank]="entry.rank"
-                      [prefix]="String(entry.rank) + '.'"
-                      [isCurrent]="isCurrentPlayer(entry.reg)"
-                      [canWithdraw]="canWithdraw(entry.reg)"
-                      (withdraw)="onWithdraw($event)"
-                    />
+                    <app-player-row [reg]="entry.reg" [rank]="entry.rank" [prefix]="String(entry.rank) + '.'"
+                      [isCurrent]="isCurrentPlayer(entry.reg)" [canWithdraw]="canWithdraw(entry.reg)"
+                      [team]="entry.reg.team" (withdraw)="onWithdraw($event)" />
                   } @else {
                     <li class="guest-row">
-                      <span class="guest-rank">{{ entry.rank }}.</span>
-                      <span class="guest-name">+1 de {{ entry.hostName }}</span>
+                      <span class="rank-label">{{ entry.rank }}.</span>
+                      <span class="muted italic">+1 de {{ entry.hostName }}</span>
                     </li>
                   }
                 }
               </ul>
             }
-          </section>
-
-          <!-- Désistements -->
-          @if (withdrawnPlayers().length > 0) {
-            <section class="list-section withdrawn-section">
-              <h3>Désistements ({{ withdrawnPlayers().length }})</h3>
-              <ul class="player-list">
-                @for (reg of withdrawnPlayers(); track reg.id; let i = $index) {
-                  <app-player-row
-                    [reg]="reg"
-                    [rank]="i + 1"
-                    [prefix]="'D' + (i + 1) + '.'"
-                    [isCurrent]="isCurrentPlayer(reg)"
-                    [canWithdraw]="false"
-                    [canDelete]="isAdmin()"
-                    (delete)="onDeleteRegistration($event)"
-                  />
-                }
-              </ul>
-            </section>
           }
         </div>
 
-        <!-- Actions du joueur -->
-        @if (!match()!.is_closed) {
-          <div class="actions">
+        <!-- Désistements -->
+        @if (withdrawnPlayers().length > 0) {
+          <div class="card mb-sm withdrawn-card">
+            <h3 class="section-label">Désistements ({{ withdrawnPlayers().length }})</h3>
+            <ul class="player-list">
+              @for (reg of withdrawnPlayers(); track reg.id; let i = $index) {
+                <app-player-row [reg]="reg" [rank]="i + 1" [prefix]="'D' + (i + 1) + '.'"
+                  [isCurrent]="isCurrentPlayer(reg)" [canWithdraw]="false"
+                  [canDelete]="isAdmin()" (delete)="onDeleteRegistration($event)" />
+              }
+            </ul>
+          </div>
+        }
+
+        <!-- Actions joueur -->
+        @if (!match()!.is_closed && !isFinished()) {
+          <div class="player-actions">
             @if (!isRegistered()) {
-              <button class="btn-action btn-join" (click)="onRegister()" [disabled]="actionLoading()">
-                Je viens
-              </button>
+              <button class="btn-primary btn-full" (click)="onRegister()" [disabled]="actionLoading()">Je viens</button>
             } @else if (!isWithdrawn()) {
-              <button class="btn-action btn-withdraw" (click)="onWithdraw(currentPlayerId())" [disabled]="actionLoading()">
-                Je me retire
-              </button>
+              <button class="btn-danger btn-full" (click)="onWithdraw(currentPlayerId())" [disabled]="actionLoading()">Je me retire</button>
             } @else {
-              <button class="btn-action btn-join" (click)="onRegister()" [disabled]="actionLoading()">
-                Je reviens
-              </button>
+              <button class="btn-primary btn-full" (click)="onRegister()" [disabled]="actionLoading()">Je reviens</button>
             }
-
-            @if (canAddProxy()) {
-              <button class="btn-action btn-proxy" (click)="showModal.set(true)">
-                + Inscrire quelqu'un ({{ proxyCount() }}/2)
-              </button>
-            }
-
             @if (isRegistered() && !isWithdrawn()) {
-              <div class="plus-ones-control">
-                <span class="plus-ones-label">Invités</span>
-                <div class="plus-ones-stepper">
-                  <button (click)="onAdjustPlusOnes(-1)" [disabled]="myPlusOnes() === 0 || actionLoading()">−</button>
-                  <span>{{ myPlusOnes() }}</span>
-                  <button (click)="onAdjustPlusOnes(1)" [disabled]="actionLoading()">+</button>
+              <div class="proxy-row">
+                @if (canAddProxy()) {
+                  <button class="btn-stroked proxy-btn" (click)="showModal.set(true)">
+                    + Inscrire quelqu'un ({{ proxyCount() }}/2)
+                  </button>
+                }
+                <div class="plus-ones-row card">
+                  <span class="plus-ones-label">Invités</span>
+                  <div class="plus-ones-controls">
+                    <button class="btn-icon" (click)="onAdjustPlusOnes(-1)" [disabled]="myPlusOnes() === 0 || actionLoading()">−</button>
+                    <span class="plus-ones-count">{{ myPlusOnes() }}</span>
+                    <button class="btn-icon" (click)="onAdjustPlusOnes(1)" [disabled]="actionLoading()">+</button>
+                  </div>
                 </div>
               </div>
             }
           </div>
-
           @if (actionError()) {
-            <p class="action-error">{{ actionError() }}</p>
+            <p class="feedback-error">{{ actionError() }}</p>
           }
         }
 
-        <!-- Action admin : figer / rouvrir -->
-        @if (isAdmin()) {
-          <div class="admin-freeze">
+        <!-- Admin : figer/rouvrir -->
+        @if (isAdmin() && !isFinished()) {
+          <div class="admin-row">
             @if (!match()!.is_closed) {
-              <button class="btn-freeze" (click)="toggleClose()" [disabled]="actionLoading()">
+              <button class="btn-stroked btn-full" (click)="toggleClose()" [disabled]="actionLoading()">
                 Figer la liste
               </button>
             } @else {
-              <button class="btn-unfreeze" (click)="toggleClose()" [disabled]="actionLoading()">
+              <button class="btn-stroked btn-full" (click)="toggleClose()" [disabled]="actionLoading()">
                 Rouvrir les inscriptions
               </button>
             }
           </div>
         }
-      </div>
 
-      <!-- Section admin : gestion des présences -->
-      @if (isAdmin()) {
-        <div class="admin-section">
-          <h3 class="admin-title">Gestion présences</h3>
-          <ul class="admin-player-list">
-            @for (player of allPlayers(); track player.id) {
-              <li
-                class="admin-player-row"
-                [class.present]="isPlayerPresent(player.id)"
-                (click)="adminToggle(player)"
-              >
-                <span class="admin-checkbox" [class.checked]="isPlayerPresent(player.id)">
-                  @if (isPlayerPresent(player.id)) { ✓ }
-                </span>
-                <span class="admin-name">{{ getDisplayName(player) }}</span>
-                @if (isPlayerPresent(player.id)) {
-                  <div class="admin-plus-stepper" (click)="$event.stopPropagation()">
-                    <button (click)="adminAdjustPlusOnes(player, -1)" [disabled]="getPlayerPlusOnes(player.id) === 0 || actionLoading()">−</button>
-                    <span>+{{ getPlayerPlusOnes(player.id) }}</span>
-                    <button (click)="adminAdjustPlusOnes(player, 1)" [disabled]="actionLoading()">+</button>
-                  </div>
-                }
-              </li>
+        <!-- Admin : score -->
+        @if (isAdmin()) {
+          <div class="card admin-section">
+            <h3 class="section-label">Score principal</h3>
+            <div class="score-inputs">
+              <div class="score-input-group">
+                <label>{{ match()!.team_a_name }}</label>
+                <input type="number" min="0" [(ngModel)]="scoreA" class="score-input" />
+              </div>
+              <span class="score-sep-sm">–</span>
+              <div class="score-input-group">
+                <label>{{ match()!.team_b_name }}</label>
+                <input type="number" min="0" [(ngModel)]="scoreB" class="score-input" />
+              </div>
+              <button class="btn-primary" (click)="saveScore()" [disabled]="actionLoading()">
+                Enregistrer
+              </button>
+            </div>
+            @if (scoreFeedback()) {
+              <p class="feedback-success">{{ scoreFeedback() }}</p>
             }
-          </ul>
-        </div>
-      }
+
+            <h3 class="section-label" style="margin-top:1rem">Mini-match</h3>
+            <div class="score-inputs">
+              <div class="score-input-group">
+                <label>{{ match()!.team_a_name }}</label>
+                <input type="number" min="0" [(ngModel)]="miniScoreA" class="score-input" />
+              </div>
+              <span class="score-sep-sm">–</span>
+              <div class="score-input-group">
+                <label>{{ match()!.team_b_name }}</label>
+                <input type="number" min="0" [(ngModel)]="miniScoreB" class="score-input" />
+              </div>
+              <div class="score-input-group">
+                <label>1er à</label>
+                <select [(ngModel)]="miniTarget" class="score-input">
+                  <option [ngValue]="3">3</option>
+                  <option [ngValue]="5">5</option>
+                  <option [ngValue]="7">7</option>
+                </select>
+              </div>
+              <button class="btn-primary" (click)="saveMiniScore()" [disabled]="actionLoading()">
+                Enregistrer
+              </button>
+            </div>
+            @if (miniScoreFeedback()) {
+              <p class="feedback-success">{{ miniScoreFeedback() }}</p>
+            }
+          </div>
+        }
+
+        <!-- Admin : panneau présences -->
+        @if (isAdmin() && !isFinished()) {
+          <div class="card admin-section">
+            <button class="presence-toggle" (click)="showAdminPanel.set(!showAdminPanel())">
+              <span class="section-label" style="margin:0">Gérer les présences</span>
+              <div class="presence-toggle-right">
+                <span class="presence-count">{{ presentCount() }}/{{ match()!.max_players }}</span>
+                <span class="toggle-icon">{{ showAdminPanel() ? '▲' : '▼' }}</span>
+              </div>
+            </button>
+            @if (showAdminPanel()) {
+              <ul class="admin-player-list">
+                @for (player of sortedPlayers(); track player.id) {
+                  @let present = isPlayerPresent(player.id);
+                  @let team = getPlayerTeam(player.id);
+                  <li class="admin-player-row" [class.is-present]="present">
+                    <label class="admin-player-check">
+                      <input type="checkbox" [checked]="present" (change)="adminToggle(player.id)" />
+                      <span class="player-name">{{ getDisplayName(player) }}</span>
+                    </label>
+                    @if (present) {
+                      <div class="admin-player-controls">
+                        <div class="plus-ones-mini">
+                          <button class="btn-mini" (click)="adminAdjustPlusOnes(player.id, -1)"
+                            [disabled]="getPlayerPlusOnes(player.id) === 0">−</button>
+                          <span class="plus-ones-mini-count">+{{ getPlayerPlusOnes(player.id) }}</span>
+                          <button class="btn-mini" (click)="adminAdjustPlusOnes(player.id, 1)">+</button>
+                        </div>
+                        <div class="team-btns">
+                          <button class="team-btn team-btn-a" [class.active]="team === 0"
+                            (click)="adminSetTeam(player.id, 0)">A</button>
+                          <button class="team-btn team-btn-b" [class.active]="team === 1"
+                            (click)="adminSetTeam(player.id, 1)">B</button>
+                        </div>
+                      </div>
+                    }
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        }
+      </div>
 
       <!-- Modal procuration -->
       @if (showModal()) {
@@ -211,204 +292,96 @@ type PresentEntry =
     }
   `,
   styles: `
-    .loading-state {
-      display: flex; align-items: center; justify-content: center;
-      min-height: 50vh; color: var(--text-muted); font-size: 1.1rem;
-    }
+    .center-msg { display: flex; align-items: center; justify-content: center; min-height: 50vh; color: var(--text-muted); }
     .container { padding: 1rem; max-width: 600px; margin: 0 auto; }
+    .card { background: var(--card); border: 1.5px solid var(--border); border-radius: 0.75rem; padding: 1rem; }
+    .mb-sm { margin-bottom: 0.75rem; }
+    .muted { color: var(--text-muted); }
+    .italic { font-style: italic; }
+    .text-danger { color: var(--danger); }
 
-    .match-header { margin-bottom: 1.25rem; }
-    .match-title-row { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
-    .match-title-row h2 { margin: 0; }
-    .badge-closed {
-      background: var(--border); color: var(--text-muted);
-      font-size: 0.75rem; padding: 0.2rem 0.6rem;
-      border-radius: 1rem; font-weight: 600;
-    }
-    .match-meta { color: var(--text-muted); margin: 0.35rem 0 0.75rem; font-size: 0.9rem; }
-    .match-meta strong { color: var(--text); }
-    .match-meta strong.full { color: var(--danger); }
+    /* Header */
+    .header { margin-bottom: 1.25rem; }
+    .header-top { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.25rem; }
+    .header-top h2 { margin: 0; font-size: 1.2rem; }
+    .badge-closed { font-size: 0.75rem; font-weight: 600; background: var(--border); color: var(--text-muted); padding: 0.2rem 0.6rem; border-radius: 1rem; }
+    .badge-finished { font-size: 0.75rem; font-weight: 600; background: var(--success); color: white; padding: 0.2rem 0.6rem; border-radius: 1rem; }
+    .match-meta { font-size: 0.85rem; color: var(--text-muted); margin: 0 0 0.75rem; }
+    .action-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .feedback-success { color: var(--success); font-size: 0.85rem; margin: 0.4rem 0 0; }
+    .feedback-error { color: var(--danger); font-size: 0.85rem; text-align: center; margin: 0.5rem 0 0; }
 
-    .share-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-    .btn-share {
-      padding: 0.4rem 0.85rem;
-      background: var(--card);
-      border: 1.5px solid var(--border);
-      border-radius: 0.5rem;
-      font-size: 0.85rem;
-      cursor: pointer;
-      font-weight: 500;
-      transition: all 0.15s;
-    }
-    .btn-share:hover { border-color: var(--primary); color: var(--primary); }
-    .copy-feedback { font-size: 0.8rem; color: var(--success); margin: 0.35rem 0 0; }
+    /* Buttons */
+    .btn-primary { padding: 0.65rem 1.25rem; background: var(--primary); color: white; border: none; border-radius: 0.5rem; font-size: 0.95rem; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-danger { padding: 0.65rem 1.25rem; background: var(--danger); color: white; border: none; border-radius: 0.5rem; font-size: 0.95rem; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .btn-danger:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-stroked { padding: 0.6rem 1.1rem; background: transparent; border: 1.5px solid var(--border); border-radius: 0.5rem; font-size: 0.9rem; font-weight: 500; cursor: pointer; color: var(--text); font-family: inherit; }
+    .btn-stroked:hover { border-color: var(--primary); }
+    .btn-full { width: 100%; }
+    .btn-icon { width: 2rem; height: 2rem; border-radius: 50%; border: 1.5px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; font-family: inherit; }
+    .btn-icon:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-close { background: none; border: none; font-size: 1rem; cursor: pointer; color: var(--text-muted); padding: 0.25rem; }
 
-    .lists-grid { display: flex; flex-direction: column; gap: 1rem; }
-    .list-section {
-      background: var(--card);
-      border-radius: 0.75rem;
-      padding: 1rem;
-      border: 1.5px solid var(--border);
-    }
-    .list-section h3 { margin: 0 0 0.75rem; font-size: 0.95rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
-    .withdrawn-section { opacity: 0.75; }
+    /* Score display */
+    .score-display { display: flex; align-items: center; justify-content: center; gap: 1.5rem; margin-bottom: 0.75rem; text-align: center; }
+    .score-team { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; }
+    .score-name { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
+    .score-value { font-size: 2.25rem; font-weight: 900; line-height: 1; }
+    .score-sep { font-size: 1.5rem; font-weight: 700; color: var(--text-muted); }
+
+    /* Player list */
+    .section-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin: 0 0 0.75rem; }
     .player-list { list-style: none; padding: 0; margin: 0; }
-    .muted { color: var(--text-muted); font-size: 0.9rem; padding: 0.5rem 0; }
-    .guest-row {
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-      padding: 0.55rem 0.75rem;
-      border-radius: 0.4rem;
-      opacity: 0.75;
-    }
-    .guest-rank { min-width: 2rem; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-align: right; }
-    .guest-name { font-size: 0.9rem; color: var(--text-muted); font-style: italic; }
+    .guest-row { display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 0.75rem; opacity: 0.7; }
+    .rank-label { min-width: 2rem; text-align: right; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); }
+    .sub-divider { display: flex; align-items: center; gap: 0.5rem; margin: 0.75rem 0; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--warning); }
+    .divider-line { flex: 1; height: 1px; background: var(--warning); opacity: 0.3; }
+    .withdrawn-card { opacity: 0.7; }
 
-    .actions {
-      display: flex;
-      flex-direction: column;
-      gap: 0.6rem;
-      margin-top: 1.25rem;
-    }
-    .btn-action {
-      width: 100%;
-      padding: 0.85rem;
-      border: none;
-      border-radius: 0.6rem;
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-    .btn-join { background: var(--success); color: white; }
-    .btn-join:hover:not(:disabled) { filter: brightness(1.1); }
-    .btn-withdraw { background: var(--danger); color: white; }
-    .btn-withdraw:hover:not(:disabled) { filter: brightness(1.1); }
-    .btn-proxy {
-      background: var(--card);
-      color: var(--primary);
-      border: 1.5px solid var(--primary);
-    }
-    .btn-proxy:hover { background: var(--primary-light); }
-    .btn-action:disabled { opacity: 0.6; cursor: not-allowed; }
-    .action-error { color: var(--danger); font-size: 0.9rem; text-align: center; margin-top: 0.5rem; }
+    /* Player actions */
+    .player-actions { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem; }
+    .proxy-row { display: flex; gap: 0.5rem; align-items: stretch; }
+    .proxy-btn { flex: 1; }
+    .plus-ones-row { display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 1rem; }
+    .plus-ones-label { font-size: 0.9rem; font-weight: 600; }
+    .plus-ones-controls { display: flex; align-items: center; gap: 0.75rem; }
+    .plus-ones-count { font-weight: 700; font-size: 1.1rem; min-width: 1.5rem; text-align: center; }
 
-    .plus-ones-control {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0.65rem 1rem;
-      background: var(--card);
-      border: 1.5px solid var(--border);
-      border-radius: 0.6rem;
-    }
-    .plus-ones-label { font-size: 0.95rem; font-weight: 600; }
-    .plus-ones-stepper { display: flex; align-items: center; gap: 1rem; }
-    .plus-ones-stepper span { font-size: 1.1rem; font-weight: 700; min-width: 1.5rem; text-align: center; }
-    .plus-ones-stepper button {
-      width: 2rem; height: 2rem;
-      border-radius: 50%;
-      border: 1.5px solid var(--border);
-      background: var(--bg);
-      font-size: 1.2rem;
-      line-height: 1;
-      cursor: pointer;
-      font-weight: 700;
-      color: var(--text);
-      transition: border-color 0.15s;
-    }
-    .plus-ones-stepper button:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
-    .plus-ones-stepper button:disabled { opacity: 0.4; cursor: not-allowed; }
-
-    .admin-freeze { margin-top: 1rem; }
-    .btn-freeze {
-      width: 100%;
-      padding: 0.75rem;
-      background: var(--warning);
-      color: white;
-      border: none;
-      border-radius: 0.6rem;
-      font-size: 0.95rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: filter 0.15s;
-    }
-    .btn-freeze:hover:not(:disabled) { filter: brightness(1.1); }
-    .btn-unfreeze {
-      width: 100%;
-      padding: 0.75rem;
-      background: var(--card);
-      color: var(--primary);
-      border: 1.5px solid var(--primary);
-      border-radius: 0.6rem;
-      font-size: 0.95rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-    .btn-unfreeze:hover:not(:disabled) { background: var(--primary-light); }
-    .btn-freeze:disabled, .btn-unfreeze:disabled { opacity: 0.6; cursor: not-allowed; }
-
-    .admin-section {
-      margin-top: 1.5rem;
-      background: var(--card);
-      border: 1.5px solid var(--border);
-      border-radius: 0.75rem;
-      padding: 1rem;
-    }
-    .admin-title {
-      margin: 0 0 0.75rem;
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-    }
-    .admin-player-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.25rem; }
-    .admin-player-row {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.5rem 0.6rem;
-      border-radius: 0.4rem;
-      cursor: pointer;
-      transition: background 0.1s;
-    }
-    .admin-player-row:hover { background: var(--border); }
-    .admin-player-row.present { background: color-mix(in srgb, var(--success) 12%, transparent); }
-    .admin-checkbox {
-      width: 1.25rem;
-      height: 1.25rem;
-      border-radius: 0.3rem;
-      border: 2px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.75rem;
-      font-weight: 700;
-      flex-shrink: 0;
-      color: white;
-    }
-    .admin-checkbox.checked { background: var(--success); border-color: var(--success); }
-    .admin-name { font-size: 0.9rem; flex: 1; }
-    .admin-plus-stepper {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    .admin-plus-stepper span { font-size: 0.85rem; font-weight: 700; color: var(--primary); min-width: 1.5rem; text-align: center; }
-    .admin-plus-stepper button {
-      width: 1.6rem; height: 1.6rem;
-      border-radius: 50%;
-      border: 1.5px solid var(--border);
-      background: var(--bg);
-      font-size: 1rem;
-      line-height: 1;
-      cursor: pointer;
-      font-weight: 700;
-      color: var(--text);
-    }
-    .admin-plus-stepper button:disabled { opacity: 0.4; cursor: not-allowed; }
+    /* Admin sections */
+    .admin-row { margin-top: 0.75rem; }
+    .admin-section { margin-top: 0.75rem; }
+    .score-inputs { display: flex; align-items: flex-end; gap: 0.75rem; flex-wrap: wrap; }
+    .score-input-group { display: flex; flex-direction: column; gap: 0.25rem; }
+    .score-input-group label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
+    .score-input { width: 4rem; text-align: center; font-size: 1.1rem; font-weight: 700; padding: 0.5rem; border: 1.5px solid var(--border); border-radius: 0.5rem; background: var(--card); color: var(--text); font-family: inherit; }
+    .score-input:focus { outline: none; border-color: var(--primary); }
+    .mini-match-display { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; margin-bottom: 0.75rem; padding: 0.75rem 1rem; }
+    .mini-match-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); }
+    .mini-match-score { display: flex; align-items: center; gap: 0.75rem; }
+    .mini-score-name { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
+    .mini-score-value { font-size: 1.4rem; font-weight: 900; color: var(--text); }
+    .score-sep-sm { font-size: 1.25rem; font-weight: 700; color: var(--text-muted); padding-bottom: 0.5rem; }
+    .presence-count { background: var(--primary); color: white; font-size: 0.75rem; font-weight: 700; padding: 0.15rem 0.6rem; border-radius: 1rem; }
+    .presence-toggle { width: 100%; display: flex; align-items: center; justify-content: space-between; background: none; border: none; padding: 0; cursor: pointer; }
+    .presence-toggle-right { display: flex; align-items: center; gap: 0.6rem; }
+    .toggle-icon { font-size: 0.75rem; color: var(--text-muted); }
+    .admin-player-list { list-style: none; padding: 0; margin: 0.75rem 0 0; display: flex; flex-direction: column; gap: 0.15rem; }
+    .admin-player-row { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0.5rem; border-radius: 0.5rem; transition: background 0.1s; }
+    .admin-player-row:hover { background: var(--bg); }
+    .admin-player-row.is-present { background: var(--primary-light); }
+    .admin-player-check { display: flex; align-items: center; gap: 0.6rem; cursor: pointer; flex: 1; }
+    .admin-player-check input[type="checkbox"] { width: 1.1rem; height: 1.1rem; cursor: pointer; accent-color: var(--primary); }
+    .player-name { font-size: 0.95rem; }
+    .admin-player-controls { display: flex; align-items: center; gap: 0.6rem; }
+    .plus-ones-mini { display: flex; align-items: center; gap: 0.3rem; }
+    .plus-ones-mini-count { font-size: 0.8rem; font-weight: 700; min-width: 1.75rem; text-align: center; color: var(--text-muted); }
+    .btn-mini { width: 1.5rem; height: 1.5rem; border-radius: 50%; border: 1.5px solid var(--border); background: var(--card); cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; font-family: inherit; line-height: 1; padding: 0; color: var(--text); }
+    .btn-mini:disabled { opacity: 0.35; cursor: not-allowed; }
+    .team-btns { display: flex; gap: 0.4rem; }
+    .team-btn { padding: 0.2rem 0.65rem; border: 1.5px solid var(--border); border-radius: 0.35rem; font-size: 0.8rem; font-weight: 700; cursor: pointer; background: transparent; color: var(--text-muted); font-family: inherit; transition: all 0.1s; }
+    .team-btn-a.active { background: var(--primary); color: white; border-color: var(--primary); }
+    .team-btn-b.active { background: var(--warning); color: white; border-color: var(--warning); }
   `,
 })
 export class MatchDetailComponent implements OnInit, OnDestroy {
@@ -428,7 +401,15 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
   actionLoading = signal(false);
   actionError = signal('');
   showModal = signal(false);
+  showAdminPanel = signal(false);
   copyFeedback = signal('');
+  scoreFeedback = signal('');
+  miniScoreFeedback = signal('');
+  scoreA = 0;
+  scoreB = 0;
+  miniScoreA = 0;
+  miniScoreB = 0;
+  miniTarget = 5;
 
   private channel: RealtimeChannel | null = null;
   private feedbackTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -440,14 +421,12 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
   isAdmin = computed(() => this.auth.isAdmin());
 
   presentPlayers = computed(() =>
-    this.registrations()
-      .filter((r) => !r.is_withdrawn)
+    this.registrations().filter(r => !r.is_withdrawn)
       .sort((a, b) => new Date(a.registered_at).getTime() - new Date(b.registered_at).getTime())
   );
 
   withdrawnPlayers = computed(() =>
-    this.registrations()
-      .filter((r) => r.is_withdrawn)
+    this.registrations().filter(r => r.is_withdrawn)
       .sort((a, b) => new Date(a.registered_at).getTime() - new Date(b.registered_at).getTime())
   );
 
@@ -466,35 +445,42 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
     }
     return entries;
   });
-  myPlusOnes = computed(() => {
-    const reg = this.registrations().find(
-      (r) => r.player_id === this.currentPlayerId() && !r.is_withdrawn
-    );
-    return reg?.plus_ones ?? 0;
+
+  starters = computed(() => {
+    const max = this.match()?.max_players ?? Infinity;
+    return this.expandedPresent().filter(e => e.rank <= max);
   });
+
+  substitutes = computed(() => {
+    const max = this.match()?.max_players ?? Infinity;
+    return this.expandedPresent().filter(e => e.rank > max);
+  });
+
+  myPlusOnes = computed(() =>
+    this.registrations().find(r => r.player_id === this.currentPlayerId() && !r.is_withdrawn)?.plus_ones ?? 0
+  );
+
   isFull = computed(() => {
     const m = this.match();
     return m ? this.presentCount() >= m.max_players : false;
   });
 
-  isRegistered = computed(() =>
-    this.registrations().some((r) => r.player_id === this.currentPlayerId())
-  );
-  isWithdrawn = computed(() =>
-    this.registrations().some(
-      (r) => r.player_id === this.currentPlayerId() && r.is_withdrawn
-    )
-  );
+  isFinished = computed(() => this.match()?.score_a !== null && this.match()?.score_a !== undefined);
+  isRegistered = computed(() => this.registrations().some(r => r.player_id === this.currentPlayerId()));
+  isWithdrawn = computed(() => this.registrations().some(r => r.player_id === this.currentPlayerId() && r.is_withdrawn));
 
   proxyCount = computed(() =>
-    this.registrations().filter(
-      (r) =>
-        !r.is_withdrawn &&
-        r.registered_by === this.currentPlayerId() &&
-        r.player_id !== this.currentPlayerId()
-    ).length
+    this.registrations().filter(r => !r.is_withdrawn && r.registered_by === this.currentPlayerId() && r.player_id !== this.currentPlayerId()).length
   );
   canAddProxy = computed(() => this.proxyCount() < 2);
+
+  sortedPlayers = computed(() => {
+    const presentIds = new Set(this.presentPlayers().map(r => r.player_id));
+    return [...this.allPlayers()].sort((a, b) => {
+      const diff = (presentIds.has(a.id) ? 0 : 1) - (presentIds.has(b.id) ? 0 : 1);
+      return diff !== 0 ? diff : a.username.localeCompare(b.username);
+    });
+  });
 
   async ngOnInit(): Promise<void> {
     await Promise.all([this.loadMatch(), this.loadRegistrations()]);
@@ -512,52 +498,82 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
     try {
       const m = await this.matchesService.getMatch(this.matchId);
       this.match.set(m);
-    } catch {
-      this.match.set(null);
-    }
+      this.scoreA = m.score_a ?? 0;
+      this.scoreB = m.score_b ?? 0;
+      this.miniScoreA = m.score_a2 ?? 0;
+      this.miniScoreB = m.score_b2 ?? 0;
+      this.miniTarget = m.mini_match_target ?? 5;
+    } catch { this.match.set(null); }
   }
 
   private async loadRegistrations(): Promise<void> {
-    try {
-      const regs = await this.matchesService.getRegistrations(this.matchId);
-      this.registrations.set(regs);
-    } catch {
-      this.registrations.set([]);
-    }
+    try { this.registrations.set(await this.matchesService.getRegistrations(this.matchId)); }
+    catch { this.registrations.set([]); }
   }
 
   private async loadPlayers(): Promise<void> {
     const player = this.auth.currentPlayer();
     if (!player) return;
-    try {
-      const players = await this.matchesService.getGroupPlayers(player.group_id);
-      this.allPlayers.set(players);
-    } catch {
-      this.allPlayers.set([]);
-    }
+    try { this.allPlayers.set(await this.matchesService.getGroupPlayers(player.group_id)); }
+    catch { this.allPlayers.set([]); }
   }
 
   private subscribeToRealtime(): void {
-    this.channel = this.supabase
-      .channel(`match-${this.matchId}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'registrations', filter: `match_id=eq.${this.matchId}` },
-        () => this.loadRegistrations()
-      )
+    this.channel = this.supabase.channel(`match-${this.matchId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'registrations', filter: `match_id=eq.${this.matchId}` },
+        () => this.loadRegistrations())
       .subscribe();
   }
 
-  isCurrentPlayer(reg: Registration): boolean {
-    return reg.player_id === this.currentPlayerId();
-  }
+  isCurrentPlayer(reg: Registration): boolean { return reg.player_id === this.currentPlayerId(); }
 
   canWithdraw(reg: Registration): boolean {
     const currentId = this.currentPlayerId();
     const m = this.match();
-    if (!m || m.is_closed) return false;
-    if (reg.is_withdrawn) return false;
+    if (!m || m.is_closed || reg.is_withdrawn) return false;
     return reg.player_id === currentId || reg.registered_by === currentId;
+  }
+
+  isPlayerPresent(playerId: string): boolean {
+    return this.registrations().some(r => r.player_id === playerId && !r.is_withdrawn);
+  }
+
+  getPlayerTeam(playerId: string): number | null {
+    return this.registrations().find(r => r.player_id === playerId && !r.is_withdrawn)?.team ?? null;
+  }
+
+  getPlayerPlusOnes(playerId: string): number {
+    return this.registrations().find(r => r.player_id === playerId && !r.is_withdrawn)?.plus_ones ?? 0;
+  }
+
+  async adminAdjustPlusOnes(playerId: string, delta: number): Promise<void> {
+    const newCount = Math.max(0, this.getPlayerPlusOnes(playerId) + delta);
+    try {
+      await this.matchesService.setPlusOnes(this.matchId, playerId, newCount);
+      await this.loadRegistrations();
+    } catch { /* silently fail */ }
+  }
+
+  async adminToggle(playerId: string): Promise<void> {
+    const admin = this.auth.currentPlayer();
+    if (!admin) return;
+    try {
+      if (this.isPlayerPresent(playerId)) {
+        await this.matchesService.adminRemoveRegistration(admin.id, this.matchId, playerId);
+      } else {
+        await this.matchesService.registerPlayer(this.matchId, playerId, admin.id);
+      }
+      await this.loadRegistrations();
+    } catch { /* silently fail */ }
+  }
+
+  async adminSetTeam(playerId: string, team: number): Promise<void> {
+    const currentTeam = this.getPlayerTeam(playerId);
+    const newTeam = currentTeam === team ? null : team;
+    try {
+      await this.matchesService.assignTeam(this.matchId, playerId, newTeam);
+      await this.loadRegistrations();
+    } catch { /* silently fail */ }
   }
 
   async onRegister(): Promise<void> {
@@ -568,11 +584,8 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
     try {
       await this.matchesService.registerPlayer(this.matchId, player.id, player.id);
       await this.loadRegistrations();
-    } catch (err) {
-      this.actionError.set('Erreur lors de l\'inscription');
-    } finally {
-      this.actionLoading.set(false);
-    }
+    } catch { this.actionError.set('Erreur lors de l\'inscription'); }
+    finally { this.actionLoading.set(false); }
   }
 
   async onWithdraw(playerId: string): Promise<void> {
@@ -583,11 +596,8 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
     try {
       await this.matchesService.withdrawPlayer(this.matchId, playerId, currentPlayer.id);
       await this.loadRegistrations();
-    } catch {
-      this.actionError.set('Erreur lors du retrait');
-    } finally {
-      this.actionLoading.set(false);
-    }
+    } catch { this.actionError.set('Erreur lors du retrait'); }
+    finally { this.actionLoading.set(false); }
   }
 
   async onRegisterProxy(playerId: string): Promise<void> {
@@ -598,49 +608,8 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
       await this.matchesService.registerPlayer(this.matchId, playerId, currentPlayer.id);
       await this.loadRegistrations();
     } catch (err) {
-      const msg = err instanceof Error && err.message.includes('proxy_limit_reached')
-        ? 'Limite de 2 procurations atteinte'
-        : 'Erreur lors de l\'inscription';
-      this.actionError.set(msg);
-    }
-  }
-
-  copyMatchLink(): void {
-    const url = `${window.location.origin}/${this.groupSlug}/match/${this.matchId}`;
-    navigator.clipboard.writeText(url).then(() => {
-      this.showFeedback('Lien copié !');
-    });
-  }
-
-  shareList(): void {
-    const m = this.match();
-    if (!m) return;
-    const present = this.expandedPresent()
-      .map((entry) => {
-        if (entry.type === 'player') {
-          return `${entry.rank}. ${getDisplayName(entry.reg.player)}`;
-        } else {
-          return `${entry.rank}. +1 de ${entry.hostName}`;
-        }
-      })
-      .join('\n');
-    const withdrawn = this.withdrawnPlayers()
-      .map((r, i) => `D${i + 1}. ${r.player.display_name ?? r.player.username}`)
-      .join('\n');
-
-    const text = [
-      `⚽ ${m.title} — ${this.presentCount()}/${m.max_players}`,
-      '',
-      'Présents :',
-      present || 'Aucun',
-      ...(withdrawn ? ['', 'Désistements :', withdrawn] : []),
-    ].join('\n');
-
-    const encoded = encodeURIComponent(text);
-    if (navigator.share) {
-      navigator.share({ text });
-    } else {
-      window.open(`https://wa.me/?text=${encoded}`, '_blank');
+      this.actionError.set(err instanceof Error && err.message.includes('proxy_limit_reached')
+        ? 'Limite de 2 procurations atteinte' : 'Erreur lors de l\'inscription');
     }
   }
 
@@ -652,11 +621,8 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
     try {
       await this.matchesService.setPlusOnes(this.matchId, player.id, newCount);
       await this.loadRegistrations();
-    } catch {
-      this.actionError.set('Erreur lors de la mise à jour');
-    } finally {
-      this.actionLoading.set(false);
-    }
+    } catch { this.actionError.set('Erreur lors de la mise à jour'); }
+    finally { this.actionLoading.set(false); }
   }
 
   async toggleClose(): Promise<void> {
@@ -665,18 +631,10 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
     if (!m || !player) return;
     this.actionLoading.set(true);
     try {
-      await this.matchesService.updateMatch(
-        m.id,
-        { is_closed: !m.is_closed },
-        player.id,
-        { title: m.title }
-      );
+      await this.matchesService.updateMatch(m.id, { is_closed: !m.is_closed }, player.id, { title: m.title });
       await this.loadMatch();
-    } catch {
-      this.actionError.set('Erreur lors de la mise à jour');
-    } finally {
-      this.actionLoading.set(false);
-    }
+    } catch { this.actionError.set('Erreur lors de la mise à jour'); }
+    finally { this.actionLoading.set(false); }
   }
 
   async onDeleteRegistration(playerId: string): Promise<void> {
@@ -686,52 +644,51 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
     try {
       await this.matchesService.adminRemoveRegistration(admin.id, this.matchId, playerId);
       await this.loadRegistrations();
-    } catch {
-      this.actionError.set('Erreur lors de la suppression');
-    } finally {
-      this.actionLoading.set(false);
-    }
+    } catch { this.actionError.set('Erreur lors de la suppression'); }
+    finally { this.actionLoading.set(false); }
   }
 
-  isPlayerPresent(playerId: string): boolean {
-    return this.registrations().some((r) => r.player_id === playerId && !r.is_withdrawn);
-  }
-
-  getPlayerPlusOnes(playerId: string): number {
-    const reg = this.registrations().find((r) => r.player_id === playerId && !r.is_withdrawn);
-    return reg?.plus_ones ?? 0;
-  }
-
-  async adminAdjustPlusOnes(player: Player, delta: number): Promise<void> {
-    const newCount = Math.max(0, this.getPlayerPlusOnes(player.id) + delta);
+  async saveMiniScore(): Promise<void> {
     this.actionLoading.set(true);
     try {
-      await this.matchesService.setPlusOnes(this.matchId, player.id, newCount);
-      await this.loadRegistrations();
-    } catch {
-      this.actionError.set('Erreur lors de la mise à jour');
-    } finally {
-      this.actionLoading.set(false);
-    }
+      await this.matchesService.setMiniMatchScore(this.matchId, this.miniScoreA, this.miniScoreB, this.miniTarget);
+      await this.loadMatch();
+      this.miniScoreFeedback.set('Mini-match enregistré !');
+      setTimeout(() => this.miniScoreFeedback.set(''), 2500);
+    } catch { this.miniScoreFeedback.set('Erreur lors de l\'enregistrement'); }
+    finally { this.actionLoading.set(false); }
   }
 
-  async adminToggle(player: Player): Promise<void> {
-    const currentPlayer = this.auth.currentPlayer();
-    if (!currentPlayer) return;
-    if (this.isPlayerPresent(player.id)) {
-      await this.onWithdraw(player.id);
-    } else {
-      this.actionLoading.set(true);
-      this.actionError.set('');
-      try {
-        await this.matchesService.registerPlayer(this.matchId, player.id, currentPlayer.id);
-        await this.loadRegistrations();
-      } catch {
-        this.actionError.set('Erreur lors de l\'inscription');
-      } finally {
-        this.actionLoading.set(false);
-      }
-    }
+  async saveScore(): Promise<void> {
+    const player = this.auth.currentPlayer();
+    if (!player) return;
+    this.actionLoading.set(true);
+    try {
+      await this.matchesService.setMatchScore(this.matchId, this.scoreA, this.scoreB, player.id);
+      await this.loadMatch();
+      this.scoreFeedback.set('Score enregistré !');
+      setTimeout(() => this.scoreFeedback.set(''), 2500);
+    } catch { this.scoreFeedback.set('Erreur lors de l\'enregistrement'); }
+    finally { this.actionLoading.set(false); }
+  }
+
+  copyMatchLink(): void {
+    const url = `${window.location.origin}/${this.groupSlug}/match/${this.matchId}`;
+    navigator.clipboard.writeText(url).then(() => this.showFeedback('Lien copié !'));
+  }
+
+  shareList(): void {
+    const m = this.match();
+    if (!m) return;
+    const lines: string[] = [`⚽ ${m.title} — ${this.presentCount()}/${m.max_players}`, ''];
+    lines.push(`Titulaires (${this.starters().length}) :`,
+      ...this.starters().map(e => e.type === 'player' ? `${e.rank}. ${getDisplayName(e.reg.player)}` : `${e.rank}. +1 de ${e.hostName}`));
+    if (this.substitutes().length > 0)
+      lines.push('', `Remplaçants (${this.substitutes().length}) :`,
+        ...this.substitutes().map(e => e.type === 'player' ? `${e.rank}. ${getDisplayName(e.reg.player)}` : `${e.rank}. +1 de ${e.hostName}`));
+    const withdrawn = this.withdrawnPlayers().map((r, i) => `D${i + 1}. ${r.player.display_name ?? r.player.username}`).join('\n');
+    if (withdrawn) lines.push('', 'Désistements :', withdrawn);
+    navigator.clipboard.writeText(lines.join('\n')).then(() => this.showFeedback('Liste copiée !'));
   }
 
   private showFeedback(msg: string): void {
@@ -741,14 +698,7 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
   }
 
   formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('fr-FR', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-    });
+    return new Date(dateStr).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
   }
-
-  formatTime(timeStr: string): string {
-    return timeStr.slice(0, 5);
-  }
+  formatTime(timeStr: string): string { return timeStr.slice(0, 5); }
 }

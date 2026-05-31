@@ -4,6 +4,26 @@ import { Match } from '../../shared/models/match.model';
 import { Registration } from '../../shared/models/registration.model';
 import { Player } from '../../shared/models/player.model';
 
+export interface PlayerStats {
+  played: number;
+  wins: number;
+  losses: number;
+  draws: number;
+}
+
+export interface MatchHistoryEntry {
+  id: string;
+  title: string;
+  match_date: string;
+  match_time: string;
+  score_a: number | null;
+  score_b: number | null;
+  team_a_name: string;
+  team_b_name: string;
+  team: number | null;
+  result: 'win' | 'loss' | 'draw' | null;
+}
+
 export interface AuditEntry {
   id: string;
   action: string;
@@ -14,20 +34,26 @@ export interface AuditEntry {
   actor_name: string;
 }
 
+export type MatchWithCount = Match & { registration_count: number };
+
 @Injectable({ providedIn: 'root' })
 export class MatchesService {
   private readonly supabase = inject(SupabaseService).client;
 
-  async getMatchesByGroup(groupId: string): Promise<Match[]> {
+  async getMatchesByGroup(groupId: string): Promise<MatchWithCount[]> {
     const { data, error } = await this.supabase
       .from('matches')
-      .select('*')
+      .select('*, registrations(id, is_withdrawn)')
       .eq('group_id', groupId)
       .order('match_date', { ascending: false })
       .order('match_time', { ascending: false });
 
     if (error) throw error;
-    return data ?? [];
+    return (data ?? []).map(m => {
+      const regs = (m.registrations as unknown as { is_withdrawn: boolean }[] | null) ?? [];
+      const { registrations: _, ...match } = m as typeof m & { registrations: unknown };
+      return { ...(match as Match), registration_count: regs.filter(r => !r.is_withdrawn).length };
+    });
   }
 
   async getMatch(matchId: string): Promise<Match> {
@@ -156,6 +182,45 @@ export class MatchesService {
       p_player_id: playerId,
     });
     if (error) throw error;
+  }
+
+  async assignTeam(matchId: string, playerId: string, team: number | null): Promise<void> {
+    const { error } = await this.supabase.rpc('assign_team', {
+      p_match_id: matchId,
+      p_player_id: playerId,
+      p_team: team,
+    });
+    if (error) throw error;
+  }
+
+  async setMatchScore(matchId: string, scoreA: number, scoreB: number, actorId: string): Promise<void> {
+    const { error } = await this.supabase.rpc('set_match_score', {
+      p_match_id: matchId,
+      p_score_a: scoreA,
+      p_score_b: scoreB,
+      p_actor_id: actorId,
+    });
+    if (error) throw error;
+  }
+
+  async setMiniMatchScore(matchId: string, scoreA2: number | null, scoreB2: number | null, target: number | null): Promise<void> {
+    const { error } = await this.supabase
+      .from('matches')
+      .update({ score_a2: scoreA2, score_b2: scoreB2, mini_match_target: target })
+      .eq('id', matchId);
+    if (error) throw error;
+  }
+
+  async getPlayerStats(playerId: string): Promise<PlayerStats> {
+    const { data, error } = await this.supabase.rpc('get_player_stats', { p_player_id: playerId });
+    if (error) throw error;
+    return (data as unknown as PlayerStats) ?? { played: 0, wins: 0, losses: 0, draws: 0 };
+  }
+
+  async getPlayerHistory(playerId: string): Promise<MatchHistoryEntry[]> {
+    const { data, error } = await this.supabase.rpc('get_player_history', { p_player_id: playerId });
+    if (error) throw error;
+    return (data as unknown as MatchHistoryEntry[]) ?? [];
   }
 
   async getAuditLog(groupId: string): Promise<AuditEntry[]> {

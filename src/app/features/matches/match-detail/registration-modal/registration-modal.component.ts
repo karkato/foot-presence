@@ -85,7 +85,8 @@ import { AuthService } from '../../../../core/auth/auth.service';
     .player-btn {
       width: 100%;
       padding: 0.75rem 1rem;
-      background: var(--bg);
+      background: var(--card);
+      color: var(--text);
       border: 1.5px solid var(--border);
       border-radius: 0.5rem;
       text-align: left;
