@@ -43,16 +43,19 @@ export class MatchesService {
   async getMatchesByGroup(groupId: string): Promise<MatchWithCount[]> {
     const { data, error } = await this.supabase
       .from('matches')
-      .select('*, registrations(id, is_withdrawn)')
+      .select('*, registrations(id, is_withdrawn, plus_ones)')
       .eq('group_id', groupId)
       .order('match_date', { ascending: false })
       .order('match_time', { ascending: false });
 
     if (error) throw error;
     return (data ?? []).map(m => {
-      const regs = (m.registrations as unknown as { is_withdrawn: boolean }[] | null) ?? [];
+      const regs = (m.registrations as unknown as { is_withdrawn: boolean; plus_ones: number }[] | null) ?? [];
       const { registrations: _, ...match } = m as typeof m & { registrations: unknown };
-      return { ...(match as Match), registration_count: regs.filter(r => !r.is_withdrawn).length };
+      return {
+        ...(match as Match),
+        registration_count: regs.filter(r => !r.is_withdrawn).reduce((sum, r) => sum + 1 + (r.plus_ones ?? 0), 0),
+      };
     });
   }
 

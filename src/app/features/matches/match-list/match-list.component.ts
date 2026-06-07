@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   inject,
+  OnDestroy,
   OnInit,
   signal,
 } from '@angular/core';
@@ -98,7 +99,7 @@ import { MatchWithCount } from '../matches.service';
     .arrow { font-size: 1.5rem; color: var(--text-muted); line-height: 1; }
   `,
 })
-export class MatchListComponent implements OnInit {
+export class MatchListComponent implements OnInit, OnDestroy {
   private readonly matchesService = inject(MatchesService);
   private readonly supabase = inject(SupabaseService).client;
   private readonly auth = inject(AuthService);
@@ -110,7 +111,20 @@ export class MatchListComponent implements OnInit {
 
   readonly groupSlug = this.route.snapshot.params['groupSlug'] as string;
 
+  private readonly visibilityHandler = () => {
+    if (document.visibilityState === 'visible') this.loadMatches();
+  };
+
   async ngOnInit(): Promise<void> {
+    await this.loadMatches();
+    document.addEventListener('visibilitychange', this.visibilityHandler);
+  }
+
+  ngOnDestroy(): void {
+    document.removeEventListener('visibilitychange', this.visibilityHandler);
+  }
+
+  private async loadMatches(): Promise<void> {
     try {
       const player = this.auth.currentPlayer();
       if (!player) return;
