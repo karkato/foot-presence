@@ -78,7 +78,7 @@ BEGIN
   WHERE username = p_username AND group_id = p_group_id;
   IF NOT FOUND THEN RETURN NULL; END IF;
   IF crypt(p_pin, player_row.pin_hash) = player_row.pin_hash THEN
-    RETURN row_to_json(player_row);
+    RETURN to_jsonb(player_row) - 'pin_hash';
   END IF;
   RETURN NULL;
 END;
@@ -140,7 +140,7 @@ BEGIN
     pin_hash = CASE WHEN p_new_pin IS NOT NULL THEN crypt(p_new_pin, gen_salt('bf')) ELSE pin_hash END
   WHERE id = p_player_id
   RETURNING * INTO result;
-  RETURN row_to_json(result);
+  RETURN to_jsonb(result) - 'pin_hash';
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -158,7 +158,7 @@ BEGIN
   INSERT INTO players (group_id, username, display_name, pin_hash, is_admin)
   VALUES (p_group_id, p_username, p_display_name, crypt(p_pin, gen_salt('bf')), p_is_admin)
   RETURNING * INTO result;
-  RETURN row_to_json(result);
+  RETURN to_jsonb(result) - 'pin_hash';
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -188,6 +188,11 @@ CREATE POLICY "groups: lecture publique" ON groups FOR SELECT USING (true);
 CREATE POLICY "players: lecture publique" ON players FOR SELECT USING (true);
 CREATE POLICY "matches: lecture publique" ON matches FOR SELECT USING (true);
 CREATE POLICY "registrations: lecture publique" ON registrations FOR SELECT USING (true);
+
+-- Restriction colonne : masquer pin_hash des accès REST directs (anon key)
+-- Les RPCs SECURITY DEFINER accèdent à pin_hash via le rôle postgres, non affecté.
+REVOKE SELECT ON players FROM anon, authenticated;
+GRANT SELECT (id, group_id, username, display_name, is_admin, created_at) ON players TO anon, authenticated;
 
 -- Écriture sur matches (admin via client direct)
 CREATE POLICY "matches: écriture publique" ON matches FOR ALL USING (true) WITH CHECK (true);

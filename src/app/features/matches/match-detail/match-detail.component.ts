@@ -237,7 +237,7 @@ type PresentEntry =
         }
 
         <!-- Admin : panneau présences -->
-        @if (isAdmin() && !isFinished()) {
+        @if (isAdmin()) {
           <div class="card admin-section">
             <button class="presence-toggle" (click)="showAdminPanel.set(!showAdminPanel())">
               <span class="section-label" style="margin:0">Gérer les présences</span>
