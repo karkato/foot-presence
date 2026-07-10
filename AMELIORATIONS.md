@@ -51,6 +51,12 @@ Durcissement pragmatique pour une app perso :
 ### 4. `update_player_profile` sans vérification admin
 - [ ] Même avec le token (point 3), vérifier que seul le joueur lui-même ou un admin du groupe peut modifier un profil. Actuellement `p_actor_id` est purement déclaratif et ne sert qu'au log.
 
+### 5. Écritures directes sur tables qui échouent silencieusement *(ajout audit 06/07/2026)*
+- [ ] `MatchesService.setMiniMatchScore()` et `PlayerFormComponent` (toggle `is_admin`) écrivent en direct via `supabase.from(...).update()`. Or les policies RLS d'écriture sur `matches` sont supprimées dans `sessions.sql` et `players` n'a pas de policy UPDATE → ces `update` sont refusés silencieusement (0 ligne modifiée, aucune erreur). Créer des RPC `set_mini_match_score` et `set_player_admin` avec vérification admin.
+
+### 6. Validation PIN absente à la création de joueur *(ajout audit 06/07/2026)*
+- [ ] `PlayerFormComponent` ne valide ni la longueur ni le format numérique du PIN, contrairement à `ProfileComponent.savePin()` qui exige ≥ 4 chiffres. Un admin peut créer un compte avec un PIN à 1 chiffre. Ajouter la même validation (PIN 4-6 chiffres numériques, username non vide) + messages d'erreur.
+
 ---
 
 ## 🟠 Qualité / modernisation Angular
