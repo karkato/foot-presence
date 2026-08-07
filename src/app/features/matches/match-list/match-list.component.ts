@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   inject,
   OnDestroy,
   OnInit,
@@ -26,27 +27,62 @@ import { MatchWithCount } from '../matches.service';
       } @else if (matches().length === 0) {
         <p class="muted empty">Aucun match prévu pour l'instant.</p>
       } @else {
-        <ul class="match-list">
-          @for (match of matches(); track match.id) {
-            <li class="match-card" (click)="openMatch(match)">
-              <div class="match-info">
-                <span class="match-title">{{ match.title }}</span>
-                <span class="match-date">{{ formatDate(match.match_date) }} à {{ formatTime(match.match_time) }}</span>
-              </div>
-              <div class="match-meta">
-                <span class="badge badge-count" [class.badge-full]="match.registration_count >= match.max_players">
-                  {{ match.registration_count }}/{{ match.max_players }}
-                </span>
-                @if (match.score_a !== null) {
-                  <span class="badge badge-finished">Terminé</span>
-                } @else if (match.is_closed) {
-                  <span class="badge badge-closed">Fermé</span>
+        @if (upcomingMatches().length === 0) {
+          <p class="muted empty">Aucun match à venir.</p>
+        } @else {
+          <ul class="match-list">
+            @for (match of upcomingMatches(); track match.id) {
+              <li class="match-card" (click)="openMatch(match)">
+                <div class="match-info">
+                  <span class="match-title">{{ match.title }}</span>
+                  <span class="match-date">{{ formatDate(match.match_date) }} à {{ formatTime(match.match_time) }}</span>
+                </div>
+                <div class="match-meta">
+                  <span class="badge badge-count" [class.badge-full]="match.registration_count >= match.max_players">
+                    {{ match.registration_count }}/{{ match.max_players }}
+                  </span>
+                  @if (match.is_closed) {
+                    <span class="badge badge-closed">Fermé</span>
+                  }
+                  <span class="arrow">›</span>
+                </div>
+              </li>
+            }
+          </ul>
+        }
+
+        @if (finishedMatches().length > 0) {
+          <div class="finished-panel">
+            <button
+              type="button"
+              class="finished-toggle"
+              (click)="toggleFinished()"
+              [attr.aria-expanded]="showFinished()"
+            >
+              <span>Matchs terminés ({{ finishedMatches().length }})</span>
+              <span class="chevron" [class.open]="showFinished()">›</span>
+            </button>
+            @if (showFinished()) {
+              <ul class="match-list finished-list">
+                @for (match of finishedMatches(); track match.id) {
+                  <li class="match-card" (click)="openMatch(match)">
+                    <div class="match-info">
+                      <span class="match-title">{{ match.title }}</span>
+                      <span class="match-date">{{ formatDate(match.match_date) }} à {{ formatTime(match.match_time) }}</span>
+                    </div>
+                    <div class="match-meta">
+                      <span class="badge badge-count">
+                        {{ match.registration_count }}/{{ match.max_players }}
+                      </span>
+                      <span class="badge badge-finished">Terminé</span>
+                      <span class="arrow">›</span>
+                    </div>
+                  </li>
                 }
-                <span class="arrow">›</span>
-              </div>
-            </li>
-          }
-        </ul>
+              </ul>
+            }
+          </div>
+        }
       }
     </div>
   `,
@@ -97,6 +133,26 @@ import { MatchWithCount } from '../matches.service';
       color: var(--text-muted);
     }
     .arrow { font-size: 1.5rem; color: var(--text-muted); line-height: 1; }
+    .finished-panel { margin-top: 1.5rem; }
+    .finished-toggle {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: none;
+      border: 1.5px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 0.75rem 1.25rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .finished-toggle:hover { border-color: var(--primary); }
+    .chevron { display: inline-block; transform: rotate(90deg); transition: transform 0.15s; }
+    .chevron.open { transform: rotate(-90deg); }
+    .finished-list { margin-top: 0.75rem; }
   `,
 })
 export class MatchListComponent implements OnInit, OnDestroy {
@@ -108,6 +164,10 @@ export class MatchListComponent implements OnInit, OnDestroy {
 
   matches = signal<MatchWithCount[]>([]);
   loading = signal(true);
+  showFinished = signal(false);
+
+  upcomingMatches = computed(() => this.matches().filter(m => m.score_a === null));
+  finishedMatches = computed(() => this.matches().filter(m => m.score_a !== null));
 
   readonly groupSlug = this.route.snapshot.params['groupSlug'] as string;
 
@@ -137,6 +197,10 @@ export class MatchListComponent implements OnInit, OnDestroy {
 
   openMatch(match: Match): void {
     this.router.navigate([`/${this.groupSlug}/match/${match.id}`]);
+  }
+
+  toggleFinished(): void {
+    this.showFinished.update(v => !v);
   }
 
   formatDate(dateStr: string): string {
