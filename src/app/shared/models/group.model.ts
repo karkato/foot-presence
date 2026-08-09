@@ -3,4 +3,6 @@ export interface Group {
   name: string;
   slug: string;
   created_at: string;
+  guests_enabled: boolean;
+  max_guests_per_player: number | null;
 }
