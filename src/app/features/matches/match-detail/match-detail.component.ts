@@ -6,10 +6,12 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { AuthService } from '../../../core/auth/auth.service';
 import { SupabaseService } from '../../../core/supabase/supabase.service';
+import { GroupsService } from '../../../core/groups/groups.service';
 import { MatchesService } from '../matches.service';
 import { Match } from '../../../shared/models/match.model';
 import { Registration } from '../../../shared/models/registration.model';
 import { Player, getDisplayName } from '../../../shared/models/player.model';
+import { Group } from '../../../shared/models/group.model';
 import { PlayerRowComponent } from './player-row/player-row.component';
 import { RegistrationModalComponent } from './registration-modal/registration-modal.component';
 
@@ -154,14 +156,21 @@ type PresentEntry =
                     + Inscrire quelqu'un ({{ proxyCount() }}/2)
                   </button>
                 }
-                <div class="plus-ones-row card">
-                  <span class="plus-ones-label">Invités</span>
-                  <div class="plus-ones-controls">
-                    <button class="btn-icon" (click)="onAdjustPlusOnes(-1)" [disabled]="myPlusOnes() === 0 || actionLoading()">−</button>
-                    <span class="plus-ones-count">{{ myPlusOnes() }}</span>
-                    <button class="btn-icon" (click)="onAdjustPlusOnes(1)" [disabled]="actionLoading()">+</button>
+                @if (guestsEnabled() || myPlusOnes() > 0) {
+                  <div class="plus-ones-row card">
+                    <span class="plus-ones-label">
+                      Invités
+                      @if (maxGuests() !== null) {
+                        ({{ myPlusOnes() }}/{{ maxGuests() }})
+                      }
+                    </span>
+                    <div class="plus-ones-controls">
+                      <button class="btn-icon" (click)="onAdjustPlusOnes(-1)" [disabled]="myPlusOnes() === 0 || actionLoading()">−</button>
+                      <span class="plus-ones-count">{{ myPlusOnes() }}</span>
+                      <button class="btn-icon" (click)="onAdjustPlusOnes(1)" [disabled]="actionLoading() || !canAddGuest()">+</button>
+                    </div>
                   </div>
-                </div>
+                }
               </div>
             }
           </div>
@@ -388,6 +397,7 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
   private readonly matchesService = inject(MatchesService);
   private readonly supabase = inject(SupabaseService).client;
   private readonly auth = inject(AuthService);
+  private readonly groupsService = inject(GroupsService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
@@ -397,6 +407,7 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
   match = signal<Match | null>(null);
   registrations = signal<Registration[]>([]);
   allPlayers = signal<Player[]>([]);
+  group = signal<Group | null>(null);
   loading = signal(true);
   actionLoading = signal(false);
   actionError = signal('');
@@ -460,6 +471,12 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
     this.registrations().find(r => r.player_id === this.currentPlayerId() && !r.is_withdrawn)?.plus_ones ?? 0
   );
 
+  guestsEnabled = computed(() => this.group()?.guests_enabled ?? true);
+  maxGuests = computed(() => this.group()?.max_guests_per_player ?? null);
+  canAddGuest = computed(() =>
+    this.isAdmin() || (this.guestsEnabled() && (this.maxGuests() === null || this.myPlusOnes() < this.maxGuests()!))
+  );
+
   isFull = computed(() => {
     const m = this.match();
     return m ? this.presentCount() >= m.max_players : false;
@@ -484,7 +501,7 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
 
   async ngOnInit(): Promise<void> {
     await Promise.all([this.loadMatch(), this.loadRegistrations()]);
-    await this.loadPlayers();
+    await Promise.all([this.loadPlayers(), this.loadGroup()]);
     this.loading.set(false);
     this.subscribeToRealtime();
   }
@@ -518,6 +535,13 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
     catch { this.allPlayers.set([]); }
   }
 
+  private async loadGroup(): Promise<void> {
+    const player = this.auth.currentPlayer();
+    if (!player) return;
+    try { this.group.set(await this.groupsService.getGroup(player.group_id)); }
+    catch { this.group.set(null); }
+  }
+
   private subscribeToRealtime(): void {
     this.channel = this.supabase.channel(`match-${this.matchId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'registrations', filter: `match_id=eq.${this.matchId}` },
@@ -547,11 +571,15 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
   }
 
   async adminAdjustPlusOnes(playerId: string, delta: number): Promise<void> {
+    const admin = this.auth.currentPlayer();
+    if (!admin) return;
     const newCount = Math.max(0, this.getPlayerPlusOnes(playerId) + delta);
     try {
-      await this.matchesService.setPlusOnes(this.matchId, playerId, newCount);
+      await this.matchesService.setPlusOnes(this.matchId, playerId, newCount, admin.id);
       await this.loadRegistrations();
-    } catch { /* silently fail */ }
+    } catch (err) {
+      this.actionError.set(this.mapPlusOnesError(err));
+    }
   }
 
   async adminToggle(playerId: string): Promise<void> {
@@ -618,11 +646,25 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
     if (!player) return;
     const newCount = Math.max(0, this.myPlusOnes() + delta);
     this.actionLoading.set(true);
+    this.actionError.set('');
     try {
-      await this.matchesService.setPlusOnes(this.matchId, player.id, newCount);
+      await this.matchesService.setPlusOnes(this.matchId, player.id, newCount, player.id);
       await this.loadRegistrations();
-    } catch { this.actionError.set('Erreur lors de la mise à jour'); }
-    finally { this.actionLoading.set(false); }
+    } catch (err) {
+      this.actionError.set(this.mapPlusOnesError(err));
+    } finally { this.actionLoading.set(false); }
+  }
+
+  private mapPlusOnesError(err: unknown): string {
+    if (err instanceof Error) {
+      if (err.message.includes('guests_disabled')) return 'Les invités sont désactivés pour ce groupe';
+      if (err.message.includes('guest_limit_exceeded')) {
+        const max = this.maxGuests();
+        return max !== null ? `Limite de ${max} invité(s) par joueur atteinte` : 'Limite d\'invités atteinte';
+      }
+      if (err.message.includes('not_allowed')) return 'Action non autorisée';
+    }
+    return 'Erreur lors de la mise à jour';
   }
 
   async toggleClose(): Promise<void> {
