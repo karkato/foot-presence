@@ -4,9 +4,30 @@ export interface Database {
   public: {
     Tables: {
       groups: {
-        Row: { id: string; name: string; slug: string; created_at: string };
-        Insert: { id?: string; name: string; slug: string; created_at?: string };
-        Update: { id?: string; name?: string; slug?: string; created_at?: string };
+        Row: {
+          id: string;
+          name: string;
+          slug: string;
+          created_at: string;
+          guests_enabled: boolean;
+          max_guests_per_player: number | null;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          slug: string;
+          created_at?: string;
+          guests_enabled?: boolean;
+          max_guests_per_player?: number | null;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          slug?: string;
+          created_at?: string;
+          guests_enabled?: boolean;
+          max_guests_per_player?: number | null;
+        };
         Relationships: [];
       };
       players: {
@@ -163,7 +184,16 @@ export interface Database {
         Returns: Json;
       };
       set_plus_ones: {
-        Args: { p_match_id: string; p_player_id: string; p_count: number };
+        Args: { p_match_id: string; p_player_id: string; p_count: number; p_actor_id: string };
+        Returns: undefined;
+      };
+      set_group_guest_settings: {
+        Args: {
+          p_group_id: string;
+          p_actor_id: string;
+          p_guests_enabled: boolean;
+          p_max_guests_per_player: number | null;
+        };
         Returns: undefined;
       };
       admin_remove_registration: {

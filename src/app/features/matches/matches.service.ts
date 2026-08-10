@@ -169,11 +169,12 @@ export class MatchesService {
     }
   }
 
-  async setPlusOnes(matchId: string, playerId: string, count: number): Promise<void> {
+  async setPlusOnes(matchId: string, playerId: string, count: number, actorId: string): Promise<void> {
     const { error } = await this.supabase.rpc('set_plus_ones', {
       p_match_id: matchId,
       p_player_id: playerId,
       p_count: count,
+      p_actor_id: actorId,
     });
     if (error) throw error;
   }

@@ -11,11 +11,13 @@ import { MatchesService, AuditEntry } from '../../matches/matches.service';
 import { SupabaseService } from '../../../core/supabase/supabase.service';
 import { Match } from '../../../shared/models/match.model';
 import { Player, getDisplayName } from '../../../shared/models/player.model';
+import { GroupSettingsComponent } from '../group-settings/group-settings.component';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [GroupSettingsComponent],
   template: `
     <div class="container">
       <h2>Administration</h2>
@@ -25,6 +27,7 @@ import { Player, getDisplayName } from '../../../shared/models/player.model';
         <button class="tab" [class.active]="activeTab() === 'matches'" (click)="activeTab.set('matches')">Matchs</button>
         <button class="tab" [class.active]="activeTab() === 'players'" (click)="activeTab.set('players')">Joueurs</button>
         <button class="tab" [class.active]="activeTab() === 'audit'" (click)="activeTab.set('audit')">Historique</button>
+        <button class="tab" [class.active]="activeTab() === 'settings'" (click)="activeTab.set('settings')">Réglages</button>
       </div>
 
       <!-- Matchs -->
@@ -112,6 +115,17 @@ import { Player, getDisplayName } from '../../../shared/models/player.model';
                 </li>
               }
             </ul>
+          }
+        </section>
+      }
+
+      <!-- Réglages -->
+      @if (activeTab() === 'settings') {
+        <section class="section">
+          @defer (on viewport) {
+            <app-group-settings />
+          } @placeholder {
+            <p class="muted">Chargement...</p>
           }
         </section>
       }
@@ -204,7 +218,7 @@ export class AdminDashboardComponent implements OnInit {
 
   readonly getDisplayName = getDisplayName;
 
-  activeTab = signal<'matches' | 'players' | 'audit'>('matches');
+  activeTab = signal<'matches' | 'players' | 'audit' | 'settings'>('matches');
 
   matches = signal<Match[]>([]);
   players = signal<Player[]>([]);
@@ -320,6 +334,7 @@ export class AdminDashboardComponent implements OnInit {
       case 'reopen_match': return `${actor} a rouvert un match`;
       case 'create_player': return `${actor} a créé le joueur "${d['username'] ?? '...'}"`;
       case 'update_player': return `${actor} a mis à jour un profil`;
+      case 'update_group_settings': return `${actor} a modifié les réglages du groupe`;
       default: return `${actor} : ${entry.action}`;
     }
   }
