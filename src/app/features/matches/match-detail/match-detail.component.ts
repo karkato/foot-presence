@@ -539,9 +539,9 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
   }
 
   private async loadGroup(): Promise<void> {
-    const player = this.auth.currentPlayer();
-    if (!player) return;
-    try { this.group.set(await this.groupsService.getGroup(player.group_id)); }
+    const groupId = this.match()?.group_id;
+    if (!groupId) return;
+    try { this.group.set(await this.groupsService.getGroup(groupId)); }
     catch { this.group.set(null); }
   }
 
