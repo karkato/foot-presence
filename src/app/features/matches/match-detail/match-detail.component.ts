@@ -285,6 +285,9 @@ type PresentEntry =
                 }
               </ul>
             }
+            @if (actionError()) {
+              <p class="feedback-error">{{ actionError() }}</p>
+            }
           </div>
         }
       </div>
@@ -574,6 +577,7 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
     const admin = this.auth.currentPlayer();
     if (!admin) return;
     const newCount = Math.max(0, this.getPlayerPlusOnes(playerId) + delta);
+    this.actionError.set('');
     try {
       await this.matchesService.setPlusOnes(this.matchId, playerId, newCount, admin.id);
       await this.loadRegistrations();
