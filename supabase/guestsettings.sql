@@ -49,32 +49,39 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 DROP FUNCTION IF EXISTS set_plus_ones(uuid, uuid, int);
 DROP FUNCTION IF EXISTS set_plus_ones(uuid, uuid, int, uuid);
 
-CREATE FUNCTION set_plus_ones(p_match_id uuid, p_player_id uuid, p_count int, p_actor_id uuid DEFAULT NULL)
+CREATE FUNCTION set_plus_ones(p_match_id uuid, p_player_id uuid, p_count int, p_actor_id uuid)
 RETURNS void AS $$
 DECLARE
   is_actor_admin boolean;
   current_count int;
+  v_group_id uuid;
   v_guests_enabled boolean;
   v_max_guests int;
   safe_count int := GREATEST(0, p_count);
 BEGIN
-  SELECT COALESCE(is_admin, false) INTO is_actor_admin FROM players WHERE id = p_actor_id;
+  IF p_actor_id IS NULL THEN
+    RAISE EXCEPTION 'not_allowed';
+  END IF;
 
-  SELECT g.guests_enabled, g.max_guests_per_player
-  INTO v_guests_enabled, v_max_guests
+  SELECT m.group_id, g.guests_enabled, g.max_guests_per_player
+  INTO v_group_id, v_guests_enabled, v_max_guests
   FROM matches m JOIN groups g ON g.id = m.group_id
   WHERE m.id = p_match_id;
+
+  SELECT COALESCE(is_admin, false) INTO is_actor_admin
+  FROM players WHERE id = p_actor_id AND group_id = v_group_id;
+  is_actor_admin := COALESCE(is_actor_admin, false);
 
   SELECT plus_ones INTO current_count FROM registrations
   WHERE match_id = p_match_id AND player_id = p_player_id;
 
   IF NOT is_actor_admin THEN
     -- durcissement : un non-admin ne peut modifier que ses propres invités
-    IF p_actor_id IS NOT NULL AND p_actor_id != p_player_id THEN
+    IF p_actor_id != p_player_id THEN
       RAISE EXCEPTION 'not_allowed';
     END IF;
 
-    IF NOT v_guests_enabled AND safe_count > 0 THEN
+    IF NOT COALESCE(v_guests_enabled, true) AND safe_count > COALESCE(current_count, 0) THEN
       RAISE EXCEPTION 'guests_disabled';
     END IF;
 

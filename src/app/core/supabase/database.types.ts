@@ -184,7 +184,7 @@ export interface Database {
         Returns: Json;
       };
       set_plus_ones: {
-        Args: { p_match_id: string; p_player_id: string; p_count: number; p_actor_id?: string | null };
+        Args: { p_match_id: string; p_player_id: string; p_count: number; p_actor_id: string };
         Returns: undefined;
       };
       set_group_guest_settings: {
