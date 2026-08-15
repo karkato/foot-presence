@@ -179,12 +179,13 @@ export class PlayerFormComponent implements OnInit {
 
     try {
       if (this.isEdit()) {
-        await this.supabase.rpc('update_player_profile', {
+        const { error } = await this.supabase.rpc('update_player_profile', {
           p_player_id: this.playerId,
           p_display_name: this.form.display_name.trim() || null,
           p_new_pin: this.form.pin || null,
           p_actor_id: currentPlayer.id,
         });
+        if (error) throw error;
         if (this.form.is_admin !== undefined) {
           await this.supabase
             .from('players')
@@ -196,7 +197,7 @@ export class PlayerFormComponent implements OnInit {
           this.error.set('Pseudo et PIN requis');
           return;
         }
-        await this.supabase.rpc('create_player', {
+        const { error } = await this.supabase.rpc('create_player', {
           p_group_id: currentPlayer.group_id,
           p_username: this.form.username.trim().toLowerCase(),
           p_pin: this.form.pin,
@@ -204,6 +205,7 @@ export class PlayerFormComponent implements OnInit {
           p_is_admin: this.form.is_admin,
           p_actor_id: currentPlayer.id,
         });
+        if (error) throw error;
       }
       this.goBack();
     } catch (err) {
