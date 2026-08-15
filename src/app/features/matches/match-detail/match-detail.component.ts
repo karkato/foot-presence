@@ -14,7 +14,7 @@ import { Player, getDisplayName } from '../../../shared/models/player.model';
 import { Group } from '../../../shared/models/group.model';
 import { PlayerRowComponent } from './player-row/player-row.component';
 import { RegistrationModalComponent } from './registration-modal/registration-modal.component';
-import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
+import { mapAuthRpcError, rpcMessage } from '../../../shared/utils/rpc-error';
 
 type PresentEntry =
   | { type: 'player'; reg: Registration; rank: number }
@@ -641,7 +641,7 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
       await this.matchesService.registerPlayer(this.matchId, playerId, currentPlayer.id);
       await this.loadRegistrations();
     } catch (err) {
-      this.actionError.set(err instanceof Error && err.message.includes('proxy_limit_reached')
+      this.actionError.set(rpcMessage(err).includes('proxy_limit_reached')
         ? 'Limite de 2 procurations atteinte' : 'Erreur lors de l\'inscription');
     }
   }
@@ -661,14 +661,13 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
   }
 
   private mapPlusOnesError(err: unknown): string {
-    if (err instanceof Error) {
-      if (err.message.includes('guests_disabled')) return 'Les invités sont désactivés pour ce groupe';
-      if (err.message.includes('guest_limit_exceeded')) {
-        const max = this.maxGuests();
-        return max !== null ? `Limite de ${max} invité(s) par joueur atteinte` : 'Limite d\'invités atteinte';
-      }
-      if (err.message.includes('not_allowed')) return 'Action non autorisée';
+    const message = rpcMessage(err);
+    if (message.includes('guests_disabled')) return 'Les invités sont désactivés pour ce groupe';
+    if (message.includes('guest_limit_exceeded')) {
+      const max = this.maxGuests();
+      return max !== null ? `Limite de ${max} invité(s) par joueur atteinte` : 'Limite d\'invités atteinte';
     }
+    if (message.includes('not_allowed')) return 'Action non autorisée';
     return 'Erreur lors de la mise à jour';
   }
 
