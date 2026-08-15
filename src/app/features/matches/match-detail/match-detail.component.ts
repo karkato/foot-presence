@@ -720,8 +720,9 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
       await this.loadMatch();
       this.scoreFeedback.set('Score enregistré !');
       setTimeout(() => this.scoreFeedback.set(''), 2500);
-    } catch { this.scoreFeedback.set('Erreur lors de l\'enregistrement'); }
-    finally { this.actionLoading.set(false); }
+    } catch (err) {
+      this.scoreFeedback.set(mapAuthRpcError(err, 'Erreur lors de l\'enregistrement'));
+    } finally { this.actionLoading.set(false); }
   }
 
   copyMatchLink(): void {
