@@ -12,6 +12,7 @@ import { SupabaseService } from '../../../core/supabase/supabase.service';
 import { Match } from '../../../shared/models/match.model';
 import { Player, getDisplayName } from '../../../shared/models/player.model';
 import { GroupSettingsComponent } from '../group-settings/group-settings.component';
+import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -62,6 +63,9 @@ import { GroupSettingsComponent } from '../group-settings/group-settings.compone
                 </li>
               }
             </ul>
+          }
+          @if (actionError()) {
+            <p class="feedback-error">{{ actionError() }}</p>
           }
         </section>
       }
@@ -161,6 +165,7 @@ import { GroupSettingsComponent } from '../group-settings/group-settings.compone
       font-family: inherit;
     }
     .muted { color: var(--text-muted); }
+    .feedback-error { color: var(--danger); font-size: 0.85rem; text-align: center; margin: 0.5rem 0 0; }
     .item-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
     .item-card {
       background: var(--card);
@@ -226,6 +231,7 @@ export class AdminDashboardComponent implements OnInit {
   loadingMatches = signal(true);
   loadingPlayers = signal(true);
   loadingAudit = signal(true);
+  actionError = signal('');
 
   async ngOnInit(): Promise<void> {
     const player = this.auth.currentPlayer();
@@ -279,23 +285,28 @@ export class AdminDashboardComponent implements OnInit {
   async toggleClose(match: Match): Promise<void> {
     const player = this.auth.currentPlayer();
     if (!player) return;
-    await this.matchesService.updateMatch(
-      match.id,
-      { is_closed: !match.is_closed },
-      player.id,
-      { title: match.title }
-    );
-    await this.loadMatches(player.group_id);
-    await this.loadAudit(player.group_id);
+    this.actionError.set('');
+    try {
+      await this.matchesService.setMatchClosed(match.id, !match.is_closed, player.id);
+      await this.loadMatches(player.group_id);
+      await this.loadAudit(player.group_id);
+    } catch (err) {
+      this.actionError.set(mapAuthRpcError(err, 'Erreur lors de la mise à jour du match'));
+    }
   }
 
   async deleteMatch(match: Match): Promise<void> {
     if (!confirm(`Supprimer "${match.title}" ?`)) return;
     const player = this.auth.currentPlayer();
     if (!player) return;
-    await this.matchesService.deleteMatch(match.id, player.id, match.title);
-    await this.loadMatches(player.group_id);
-    await this.loadAudit(player.group_id);
+    this.actionError.set('');
+    try {
+      await this.matchesService.deleteMatch(match.id, player.id);
+      await this.loadMatches(player.group_id);
+      await this.loadAudit(player.group_id);
+    } catch (err) {
+      this.actionError.set(mapAuthRpcError(err, 'Erreur lors de la suppression du match'));
+    }
   }
 
   formatDate(dateStr: string): string {

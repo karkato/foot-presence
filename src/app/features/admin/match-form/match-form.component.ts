@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { MatchesService } from '../../matches/matches.service';
-import { Match } from '../../../shared/models/match.model';
+import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
 
 @Component({
   selector: 'app-match-form',
@@ -125,24 +125,22 @@ export class MatchFormComponent implements OnInit {
     this.saving.set(true);
     this.error.set('');
     const payload = {
-      group_id: player.group_id, title: this.form.title.trim(),
+      title: this.form.title.trim(),
       match_date: this.form.match_date, match_time: this.form.match_time,
       max_players: Number(this.form.max_players),
       registration_deadline: this.form.registration_deadline || null,
-      is_closed: false,
       team_a_name: this.form.team_a_name.trim() || 'Équipe A',
       team_b_name: this.form.team_b_name.trim() || 'Équipe B',
-      score_a: null, score_b: null, score_a2: null, score_b2: null, mini_match_target: null,
     };
     try {
       if (this.isEdit()) {
-        await this.matchesService.updateMatch(this.matchId, payload, player.id, { title: payload.title });
+        await this.matchesService.updateMatch(this.matchId, payload, player.id);
       } else {
-        await this.matchesService.createMatch(payload, player.id);
+        await this.matchesService.createMatch(payload, player.group_id, player.id);
       }
       this.goBack();
-    } catch {
-      this.error.set('Erreur lors de la sauvegarde');
+    } catch (err) {
+      this.error.set(mapAuthRpcError(err, 'Erreur lors de la sauvegarde'));
     } finally {
       this.saving.set(false);
     }
