@@ -194,8 +194,10 @@ CREATE POLICY "registrations: lecture publique" ON registrations FOR SELECT USIN
 REVOKE SELECT ON players FROM anon, authenticated;
 GRANT SELECT (id, group_id, username, display_name, is_admin, created_at) ON players TO anon, authenticated;
 
--- Écriture sur matches (admin via client direct)
-CREATE POLICY "matches: écriture publique" ON matches FOR ALL USING (true) WITH CHECK (true);
+-- Écriture sur matches : voir security.sql, qui remplace toute écriture
+-- REST directe (policy publique) par des RPC SECURITY DEFINER scopées
+-- (create_match, update_match, set_match_closed, delete_match,
+-- set_mini_match_score) et un REVOKE INSERT/UPDATE/DELETE explicite.
 
 -- Les écritures sur players et registrations passent par SECURITY DEFINER (RPCs)
 
