@@ -75,7 +75,7 @@ RETURNS json AS $$
 DECLARE player_row players%ROWTYPE;
 BEGIN
   SELECT * INTO player_row FROM players
-  WHERE username = p_username AND group_id = p_group_id;
+  WHERE lower(username) = lower(trim(p_username)) AND group_id = p_group_id;
   IF NOT FOUND THEN RETURN NULL; END IF;
   IF crypt(p_pin, player_row.pin_hash) = player_row.pin_hash THEN
     RETURN to_jsonb(player_row) - 'pin_hash';
