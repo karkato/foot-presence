@@ -11,6 +11,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { SupabaseService } from '../../../core/supabase/supabase.service';
 import { Player, getDisplayName } from '../../../shared/models/player.model';
+import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
 
 @Component({
   selector: 'app-player-form',
@@ -208,7 +209,7 @@ export class PlayerFormComponent implements OnInit {
     } catch (err) {
       const msg = err instanceof Error && err.message.includes('unique')
         ? 'Ce pseudo existe déjà dans le groupe'
-        : 'Erreur lors de la sauvegarde';
+        : mapAuthRpcError(err, 'Erreur lors de la sauvegarde');
       this.error.set(msg);
     } finally {
       this.saving.set(false);
