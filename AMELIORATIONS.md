@@ -33,13 +33,23 @@ RETURN to_jsonb(player_row) - 'pin_hash';
 ```
 
 ### 3. Aucune RPC d'écriture ne vérifie l'identité de l'appelant
-- [ ] **Décision : pas de sessions pour le moment — à implémenter si besoin plus tard**
+- [ ] **Décision : pas de sessions pour le moment — à implémenter si besoin plus tard.**
+  Le système de tokens de session décrit ci-dessous n'a pas été adopté (voir `supabase/cleanup.sql`).
+  En revanche, la partie "n'importe qui peut usurper un `p_actor_id` non vérifié côté serveur" a été
+  traitée sans lui : `supabase/security.sql` ajoute des helpers `is_group_admin`/`assert_group_admin`
+  et durcit `update_player_profile`, `create_player`, `set_match_score`, `admin_remove_registration`,
+  `set_group_guest_settings`, `set_plus_ones` pour vérifier que l'acteur déclaré est bien admin du bon
+  groupe avant d'agir — le client peut toujours *déclarer* un `p_actor_id` arbitraire, mais la RPC
+  rejette désormais ceux qui ne correspondent à aucun admin du groupe concerné. La policy d'écriture
+  publique sur `matches` (dernier point ci-dessous) est également supprimée. Ce qui reste ouvert :
+  un compte compromis (PIN volé) reste utilisable comme n'importe quel autre acteur légitime — seul un
+  vrai système de sessions fermerait ce risque résiduel.
 
 Tout repose sur le `p_player_id` / `p_actor_id` que le client envoie. Avec l'anon key, n'importe qui peut :
-- appeler `update_player_profile` pour **changer le PIN de n'importe quel joueur** (y compris un admin → prise de contrôle totale) ;
-- appeler `create_player(..., is_admin := true)` ;
-- désinscrire les autres via `withdraw_player`, modifier les scores via `set_match_score`, etc. ;
-- modifier/supprimer tous les matchs directement via REST (policy `matches: écriture publique FOR ALL USING (true)`).
+- ~~appeler `update_player_profile` pour **changer le PIN de n'importe quel joueur** (y compris un admin → prise de contrôle totale)~~ **corrigé, voir ci-dessus et point 4** ;
+- ~~appeler `create_player(..., is_admin := true)`~~ **corrigé : `create_player` exige désormais que `p_actor_id` soit admin du groupe cible** ;
+- désinscrire les autres via `withdraw_player` *(hors périmètre de ce correctif — `withdraw_player` n'a volontairement pas été touché)*, ~~modifier les scores via `set_match_score`~~ **corrigé : `set_match_score` vérifie désormais l'acteur**, etc. ;
+- ~~modifier/supprimer tous les matchs directement via REST (policy `matches: écriture publique FOR ALL USING (true)`)~~ **corrigé : policy supprimée, remplacée par les RPC `create_match`/`update_match`/`set_match_closed`/`delete_match`/`set_mini_match_score` dans `supabase/security.sql`**.
 
 Durcissement pragmatique pour une app perso :
 1. Table `sessions(token uuid PK, player_id uuid, expires_at timestamptz)`.
@@ -49,10 +59,10 @@ Durcissement pragmatique pour une app perso :
 5. Supprimer la policy d'écriture publique sur `matches` au profit de RPC admin.
 
 ### 4. `update_player_profile` sans vérification admin
-- [ ] Même avec le token (point 3), vérifier que seul le joueur lui-même ou un admin du groupe peut modifier un profil. Actuellement `p_actor_id` est purement déclaratif et ne sert qu'au log.
+- [x] **Corrigé par `supabase/security.sql`** — signature inchangée, mais `p_actor_id` n'est plus purement déclaratif : la fonction rejette (`RAISE EXCEPTION 'not_allowed'`) tout appel sans acteur, puis exige (`assert_group_admin`) que l'acteur soit le joueur cible lui-même ou un admin de son groupe avant toute modification (`RAISE EXCEPTION 'not_admin'` sinon).
 
 ### 5. Écritures directes sur tables qui échouent silencieusement *(ajout audit 06/07/2026)*
-- [ ] `MatchesService.setMiniMatchScore()` et `PlayerFormComponent` (toggle `is_admin`) écrivent en direct via `supabase.from(...).update()`. Or les policies RLS d'écriture sur `matches` sont supprimées dans `sessions.sql` et `players` n'a pas de policy UPDATE → ces `update` sont refusés silencieusement (0 ligne modifiée, aucune erreur). Créer des RPC `set_mini_match_score` et `set_player_admin` avec vérification admin.
+- [x] `MatchesService.setMiniMatchScore()` écrivait en direct via `supabase.from(...).update()`. **Corrigé par `supabase/security.sql`** : nouvelle RPC `set_mini_match_score` avec garde admin scopée groupe, appelée par le service et par `match-detail.component.ts` (qui passe désormais l'acteur courant). `PlayerFormComponent` (toggle `is_admin`) écrit toujours en direct via `supabase.from('players').update(...)` — non traité par ce correctif, RPC `set_player_admin` restant à créer si le bug silencieux constaté ici s'y confirme aussi.
 
 ### 6. Validation PIN absente à la création de joueur *(ajout audit 06/07/2026)*
 - [ ] `PlayerFormComponent` ne valide ni la longueur ni le format numérique du PIN, contrairement à `ProfileComponent.savePin()` qui exige ≥ 4 chiffres. Un admin peut créer un compte avec un PIN à 1 chiffre. Ajouter la même validation (PIN 4-6 chiffres numériques, username non vide) + messages d'erreur.
