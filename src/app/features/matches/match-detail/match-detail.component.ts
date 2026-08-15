@@ -14,6 +14,7 @@ import { Player, getDisplayName } from '../../../shared/models/player.model';
 import { Group } from '../../../shared/models/group.model';
 import { PlayerRowComponent } from './player-row/player-row.component';
 import { RegistrationModalComponent } from './registration-modal/registration-modal.component';
+import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
 
 type PresentEntry =
   | { type: 'player'; reg: Registration; rank: number }
@@ -676,11 +677,13 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
     const player = this.auth.currentPlayer();
     if (!m || !player) return;
     this.actionLoading.set(true);
+    this.actionError.set('');
     try {
-      await this.matchesService.updateMatch(m.id, { is_closed: !m.is_closed }, player.id, { title: m.title });
+      await this.matchesService.setMatchClosed(m.id, !m.is_closed, player.id);
       await this.loadMatch();
-    } catch { this.actionError.set('Erreur lors de la mise à jour'); }
-    finally { this.actionLoading.set(false); }
+    } catch (err) {
+      this.actionError.set(mapAuthRpcError(err, 'Erreur lors de la mise à jour'));
+    } finally { this.actionLoading.set(false); }
   }
 
   async onDeleteRegistration(playerId: string): Promise<void> {
@@ -695,14 +698,17 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
   }
 
   async saveMiniScore(): Promise<void> {
+    const player = this.auth.currentPlayer();
+    if (!player) return;
     this.actionLoading.set(true);
     try {
-      await this.matchesService.setMiniMatchScore(this.matchId, this.miniScoreA, this.miniScoreB, this.miniTarget);
+      await this.matchesService.setMiniMatchScore(this.matchId, this.miniScoreA, this.miniScoreB, this.miniTarget, player.id);
       await this.loadMatch();
       this.miniScoreFeedback.set('Mini-match enregistré !');
       setTimeout(() => this.miniScoreFeedback.set(''), 2500);
-    } catch { this.miniScoreFeedback.set('Erreur lors de l\'enregistrement'); }
-    finally { this.actionLoading.set(false); }
+    } catch (err) {
+      this.miniScoreFeedback.set(mapAuthRpcError(err, 'Erreur lors de l\'enregistrement'));
+    } finally { this.actionLoading.set(false); }
   }
 
   async saveScore(): Promise<void> {
