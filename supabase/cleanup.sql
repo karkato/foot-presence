@@ -1,6 +1,13 @@
 -- ============================================================
 -- Nettoyage : code mort (sessions.sql jamais réellement appliqué)
 -- et surcharges ambiguës de update_player_profile / create_player
+--
+-- Note (sécurité, sessions désormais supprimé du repo) : le fichier
+-- sessions.sql référencé dans les commentaires ci-dessous n'existe plus
+-- dans le dépôt (voir supabase/security.sql, qui reprend et durcit ses
+-- 6 RPC "matches" et l'ensemble de ses gardes admin sans le système de
+-- tokens). Ces commentaires sont conservés tels quels comme trace de la
+-- décision et du diagnostic de désync qui ont mené à ce nettoyage.
 -- ============================================================
 
 -- Le système de tokens de session (sessions.sql) n'a jamais été adopté :
@@ -37,7 +44,9 @@ SELECT EXISTS (
 ) AS sessions_table_exists;
 
 -- Policies actuelles sur matches — vérifie s'il reste une écriture
--- publique non prévue (héritage possible de sessions.sql, jamais nettoyé)
+-- publique non prévue (héritage possible de sessions.sql, jamais nettoyé ;
+-- security.sql supprime cette policy explicitement, voir sa propre
+-- section de vérification post-migration)
 SELECT polname, polcmd, pg_get_expr(polqual, polrelid) AS using_expr,
        pg_get_expr(polwithcheck, polrelid) AS with_check_expr
 FROM pg_policy

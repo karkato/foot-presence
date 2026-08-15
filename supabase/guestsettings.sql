@@ -1,7 +1,8 @@
 -- ============================================================
 -- foot-presence — Réglages invités (+1) par groupe
 -- À exécuter APRÈS setup.sql, audit.sql, features.sql
--- (PAS après sessions.sql, qui n'est pas la version active en base)
+-- (avant security.sql, qui migre à son tour set_plus_ones et
+-- set_group_guest_settings pour utiliser ses helpers d'autorisation)
 -- ============================================================
 
 -- ============================================================
