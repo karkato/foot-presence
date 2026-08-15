@@ -180,7 +180,7 @@ export interface Database {
         Returns: undefined;
       };
       update_player_profile: {
-        Args: { p_player_id: string; p_display_name?: string | null; p_new_pin?: string | null; p_actor_id?: string | null };
+        Args: { p_player_id: string; p_display_name?: string | null; p_new_pin?: string | null; p_actor_id: string };
         Returns: Json;
       };
       set_plus_ones: {
@@ -207,7 +207,7 @@ export interface Database {
           p_pin: string;
           p_display_name?: string | null;
           p_is_admin?: boolean;
-          p_actor_id?: string | null;
+          p_actor_id: string;
         };
         Returns: Json;
       };
@@ -240,6 +240,52 @@ export interface Database {
       get_player_history: {
         Args: { p_player_id: string };
         Returns: Json;
+      };
+      create_match: {
+        Args: {
+          p_actor_id: string;
+          p_group_id: string;
+          p_title: string;
+          p_match_date: string;
+          p_match_time: string;
+          p_max_players?: number;
+          p_registration_deadline?: string | null;
+          p_team_a_name?: string;
+          p_team_b_name?: string;
+        };
+        Returns: Json;
+      };
+      update_match: {
+        Args: {
+          p_actor_id: string;
+          p_match_id: string;
+          p_title: string;
+          p_match_date: string;
+          p_match_time: string;
+          p_max_players: number;
+          p_registration_deadline: string | null;
+          p_team_a_name: string;
+          p_team_b_name: string;
+        };
+        Returns: undefined;
+      };
+      set_match_closed: {
+        Args: { p_actor_id: string; p_match_id: string; p_closed: boolean };
+        Returns: undefined;
+      };
+      delete_match: {
+        Args: { p_actor_id: string; p_match_id: string };
+        Returns: undefined;
+      };
+      set_mini_match_score: {
+        Args: {
+          p_actor_id: string;
+          p_match_id: string;
+          p_score_a2: number;
+          p_score_b2: number;
+          p_mini_match_target: number;
+        };
+        Returns: undefined;
       };
     };
     Enums: Record<string, never>;
