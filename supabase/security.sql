@@ -51,6 +51,18 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 REVOKE EXECUTE ON FUNCTION is_group_admin(uuid, uuid) FROM PUBLIC, anon, authenticated;
 REVOKE EXECUTE ON FUNCTION assert_group_admin(uuid, uuid) FROM PUBLIC, anon, authenticated;
 
+-- Ceinture-bretelles : ces 2 signatures à 3/5 paramètres (sans
+-- p_actor_id) sont censées ne plus exister depuis longtemps sur une base
+-- suivant l'ordre setup → audit → ... (setup.sql ne les définit plus,
+-- voir son commentaire) et cleanup.sql les a explicitement supprimées en
+-- prod. On les DROP quand même ici par défense en profondeur, au cas où
+-- une base existante les aurait recréées via un rejeu partiel de
+-- setup.sql — leur coexistence avec les versions à 4/6 paramètres est
+-- exactement le bug de surcharge ambiguë qui a cassé le changement de
+-- PIN en self-service.
+DROP FUNCTION IF EXISTS update_player_profile(uuid, text, text);
+DROP FUNCTION IF EXISTS create_player(uuid, text, text, text, boolean);
+
 -- ============================================================
 -- B. Migration des fonctions existantes vers les helpers
 -- ============================================================
