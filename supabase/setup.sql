@@ -75,7 +75,7 @@ RETURNS json AS $$
 DECLARE player_row players%ROWTYPE;
 BEGIN
   SELECT * INTO player_row FROM players
-  WHERE username = p_username AND group_id = p_group_id;
+  WHERE lower(username) = lower(trim(p_username)) AND group_id = p_group_id;
   IF NOT FOUND THEN RETURN NULL; END IF;
   IF crypt(p_pin, player_row.pin_hash) = player_row.pin_hash THEN
     RETURN to_jsonb(player_row) - 'pin_hash';
@@ -125,42 +125,17 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Mettre à jour le profil (display_name et/ou PIN)
-CREATE OR REPLACE FUNCTION update_player_profile(
-  p_player_id uuid,
-  p_display_name text DEFAULT NULL,
-  p_new_pin text DEFAULT NULL
-)
-RETURNS json AS $$
-DECLARE result players%ROWTYPE;
-BEGIN
-  UPDATE players
-  SET
-    display_name = CASE WHEN p_display_name IS NOT NULL THEN p_display_name ELSE display_name END,
-    pin_hash = CASE WHEN p_new_pin IS NOT NULL THEN crypt(p_new_pin, gen_salt('bf')) ELSE pin_hash END
-  WHERE id = p_player_id
-  RETURNING * INTO result;
-  RETURN to_jsonb(result) - 'pin_hash';
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Créer un joueur (admin) avec hachage du PIN
-CREATE OR REPLACE FUNCTION create_player(
-  p_group_id uuid,
-  p_username text,
-  p_pin text,
-  p_display_name text DEFAULT NULL,
-  p_is_admin boolean DEFAULT false
-)
-RETURNS json AS $$
-DECLARE result players%ROWTYPE;
-BEGIN
-  INSERT INTO players (group_id, username, display_name, pin_hash, is_admin)
-  VALUES (p_group_id, p_username, p_display_name, crypt(p_pin, gen_salt('bf')), p_is_admin)
-  RETURNING * INTO result;
-  RETURN to_jsonb(result) - 'pin_hash';
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+-- update_player_profile et create_player : volontairement absentes d'ici.
+-- Ce fichier a longtemps défini des versions à 3/5 paramètres de ces
+-- fonctions, coexistant en base avec les versions à 4/6 paramètres
+-- (avec p_actor_id) définies par audit.sql, ce qui rendait tout appel
+-- sans p_actor_id ambigu ("function ... is not unique") — voir
+-- cleanup.sql pour le nettoyage effectué en base suite à ce bug, et
+-- security.sql pour les définitions actuelles (seules sources de vérité)
+-- avec garde d'autorisation. Ordre d'exécution complet et définitif :
+-- setup.sql → audit.sql → features.sql → guestsettings.sql → security.sql
+-- (cleanup.sql n'est plus nécessaire pour une base neuve suivant cet
+-- ordre, mais reste dans le repo comme trace historique).
 
 -- Supprimer une inscription (admin uniquement)
 CREATE OR REPLACE FUNCTION admin_remove_registration(p_admin_id uuid, p_match_id uuid, p_player_id uuid)
@@ -194,8 +169,10 @@ CREATE POLICY "registrations: lecture publique" ON registrations FOR SELECT USIN
 REVOKE SELECT ON players FROM anon, authenticated;
 GRANT SELECT (id, group_id, username, display_name, is_admin, created_at) ON players TO anon, authenticated;
 
--- Écriture sur matches (admin via client direct)
-CREATE POLICY "matches: écriture publique" ON matches FOR ALL USING (true) WITH CHECK (true);
+-- Écriture sur matches : voir security.sql, qui remplace toute écriture
+-- REST directe (policy publique) par des RPC SECURITY DEFINER scopées
+-- (create_match, update_match, set_match_closed, delete_match,
+-- set_mini_match_score) et un REVOKE INSERT/UPDATE/DELETE explicite.
 
 -- Les écritures sur players et registrations passent par SECURITY DEFINER (RPCs)
 

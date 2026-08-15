@@ -36,6 +36,16 @@ export interface AuditEntry {
 
 export type MatchWithCount = Match & { registration_count: number };
 
+export interface MatchInput {
+  title: string;
+  match_date: string;
+  match_time: string;
+  max_players: number;
+  registration_deadline: string | null;
+  team_a_name: string;
+  team_b_name: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class MatchesService {
   private readonly supabase = inject(SupabaseService).client;
@@ -110,63 +120,52 @@ export class MatchesService {
     if (error) throw error;
   }
 
-  async createMatch(match: Omit<Match, 'id' | 'created_at'>, actorId?: string): Promise<Match> {
-    const { data, error } = await this.supabase
-      .from('matches')
-      .insert(match)
-      .select()
-      .single();
+  async createMatch(input: MatchInput, groupId: string, actorId: string): Promise<Match> {
+    const { data, error } = await this.supabase.rpc('create_match', {
+      p_actor_id: actorId,
+      p_group_id: groupId,
+      p_title: input.title,
+      p_match_date: input.match_date,
+      p_match_time: input.match_time,
+      p_max_players: input.max_players,
+      p_registration_deadline: input.registration_deadline,
+      p_team_a_name: input.team_a_name,
+      p_team_b_name: input.team_b_name,
+    });
     if (error) throw error;
-    if (actorId) {
-      await this.supabase.rpc('log_action', {
-        p_actor_id: actorId,
-        p_action: 'create_match',
-        p_target_type: 'match',
-        p_target_id: data.id,
-        p_details: { title: match.title },
-      });
-    }
-    return data;
+    return data as unknown as Match;
   }
 
-  async updateMatch(
-    matchId: string,
-    updates: Partial<Match>,
-    actorId?: string,
-    details?: Record<string, unknown>
-  ): Promise<void> {
-    const { error } = await this.supabase
-      .from('matches')
-      .update(updates)
-      .eq('id', matchId);
+  async updateMatch(matchId: string, input: MatchInput, actorId: string): Promise<void> {
+    const { error } = await this.supabase.rpc('update_match', {
+      p_actor_id: actorId,
+      p_match_id: matchId,
+      p_title: input.title,
+      p_match_date: input.match_date,
+      p_match_time: input.match_time,
+      p_max_players: input.max_players,
+      p_registration_deadline: input.registration_deadline,
+      p_team_a_name: input.team_a_name,
+      p_team_b_name: input.team_b_name,
+    });
     if (error) throw error;
-    if (actorId) {
-      const action =
-        updates.is_closed !== undefined
-          ? updates.is_closed ? 'close_match' : 'reopen_match'
-          : 'update_match';
-      await this.supabase.rpc('log_action', {
-        p_actor_id: actorId,
-        p_action: action,
-        p_target_type: 'match',
-        p_target_id: matchId,
-        p_details: details ?? {},
-      });
-    }
   }
 
-  async deleteMatch(matchId: string, actorId?: string, title?: string): Promise<void> {
-    const { error } = await this.supabase.from('matches').delete().eq('id', matchId);
+  async setMatchClosed(matchId: string, closed: boolean, actorId: string): Promise<void> {
+    const { error } = await this.supabase.rpc('set_match_closed', {
+      p_actor_id: actorId,
+      p_match_id: matchId,
+      p_closed: closed,
+    });
     if (error) throw error;
-    if (actorId) {
-      await this.supabase.rpc('log_action', {
-        p_actor_id: actorId,
-        p_action: 'delete_match',
-        p_target_type: 'match',
-        p_target_id: matchId,
-        p_details: title ? { title } : {},
-      });
-    }
+  }
+
+  async deleteMatch(matchId: string, actorId: string): Promise<void> {
+    const { error } = await this.supabase.rpc('delete_match', {
+      p_actor_id: actorId,
+      p_match_id: matchId,
+    });
+    if (error) throw error;
   }
 
   async setPlusOnes(matchId: string, playerId: string, count: number, actorId: string): Promise<void> {
@@ -207,11 +206,20 @@ export class MatchesService {
     if (error) throw error;
   }
 
-  async setMiniMatchScore(matchId: string, scoreA2: number | null, scoreB2: number | null, target: number | null): Promise<void> {
-    const { error } = await this.supabase
-      .from('matches')
-      .update({ score_a2: scoreA2, score_b2: scoreB2, mini_match_target: target })
-      .eq('id', matchId);
+  async setMiniMatchScore(
+    matchId: string,
+    scoreA2: number,
+    scoreB2: number,
+    target: number,
+    actorId: string
+  ): Promise<void> {
+    const { error } = await this.supabase.rpc('set_mini_match_score', {
+      p_actor_id: actorId,
+      p_match_id: matchId,
+      p_score_a2: scoreA2,
+      p_score_b2: scoreB2,
+      p_mini_match_target: target,
+    });
     if (error) throw error;
   }
 

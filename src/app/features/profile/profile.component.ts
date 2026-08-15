@@ -5,6 +5,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { SupabaseService } from '../../core/supabase/supabase.service';
 import { MatchesService, MatchHistoryEntry, PlayerStats } from '../matches/matches.service';
 import { Player, getDisplayName } from '../../shared/models/player.model';
+import { mapAuthRpcError } from '../../shared/utils/rpc-error';
 
 @Component({
   selector: 'app-profile',
@@ -294,15 +295,17 @@ export class ProfileComponent implements OnInit {
     this.saving.set(true);
     this.displayNameFeedback.set('');
     try {
-      await this.supabase.rpc('update_player_profile', {
+      const { error } = await this.supabase.rpc('update_player_profile', {
         p_player_id: player.id,
         p_display_name: this.newDisplayName.trim() || null,
+        p_actor_id: player.id,
       });
+      if (error) throw error;
       this.auth.updateCurrentPlayer({ display_name: this.newDisplayName.trim() || null });
       this.displayNameFeedback.set('Pseudo mis à jour !');
       setTimeout(() => this.displayNameFeedback.set(''), 2500);
-    } catch {
-      this.displayNameFeedback.set('Erreur lors de la sauvegarde');
+    } catch (err) {
+      this.displayNameFeedback.set(mapAuthRpcError(err, 'Erreur lors de la sauvegarde'));
     } finally {
       this.saving.set(false);
     }
@@ -316,13 +319,18 @@ export class ProfileComponent implements OnInit {
     if (!player) return;
     this.savingPin.set(true);
     try {
-      await this.supabase.rpc('update_player_profile', { p_player_id: player.id, p_new_pin: this.newPin });
+      const { error } = await this.supabase.rpc('update_player_profile', {
+        p_player_id: player.id,
+        p_new_pin: this.newPin,
+        p_actor_id: player.id,
+      });
+      if (error) throw error;
       this.newPin = '';
       this.confirmPin = '';
       this.pinFeedback.set('PIN mis à jour !');
       setTimeout(() => this.pinFeedback.set(''), 2500);
-    } catch {
-      this.pinError.set('Erreur lors de la mise à jour du PIN');
+    } catch (err) {
+      this.pinError.set(mapAuthRpcError(err, 'Erreur lors de la mise à jour du PIN'));
     } finally {
       this.savingPin.set(false);
     }
