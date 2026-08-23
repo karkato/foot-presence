@@ -14,7 +14,8 @@ import { Player, getDisplayName } from '../../../shared/models/player.model';
 import { Group } from '../../../shared/models/group.model';
 import { PlayerRowComponent } from './player-row/player-row.component';
 import { RegistrationModalComponent } from './registration-modal/registration-modal.component';
-import { mapAuthRpcError, rpcMessage } from '../../../shared/utils/rpc-error';
+import { mapAuthRpcError, mapMatchStatsError, rpcMessage } from '../../../shared/utils/rpc-error';
+import { TEAM_A_COLOR, TEAM_B_COLOR } from '../../../shared/constants/team-config';
 
 type PresentEntry =
   | { type: 'player'; reg: Registration; rank: number }
@@ -70,7 +71,7 @@ type PresentEntry =
               <span class="score-value">{{ match()!.score_b }}</span>
             </div>
           </div>
-          @if (match()!.score_a2 !== null && match()!.score_b2 !== null) {
+          @if (miniMatchEnabled() && match()!.score_a2 !== null && match()!.score_b2 !== null) {
             <div class="mini-match-display card">
               <span class="mini-match-label">Mini-match (premier à {{ match()!.mini_match_target }})</span>
               <div class="mini-match-score">
@@ -217,31 +218,33 @@ type PresentEntry =
               <p class="feedback-success">{{ scoreFeedback() }}</p>
             }
 
-            <h3 class="section-label" style="margin-top:1rem">Mini-match</h3>
-            <div class="score-inputs">
-              <div class="score-input-group">
-                <label>{{ match()!.team_a_name }}</label>
-                <input type="number" min="0" [(ngModel)]="miniScoreA" class="score-input" />
+            @if (miniMatchEnabled()) {
+              <h3 class="section-label" style="margin-top:1rem">Mini-match</h3>
+              <div class="score-inputs">
+                <div class="score-input-group">
+                  <label>{{ match()!.team_a_name }}</label>
+                  <input type="number" min="0" [(ngModel)]="miniScoreA" class="score-input" />
+                </div>
+                <span class="score-sep-sm">–</span>
+                <div class="score-input-group">
+                  <label>{{ match()!.team_b_name }}</label>
+                  <input type="number" min="0" [(ngModel)]="miniScoreB" class="score-input" />
+                </div>
+                <div class="score-input-group">
+                  <label>1er à</label>
+                  <select [(ngModel)]="miniTarget" class="score-input">
+                    <option [ngValue]="3">3</option>
+                    <option [ngValue]="5">5</option>
+                    <option [ngValue]="7">7</option>
+                  </select>
+                </div>
+                <button class="btn-primary" (click)="saveMiniScore()" [disabled]="actionLoading()">
+                  Enregistrer
+                </button>
               </div>
-              <span class="score-sep-sm">–</span>
-              <div class="score-input-group">
-                <label>{{ match()!.team_b_name }}</label>
-                <input type="number" min="0" [(ngModel)]="miniScoreB" class="score-input" />
-              </div>
-              <div class="score-input-group">
-                <label>1er à</label>
-                <select [(ngModel)]="miniTarget" class="score-input">
-                  <option [ngValue]="3">3</option>
-                  <option [ngValue]="5">5</option>
-                  <option [ngValue]="7">7</option>
-                </select>
-              </div>
-              <button class="btn-primary" (click)="saveMiniScore()" [disabled]="actionLoading()">
-                Enregistrer
-              </button>
-            </div>
-            @if (miniScoreFeedback()) {
-              <p class="feedback-success">{{ miniScoreFeedback() }}</p>
+              @if (miniScoreFeedback()) {
+                <p class="feedback-success">{{ miniScoreFeedback() }}</p>
+              }
             }
           </div>
         }
@@ -280,6 +283,16 @@ type PresentEntry =
                           <button class="team-btn team-btn-b" [class.active]="team === 1"
                             (click)="adminSetTeam(player.id, 1)">B</button>
                         </div>
+                        @if (team !== null && match()!.score_a !== null && statsDraft[player.id]) {
+                          <div class="stats-mini">
+                            <span class="stats-icon" title="Buts">⚽</span>
+                            <input type="number" min="0" class="stats-input"
+                              [(ngModel)]="statsDraft[player.id].goals" (change)="adminSaveStats(player.id)" />
+                            <span class="stats-icon" title="Passes décisives">🅰</span>
+                            <input type="number" min="0" class="stats-input"
+                              [(ngModel)]="statsDraft[player.id].assists" (change)="adminSaveStats(player.id)" />
+                          </div>
+                        }
                       </div>
                     }
                   </li>
@@ -393,8 +406,12 @@ type PresentEntry =
     .btn-mini:disabled { opacity: 0.35; cursor: not-allowed; }
     .team-btns { display: flex; gap: 0.4rem; }
     .team-btn { padding: 0.2rem 0.65rem; border: 1.5px solid var(--border); border-radius: 0.35rem; font-size: 0.8rem; font-weight: 700; cursor: pointer; background: transparent; color: var(--text-muted); font-family: inherit; transition: all 0.1s; }
-    .team-btn-a.active { background: var(--primary); color: white; border-color: var(--primary); }
-    .team-btn-b.active { background: var(--warning); color: white; border-color: var(--warning); }
+    .team-btn-a.active { background: ${TEAM_A_COLOR}; color: white; border-color: ${TEAM_A_COLOR}; }
+    .team-btn-b.active { background: ${TEAM_B_COLOR}; color: white; border-color: ${TEAM_B_COLOR}; }
+    .stats-mini { display: flex; align-items: center; gap: 0.25rem; }
+    .stats-icon { font-size: 0.8rem; }
+    .stats-input { width: 2.6rem; text-align: center; font-size: 0.85rem; font-weight: 700; padding: 0.2rem; border: 1.5px solid var(--border); border-radius: 0.35rem; background: var(--card); color: var(--text); font-family: inherit; }
+    .stats-input:focus { outline: none; border-color: var(--primary); }
   `,
 })
 export class MatchDetailComponent implements OnInit, OnDestroy {
@@ -425,6 +442,7 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
   miniScoreA = 0;
   miniScoreB = 0;
   miniTarget = 5;
+  statsDraft: Record<string, { goals: number; assists: number }> = {};
 
   private channel: RealtimeChannel | null = null;
   private feedbackTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -477,6 +495,7 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
 
   guestsEnabled = computed(() => this.group()?.guests_enabled ?? true);
   maxGuests = computed(() => this.group()?.max_guests_per_player ?? null);
+  miniMatchEnabled = computed(() => this.group()?.mini_match_enabled ?? false);
   canAddGuest = computed(() =>
     this.isAdmin() || (this.guestsEnabled() && (this.maxGuests() === null || this.myPlusOnes() < this.maxGuests()!))
   );
@@ -528,8 +547,13 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
   }
 
   private async loadRegistrations(): Promise<void> {
-    try { this.registrations.set(await this.matchesService.getRegistrations(this.matchId)); }
-    catch { this.registrations.set([]); }
+    try {
+      const regs = await this.matchesService.getRegistrations(this.matchId);
+      this.registrations.set(regs);
+      for (const r of regs) {
+        this.statsDraft[r.player_id] = { goals: r.goals, assists: r.assists };
+      }
+    } catch { this.registrations.set([]); }
   }
 
   private async loadPlayers(): Promise<void> {
@@ -601,12 +625,36 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
   }
 
   async adminSetTeam(playerId: string, team: number): Promise<void> {
+    const admin = this.auth.currentPlayer();
+    if (!admin) return;
     const currentTeam = this.getPlayerTeam(playerId);
     const newTeam = currentTeam === team ? null : team;
     try {
-      await this.matchesService.assignTeam(this.matchId, playerId, newTeam);
+      await this.matchesService.assignTeam(this.matchId, playerId, newTeam, admin.id);
       await this.loadRegistrations();
     } catch { /* silently fail */ }
+  }
+
+  getPlayerGoals(playerId: string): number {
+    return this.registrations().find(r => r.player_id === playerId && !r.is_withdrawn)?.goals ?? 0;
+  }
+
+  getPlayerAssists(playerId: string): number {
+    return this.registrations().find(r => r.player_id === playerId && !r.is_withdrawn)?.assists ?? 0;
+  }
+
+  async adminSaveStats(playerId: string): Promise<void> {
+    const admin = this.auth.currentPlayer();
+    const draft = this.statsDraft[playerId];
+    if (!admin || !draft) return;
+    this.actionError.set('');
+    try {
+      await this.matchesService.setPlayerMatchStats(this.matchId, playerId, draft.goals, draft.assists, admin.id);
+      await this.loadRegistrations();
+    } catch (err) {
+      this.actionError.set(mapMatchStatsError(err, 'Erreur lors de la mise à jour des stats'));
+      await this.loadRegistrations();
+    }
   }
 
   async onRegister(): Promise<void> {
@@ -720,7 +768,7 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
       this.scoreFeedback.set('Score enregistré !');
       setTimeout(() => this.scoreFeedback.set(''), 2500);
     } catch (err) {
-      this.scoreFeedback.set(mapAuthRpcError(err, 'Erreur lors de l\'enregistrement'));
+      this.scoreFeedback.set(mapMatchStatsError(err, 'Erreur lors de l\'enregistrement'));
     } finally { this.actionLoading.set(false); }
   }
 
