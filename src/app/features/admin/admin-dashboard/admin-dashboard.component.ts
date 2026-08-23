@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   inject,
   OnInit,
   signal,
@@ -25,17 +26,35 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
       <h2>Administration</h2>
 
       <!-- Tabs -->
-      <div class="tabs">
-        <button class="tab" [class.active]="activeTab() === 'matches'" (click)="activeTab.set('matches')">Matchs</button>
-        <button class="tab" [class.active]="activeTab() === 'players'" (click)="activeTab.set('players')">Joueurs</button>
-        <button class="tab" [class.active]="activeTab() === 'audit'" (click)="activeTab.set('audit')">Historique</button>
-        <button class="tab" [class.active]="activeTab() === 'seasons'" (click)="activeTab.set('seasons')">Saisons</button>
-        <button class="tab" [class.active]="activeTab() === 'settings'" (click)="activeTab.set('settings')">Réglages</button>
+      <div class="tabs" role="tablist" aria-label="Sections d'administration">
+        <button id="tab-management" type="button" class="tab" role="tab" [attr.aria-selected]="topTab() === 'management'"
+          [attr.aria-controls]="'panel-' + activeTab()"
+          [class.active]="topTab() === 'management'" (click)="openManagement()">Gestion</button>
+        <button id="tab-audit" type="button" class="tab" role="tab" [attr.aria-selected]="topTab() === 'audit'"
+          aria-controls="panel-audit"
+          [class.active]="topTab() === 'audit'" (click)="activeTab.set('audit')">Historique</button>
+        <button id="tab-settings" type="button" class="tab" role="tab" [attr.aria-selected]="topTab() === 'settings'"
+          aria-controls="panel-settings"
+          [class.active]="topTab() === 'settings'" (click)="activeTab.set('settings')">Réglages</button>
       </div>
+
+      @if (topTab() === 'management') {
+        <div class="tabs subtabs" role="tablist" aria-label="Sous-sections de gestion">
+          <button id="tab-matches" type="button" class="tab subtab" role="tab" [attr.aria-selected]="activeTab() === 'matches'"
+            aria-controls="panel-matches"
+            [class.active]="activeTab() === 'matches'" (click)="selectManagementTab('matches')">Matchs</button>
+          <button id="tab-players" type="button" class="tab subtab" role="tab" [attr.aria-selected]="activeTab() === 'players'"
+            aria-controls="panel-players"
+            [class.active]="activeTab() === 'players'" (click)="selectManagementTab('players')">Joueurs</button>
+          <button id="tab-seasons" type="button" class="tab subtab" role="tab" [attr.aria-selected]="activeTab() === 'seasons'"
+            aria-controls="panel-seasons"
+            [class.active]="activeTab() === 'seasons'" (click)="selectManagementTab('seasons')">Saisons</button>
+        </div>
+      }
 
       <!-- Matchs -->
       @if (activeTab() === 'matches') {
-        <section class="section">
+        <section id="panel-matches" class="section" role="tabpanel" aria-labelledby="tab-matches">
           <div class="section-header">
             <button class="btn-add" (click)="router.navigate(['match/new'], { relativeTo: route })">
               + Nouveau match
@@ -74,7 +93,7 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
 
       <!-- Joueurs -->
       @if (activeTab() === 'players') {
-        <section class="section">
+        <section id="panel-players" class="section" role="tabpanel" aria-labelledby="tab-players">
           <div class="section-header">
             <button class="btn-add" (click)="router.navigate(['player/new'], { relativeTo: route })">
               + Nouveau joueur
@@ -104,7 +123,7 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
 
       <!-- Historique -->
       @if (activeTab() === 'audit') {
-        <section class="section">
+        <section id="panel-audit" class="section" role="tabpanel" aria-labelledby="tab-audit">
           <div class="section-header">
             <button class="btn-refresh" (click)="reloadAudit()">Actualiser</button>
           </div>
@@ -127,7 +146,7 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
 
       <!-- Saisons -->
       @if (activeTab() === 'seasons') {
-        <section class="section">
+        <section id="panel-seasons" class="section" role="tabpanel" aria-labelledby="tab-seasons">
           @defer (on viewport) {
             <app-season-settings />
           } @placeholder {
@@ -138,7 +157,7 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
 
       <!-- Réglages -->
       @if (activeTab() === 'settings') {
-        <section class="section">
+        <section id="panel-settings" class="section" role="tabpanel" aria-labelledby="tab-settings">
           @defer (on viewport) {
             <app-group-settings />
           } @placeholder {
@@ -154,6 +173,8 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
     .tabs { display: flex; gap: 0.25rem; background: var(--card); border: 1.5px solid var(--border); border-radius: 0.6rem; padding: 0.25rem; margin-bottom: 1.25rem; }
     .tab { flex: 1; padding: 0.5rem; border: none; background: none; border-radius: 0.4rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; color: var(--text-muted); transition: all 0.15s; }
     .tab.active { background: var(--primary); color: white; }
+    .tabs.subtabs { background: var(--bg); border-color: transparent; margin-top: -0.75rem; }
+    .tab.subtab { font-size: 0.8rem; }
     .section { margin-bottom: 1.5rem; }
     .section-header { display: flex; align-items: center; justify-content: flex-end; margin-bottom: 0.75rem; }
     h3 { margin: 0; }
@@ -238,6 +259,17 @@ export class AdminDashboardComponent implements OnInit {
 
   activeTab = signal<'matches' | 'players' | 'audit' | 'seasons' | 'settings'>('matches');
 
+  // Groupe les 3 sous-onglets sous "Gestion".
+  topTab = computed<'management' | 'audit' | 'settings'>(() => {
+    const tab = this.activeTab();
+    return tab === 'matches' || tab === 'players' || tab === 'seasons' ? 'management' : tab;
+  });
+
+  // Mémorise la dernière sous-section de "Gestion" visitée (pas un doublon de topTab :
+  // topTab dérive l'état de navigation actif, ceci ne fait que se souvenir du dernier choix
+  // pour le restaurer quand on revient sur "Gestion" depuis un autre onglet top-level).
+  private lastManagementTab = signal<'matches' | 'players' | 'seasons'>('matches');
+
   matches = signal<Match[]>([]);
   players = signal<Player[]>([]);
   auditLog = signal<AuditEntry[]>([]);
@@ -285,6 +317,15 @@ export class AdminDashboardComponent implements OnInit {
     if (!player) return;
     this.loadingAudit.set(true);
     await this.loadAudit(player.group_id);
+  }
+
+  openManagement(): void {
+    this.activeTab.set(this.lastManagementTab());
+  }
+
+  selectManagementTab(tab: 'matches' | 'players' | 'seasons'): void {
+    this.lastManagementTab.set(tab);
+    this.activeTab.set(tab);
   }
 
   editMatch(match: Match): void {

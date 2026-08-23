@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from './core/auth/auth.service';
 
 @Component({
@@ -12,13 +12,7 @@ import { AuthService } from './core/auth/auth.service';
 })
 export class App {
   readonly auth = inject(AuthService);
-  private readonly router = inject(Router);
 
   groupSlug = computed(() => this.auth.currentGroupSlug() ?? '');
   showNav = computed(() => this.auth.isLoggedIn());
-
-  logout(): void {
-    this.auth.logout();
-    this.router.navigate(['/']);
-  }
 }

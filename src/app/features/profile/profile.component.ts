@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { SupabaseService } from '../../core/supabase/supabase.service';
 import { SeasonsService } from '../../core/seasons/seasons.service';
@@ -23,11 +23,19 @@ import { MyStatsComponent } from './my-stats/my-stats.component';
       @if (auth.currentPlayer(); as player) {
 
         <!-- Tabs -->
-        <div class="tabs">
-          <button class="tab" [class.active]="activeTab() === 'stats'" (click)="activeTab.set('stats')">Stats</button>
-          <button class="tab" [class.active]="activeTab() === 'goals'" (click)="activeTab.set('goals')">Buts</button>
-          <button class="tab" [class.active]="activeTab() === 'players'" (click)="activeTab.set('players')">Joueurs</button>
-          <button class="tab" [class.active]="activeTab() === 'config'" (click)="activeTab.set('config')">Config</button>
+        <div class="tabs" role="tablist" aria-label="Sections du profil">
+          <button id="tab-stats" type="button" class="tab" role="tab" [attr.aria-selected]="activeTab() === 'stats'"
+            aria-controls="panel-stats"
+            [class.active]="activeTab() === 'stats'" (click)="activeTab.set('stats')">Stats</button>
+          <button id="tab-goals" type="button" class="tab" role="tab" [attr.aria-selected]="activeTab() === 'goals'"
+            aria-controls="panel-goals"
+            [class.active]="activeTab() === 'goals'" (click)="activeTab.set('goals')">Buts</button>
+          <button id="tab-players" type="button" class="tab" role="tab" [attr.aria-selected]="activeTab() === 'players'"
+            aria-controls="panel-players"
+            [class.active]="activeTab() === 'players'" (click)="activeTab.set('players')">Joueurs</button>
+          <button id="tab-config" type="button" class="tab" role="tab" [attr.aria-selected]="activeTab() === 'config'"
+            aria-controls="panel-config"
+            [class.active]="activeTab() === 'config'" (click)="activeTab.set('config')">Config</button>
         </div>
 
         @if (activeTab() === 'stats' || activeTab() === 'goals') {
@@ -40,120 +48,132 @@ import { MyStatsComponent } from './my-stats/my-stats.component';
 
         <!-- Tab Stats -->
         @if (activeTab() === 'stats') {
+          <div id="panel-stats" role="tabpanel" aria-labelledby="tab-stats">
 
-          <!-- Stats -->
-          <div class="card stats-card">
-            @if (stats() && stats()!.played > 0) {
-              <div class="stats-grid">
-                <div class="stat-block">
-                  <span class="stat-value">{{ stats()!.played }}</span>
-                  <span class="stat-label">Matchs</span>
-                </div>
-                <div class="stat-block win">
-                  <span class="stat-value">{{ stats()!.wins }}</span>
-                  <span class="stat-label">Victoires</span>
-                </div>
-                <div class="stat-block loss">
-                  <span class="stat-value">{{ stats()!.losses }}</span>
-                  <span class="stat-label">Défaites</span>
-                </div>
-                <div class="stat-block draw">
-                  <span class="stat-value">{{ stats()!.draws }}</span>
-                  <span class="stat-label">Nuls</span>
-                </div>
-                <div class="stat-block goals">
-                  <span class="stat-value">{{ stats()!.goals }}</span>
-                  <span class="stat-label">Buts</span>
-                </div>
-                <div class="stat-block assists">
-                  <span class="stat-value">{{ stats()!.assists }}</span>
-                  <span class="stat-label">Passes</span>
-                </div>
-              </div>
-              <div class="ratio-row">
-                <span class="ratio-label">Taux de victoire</span>
-                <span class="ratio-value">{{ winRatio() }}%</span>
-              </div>
-            } @else {
-              <p class="muted">Aucun match joué pour cette saison.</p>
-            }
-          </div>
-
-          <!-- Derniers matchs -->
-          @if (recentHistory().length > 0) {
-            <p class="section-label">Derniers matchs</p>
-            <div class="recent-list">
-              @for (entry of recentHistory(); track entry.id) {
-                <a class="mini-card card" [routerLink]="['/' + groupSlug() + '/match/' + entry.id]">
-                  <div class="mini-info">
-                    <span class="mini-title">{{ entry.title }}</span>
-                    <span class="mini-date">{{ formatDate(entry.match_date) }}</span>
+            <!-- Stats -->
+            <div class="card stats-card">
+              @if (stats() && stats()!.played > 0) {
+                <div class="stats-grid">
+                  <div class="stat-block">
+                    <span class="stat-value">{{ stats()!.played }}</span>
+                    <span class="stat-label">Matchs</span>
                   </div>
-                  @if (entry.score_a !== null && entry.score_b !== null) {
-                    <span class="mini-score">{{ entry.score_a }} – {{ entry.score_b }}</span>
-                  }
-                  <span class="result-badge" [class]="'result-' + (entry.result ?? 'none')">
-                    {{ resultLabel(entry.result) }}
-                  </span>
-                </a>
+                  <div class="stat-block win">
+                    <span class="stat-value">{{ stats()!.wins }}</span>
+                    <span class="stat-label">Victoires</span>
+                  </div>
+                  <div class="stat-block loss">
+                    <span class="stat-value">{{ stats()!.losses }}</span>
+                    <span class="stat-label">Défaites</span>
+                  </div>
+                  <div class="stat-block draw">
+                    <span class="stat-value">{{ stats()!.draws }}</span>
+                    <span class="stat-label">Nuls</span>
+                  </div>
+                  <div class="stat-block goals">
+                    <span class="stat-value">{{ stats()!.goals }}</span>
+                    <span class="stat-label">Buts</span>
+                  </div>
+                  <div class="stat-block assists">
+                    <span class="stat-value">{{ stats()!.assists }}</span>
+                    <span class="stat-label">Passes</span>
+                  </div>
+                </div>
+                <div class="ratio-row">
+                  <span class="ratio-label">Taux de victoire</span>
+                  <span class="ratio-value">{{ winRatio() }}%</span>
+                </div>
+              } @else {
+                <p class="muted">Aucun match joué pour cette saison.</p>
               }
             </div>
-            <a class="btn-history" [routerLink]="['/' + groupSlug() + '/history']">Voir mon historique complet →</a>
-          }
 
+            <!-- Derniers matchs -->
+            @if (recentHistory().length > 0) {
+              <p class="section-label">Derniers matchs</p>
+              <div class="recent-list">
+                @for (entry of recentHistory(); track entry.id) {
+                  <a class="mini-card card" [routerLink]="['/' + groupSlug() + '/match/' + entry.id]">
+                    <div class="mini-info">
+                      <span class="mini-title">{{ entry.title }}</span>
+                      <span class="mini-date">{{ formatDate(entry.match_date) }}</span>
+                    </div>
+                    @if (entry.score_a !== null && entry.score_b !== null) {
+                      <span class="mini-score">{{ entry.score_a }} – {{ entry.score_b }}</span>
+                    }
+                    <span class="result-badge" [class]="'result-' + (entry.result ?? 'none')">
+                      {{ resultLabel(entry.result) }}
+                    </span>
+                  </a>
+                }
+              </div>
+              <a class="btn-history" [routerLink]="['/' + groupSlug() + '/history']">Voir mon historique complet →</a>
+            }
+
+          </div>
         }
 
         <!-- Tab Buts -->
         @if (activeTab() === 'goals') {
-          @defer (on viewport) {
-            <app-my-stats [seasonId]="selectedSeasonId()" />
-          } @placeholder {
-            <p class="muted">Chargement...</p>
-          }
+          <div id="panel-goals" role="tabpanel" aria-labelledby="tab-goals">
+            @defer (on viewport) {
+              <app-my-stats [seasonId]="selectedSeasonId()" />
+            } @placeholder {
+              <p class="muted">Chargement...</p>
+            }
+          </div>
         }
 
         <!-- Tab Config -->
         @if (activeTab() === 'config') {
+          <div id="panel-config" role="tabpanel" aria-labelledby="tab-config">
 
-          <!-- Pseudo affiché -->
-          <div class="card section">
-            <h3 class="section-label">Pseudo affiché</h3>
-            <div class="input-row">
-              <input type="text" class="field-input" [(ngModel)]="newDisplayName"
-                [placeholder]="player.username" maxlength="30" />
-              <button class="btn-primary" (click)="saveDisplayName()" [disabled]="saving()">
-                @if (saving()) { ... } @else { OK }
+            <!-- Pseudo affiché -->
+            <div class="card section">
+              <h3 class="section-label">Pseudo affiché</h3>
+              <div class="input-row">
+                <input type="text" class="field-input" [(ngModel)]="newDisplayName"
+                  [placeholder]="player.username" maxlength="30" />
+                <button class="btn-primary" (click)="saveDisplayName()" [disabled]="saving()">
+                  @if (saving()) { ... } @else { OK }
+                </button>
+              </div>
+              @if (displayNameFeedback()) {
+                <p class="feedback-success">{{ displayNameFeedback() }}</p>
+              }
+            </div>
+
+            <!-- Changer PIN -->
+            <div class="card section">
+              <h3 class="section-label">Changer mon PIN</h3>
+              <div class="pin-row">
+                <div class="field">
+                  <label>Nouveau PIN</label>
+                  <input type="password" class="field-input" [(ngModel)]="newPin" inputmode="numeric" maxlength="6" />
+                </div>
+                <div class="field">
+                  <label>Confirmer</label>
+                  <input type="password" class="field-input" [(ngModel)]="confirmPin" inputmode="numeric" maxlength="6" />
+                </div>
+              </div>
+              @if (pinError()) { <p class="feedback-error">{{ pinError() }}</p> }
+              @if (pinFeedback()) { <p class="feedback-success">{{ pinFeedback() }}</p> }
+              <button class="btn-primary" (click)="savePin()" [disabled]="savingPin() || !newPin || !confirmPin">
+                @if (savingPin()) { ... } @else { Confirmer }
               </button>
             </div>
-            @if (displayNameFeedback()) {
-              <p class="feedback-success">{{ displayNameFeedback() }}</p>
-            }
-          </div>
 
-          <!-- Changer PIN -->
-          <div class="card section">
-            <h3 class="section-label">Changer mon PIN</h3>
-            <div class="pin-row">
-              <div class="field">
-                <label>Nouveau PIN</label>
-                <input type="password" class="field-input" [(ngModel)]="newPin" inputmode="numeric" maxlength="6" />
-              </div>
-              <div class="field">
-                <label>Confirmer</label>
-                <input type="password" class="field-input" [(ngModel)]="confirmPin" inputmode="numeric" maxlength="6" />
-              </div>
+            <!-- Session -->
+            <div class="card section">
+              <h3 class="section-label">Session</h3>
+              <button class="btn-danger btn-full" (click)="logout()">Se déconnecter</button>
             </div>
-            @if (pinError()) { <p class="feedback-error">{{ pinError() }}</p> }
-            @if (pinFeedback()) { <p class="feedback-success">{{ pinFeedback() }}</p> }
-            <button class="btn-primary" (click)="savePin()" [disabled]="savingPin() || !newPin || !confirmPin">
-              @if (savingPin()) { ... } @else { Confirmer }
-            </button>
           </div>
         }
 
         <!-- Tab Joueurs -->
         @if (activeTab() === 'players') {
-          <div class="card section">
+          <div id="panel-players" role="tabpanel" aria-labelledby="tab-players" class="card section">
             @if (loadingPlayers()) {
               <p class="muted">Chargement...</p>
             } @else {
@@ -238,6 +258,9 @@ import { MyStatsComponent } from './my-stats/my-stats.component';
     /* Buttons */
     .btn-primary { padding: 0.65rem 1.25rem; background: var(--primary); color: white; border: none; border-radius: 0.5rem; font-size: 0.95rem; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; }
     .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-danger { padding: 0.65rem 1.25rem; background: var(--danger); color: white; border: none; border-radius: 0.5rem; font-size: 0.95rem; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .btn-danger:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-full { width: 100%; }
 
     /* Players list */
     .player-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.1rem; }
@@ -256,6 +279,7 @@ export class ProfileComponent implements OnInit {
   private readonly matchesService = inject(MatchesService);
   private readonly seasonsService = inject(SeasonsService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   newDisplayName = '';
   newPin = '';
@@ -329,6 +353,11 @@ export class ProfileComponent implements OnInit {
       const history = await this.matchesService.getPlayerHistory(playerId, this.selectedSeasonId());
       this.recentHistory.set(history.slice(0, 3));
     } catch { /* non critique */ }
+  }
+
+  logout(): void {
+    this.auth.logout();
+    void this.router.navigate(['/']);
   }
 
   resultLabel(result: 'win' | 'loss' | 'draw' | null): string {
