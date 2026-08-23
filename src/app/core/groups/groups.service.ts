@@ -17,17 +17,19 @@ export class GroupsService {
     return data;
   }
 
-  async updateGuestSettings(
+  async updateGroupSettings(
     groupId: string,
     actorId: string,
     guestsEnabled: boolean,
-    maxGuestsPerPlayer: number | null
+    maxGuestsPerPlayer: number | null,
+    miniMatchEnabled: boolean
   ): Promise<void> {
-    const { error } = await this.supabase.rpc('set_group_guest_settings', {
+    const { error } = await this.supabase.rpc('set_group_settings', {
       p_group_id: groupId,
       p_actor_id: actorId,
       p_guests_enabled: guestsEnabled,
       p_max_guests_per_player: maxGuestsPerPlayer,
+      p_mini_match_enabled: miniMatchEnabled,
     });
     if (error) throw error;
   }
