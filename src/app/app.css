@@ -86,10 +86,6 @@
   font-weight: 600;
   color: var(--text-muted);
   text-decoration: none;
-  border: none;
-  background: none;
-  cursor: pointer;
-  font-family: inherit;
   transition: color 0.15s;
   padding: 0;
 }
