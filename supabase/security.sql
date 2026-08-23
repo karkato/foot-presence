@@ -334,8 +334,8 @@ CREATE FUNCTION create_match(
   p_match_time time,
   p_max_players int DEFAULT 22,
   p_registration_deadline timestamptz DEFAULT NULL,
-  p_team_a_name text DEFAULT 'Équipe A',
-  p_team_b_name text DEFAULT 'Équipe B'
+  p_team_a_name text DEFAULT 'Équipe Rouge',
+  p_team_b_name text DEFAULT 'Équipe Bleue'
 ) RETURNS json AS $$
 DECLARE result matches%ROWTYPE;
 BEGIN
