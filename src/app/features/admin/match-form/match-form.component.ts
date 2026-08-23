@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { MatchesService } from '../../matches/matches.service';
 import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
+import { DEFAULT_TEAM_A_NAME, DEFAULT_TEAM_B_NAME } from '../../../shared/constants/team-config';
 
 @Component({
   selector: 'app-match-form',
@@ -40,11 +41,11 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
         <div class="row">
           <div class="field">
             <label>Nom équipe A</label>
-            <input type="text" [(ngModel)]="form.team_a_name" name="team_a_name" placeholder="Équipe A" maxlength="30" />
+            <input type="text" [(ngModel)]="form.team_a_name" name="team_a_name" [placeholder]="defaultTeamAName" maxlength="30" />
           </div>
           <div class="field">
             <label>Nom équipe B</label>
-            <input type="text" [(ngModel)]="form.team_b_name" name="team_b_name" placeholder="Équipe B" maxlength="30" />
+            <input type="text" [(ngModel)]="form.team_b_name" name="team_b_name" [placeholder]="defaultTeamBName" maxlength="30" />
           </div>
         </div>
 
@@ -98,9 +99,12 @@ export class MatchFormComponent implements OnInit {
   error = signal('');
   matchId = '';
 
+  readonly defaultTeamAName = DEFAULT_TEAM_A_NAME;
+  readonly defaultTeamBName = DEFAULT_TEAM_B_NAME;
+
   form = {
     title: '', match_date: '', match_time: '10:00', max_players: 22,
-    registration_deadline: '', team_a_name: 'Équipe A', team_b_name: 'Équipe B',
+    registration_deadline: '', team_a_name: DEFAULT_TEAM_A_NAME, team_b_name: DEFAULT_TEAM_B_NAME,
   };
 
   async ngOnInit(): Promise<void> {
@@ -113,8 +117,8 @@ export class MatchFormComponent implements OnInit {
         title: match.title, match_date: match.match_date, match_time: match.match_time,
         max_players: match.max_players,
         registration_deadline: match.registration_deadline ? match.registration_deadline.slice(0, 16) : '',
-        team_a_name: match.team_a_name ?? 'Équipe A',
-        team_b_name: match.team_b_name ?? 'Équipe B',
+        team_a_name: match.team_a_name ?? DEFAULT_TEAM_A_NAME,
+        team_b_name: match.team_b_name ?? DEFAULT_TEAM_B_NAME,
       };
     }
   }
@@ -129,8 +133,8 @@ export class MatchFormComponent implements OnInit {
       match_date: this.form.match_date, match_time: this.form.match_time,
       max_players: Number(this.form.max_players),
       registration_deadline: this.form.registration_deadline || null,
-      team_a_name: this.form.team_a_name.trim() || 'Équipe A',
-      team_b_name: this.form.team_b_name.trim() || 'Équipe B',
+      team_a_name: this.form.team_a_name.trim() || DEFAULT_TEAM_A_NAME,
+      team_b_name: this.form.team_b_name.trim() || DEFAULT_TEAM_B_NAME,
     };
     try {
       if (this.isEdit()) {
