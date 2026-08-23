@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { SupabaseService } from '../../core/supabase/supabase.service';
 import { SeasonsService } from '../../core/seasons/seasons.service';
@@ -149,6 +149,12 @@ import { MyStatsComponent } from './my-stats/my-stats.component';
               @if (savingPin()) { ... } @else { Confirmer }
             </button>
           </div>
+
+          <!-- Session -->
+          <div class="card section">
+            <h3 class="section-label">Session</h3>
+            <button class="btn-danger btn-full" (click)="logout()">Se déconnecter</button>
+          </div>
         }
 
         <!-- Tab Joueurs -->
@@ -238,6 +244,9 @@ import { MyStatsComponent } from './my-stats/my-stats.component';
     /* Buttons */
     .btn-primary { padding: 0.65rem 1.25rem; background: var(--primary); color: white; border: none; border-radius: 0.5rem; font-size: 0.95rem; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; }
     .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-danger { padding: 0.65rem 1.25rem; background: var(--danger); color: white; border: none; border-radius: 0.5rem; font-size: 0.95rem; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .btn-danger:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-full { width: 100%; }
 
     /* Players list */
     .player-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.1rem; }
@@ -256,6 +265,7 @@ export class ProfileComponent implements OnInit {
   private readonly matchesService = inject(MatchesService);
   private readonly seasonsService = inject(SeasonsService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   newDisplayName = '';
   newPin = '';
@@ -329,6 +339,11 @@ export class ProfileComponent implements OnInit {
       const history = await this.matchesService.getPlayerHistory(playerId, this.selectedSeasonId());
       this.recentHistory.set(history.slice(0, 3));
     } catch { /* non critique */ }
+  }
+
+  logout(): void {
+    this.auth.logout();
+    this.router.navigate(['/']);
   }
 
   resultLabel(result: 'win' | 'loss' | 'draw' | null): string {
