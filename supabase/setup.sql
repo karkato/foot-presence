@@ -134,6 +134,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- security.sql pour les définitions actuelles (seules sources de vérité)
 -- avec garde d'autorisation. Ordre d'exécution complet et définitif :
 -- setup.sql → audit.sql → features.sql → guestsettings.sql → security.sql
+--   → seasons.sql → playerstats.sql → teamnames.sql
 -- (cleanup.sql n'est plus nécessaire pour une base neuve suivant cet
 -- ordre, mais reste dans le repo comme trace historique).
 

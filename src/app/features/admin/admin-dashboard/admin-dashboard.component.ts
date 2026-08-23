@@ -12,13 +12,14 @@ import { SupabaseService } from '../../../core/supabase/supabase.service';
 import { Match } from '../../../shared/models/match.model';
 import { Player, getDisplayName } from '../../../shared/models/player.model';
 import { GroupSettingsComponent } from '../group-settings/group-settings.component';
+import { SeasonSettingsComponent } from '../season-settings/season-settings.component';
 import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [GroupSettingsComponent],
+  imports: [GroupSettingsComponent, SeasonSettingsComponent],
   template: `
     <div class="container">
       <h2>Administration</h2>
@@ -28,6 +29,7 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
         <button class="tab" [class.active]="activeTab() === 'matches'" (click)="activeTab.set('matches')">Matchs</button>
         <button class="tab" [class.active]="activeTab() === 'players'" (click)="activeTab.set('players')">Joueurs</button>
         <button class="tab" [class.active]="activeTab() === 'audit'" (click)="activeTab.set('audit')">Historique</button>
+        <button class="tab" [class.active]="activeTab() === 'seasons'" (click)="activeTab.set('seasons')">Saisons</button>
         <button class="tab" [class.active]="activeTab() === 'settings'" (click)="activeTab.set('settings')">Réglages</button>
       </div>
 
@@ -119,6 +121,17 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
                 </li>
               }
             </ul>
+          }
+        </section>
+      }
+
+      <!-- Saisons -->
+      @if (activeTab() === 'seasons') {
+        <section class="section">
+          @defer (on viewport) {
+            <app-season-settings />
+          } @placeholder {
+            <p class="muted">Chargement...</p>
           }
         </section>
       }
@@ -223,7 +236,7 @@ export class AdminDashboardComponent implements OnInit {
 
   readonly getDisplayName = getDisplayName;
 
-  activeTab = signal<'matches' | 'players' | 'audit' | 'settings'>('matches');
+  activeTab = signal<'matches' | 'players' | 'audit' | 'seasons' | 'settings'>('matches');
 
   matches = signal<Match[]>([]);
   players = signal<Player[]>([]);
@@ -346,6 +359,9 @@ export class AdminDashboardComponent implements OnInit {
       case 'create_player': return `${actor} a créé le joueur "${d['username'] ?? '...'}"`;
       case 'update_player': return `${actor} a mis à jour un profil`;
       case 'update_group_settings': return `${actor} a modifié les réglages du groupe`;
+      case 'start_season': return `${actor} a démarré "${d['name'] ?? 'une nouvelle saison'}"`;
+      case 'set_player_stats': return `${actor} a modifié des stats de match`;
+      case 'move_match_season': return `${actor} a déplacé un match vers une autre saison`;
       default: return `${actor} : ${entry.action}`;
     }
   }

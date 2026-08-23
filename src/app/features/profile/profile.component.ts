@@ -3,15 +3,19 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { SupabaseService } from '../../core/supabase/supabase.service';
+import { SeasonsService } from '../../core/seasons/seasons.service';
 import { MatchesService, MatchHistoryEntry, PlayerStats } from '../matches/matches.service';
 import { Player, getDisplayName } from '../../shared/models/player.model';
+import { Season, isCurrentSeason } from '../../shared/models/season.model';
 import { mapAuthRpcError } from '../../shared/utils/rpc-error';
+import { SeasonPickerComponent } from '../../shared/components/season-picker/season-picker.component';
+import { MyStatsComponent } from './my-stats/my-stats.component';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, SeasonPickerComponent, MyStatsComponent],
   template: `
     <div class="container">
       <h2>Mon profil</h2>
@@ -20,10 +24,19 @@ import { mapAuthRpcError } from '../../shared/utils/rpc-error';
 
         <!-- Tabs -->
         <div class="tabs">
-          <button class="tab" [class.active]="activeTab() === 'stats'" (click)="activeTab.set('stats')">Statistiques</button>
+          <button class="tab" [class.active]="activeTab() === 'stats'" (click)="activeTab.set('stats')">Stats</button>
+          <button class="tab" [class.active]="activeTab() === 'goals'" (click)="activeTab.set('goals')">Buts</button>
           <button class="tab" [class.active]="activeTab() === 'players'" (click)="activeTab.set('players')">Joueurs</button>
           <button class="tab" [class.active]="activeTab() === 'config'" (click)="activeTab.set('config')">Config</button>
         </div>
+
+        @if (activeTab() === 'stats' || activeTab() === 'goals') {
+          <app-season-picker
+            [seasons]="seasons()"
+            [selectedSeasonId]="selectedSeasonId()"
+            (seasonChange)="onSeasonChange($event)"
+          />
+        }
 
         <!-- Tab Stats -->
         @if (activeTab() === 'stats') {
@@ -48,13 +61,21 @@ import { mapAuthRpcError } from '../../shared/utils/rpc-error';
                   <span class="stat-value">{{ stats()!.draws }}</span>
                   <span class="stat-label">Nuls</span>
                 </div>
+                <div class="stat-block goals">
+                  <span class="stat-value">{{ stats()!.goals }}</span>
+                  <span class="stat-label">Buts</span>
+                </div>
+                <div class="stat-block assists">
+                  <span class="stat-value">{{ stats()!.assists }}</span>
+                  <span class="stat-label">Passes</span>
+                </div>
               </div>
               <div class="ratio-row">
                 <span class="ratio-label">Taux de victoire</span>
                 <span class="ratio-value">{{ winRatio() }}%</span>
               </div>
             } @else {
-              <p class="muted">Aucun match joué pour l'instant.</p>
+              <p class="muted">Aucun match joué pour cette saison.</p>
             }
           </div>
 
@@ -80,6 +101,15 @@ import { mapAuthRpcError } from '../../shared/utils/rpc-error';
             <a class="btn-history" [routerLink]="['/' + groupSlug() + '/history']">Voir mon historique complet →</a>
           }
 
+        }
+
+        <!-- Tab Buts -->
+        @if (activeTab() === 'goals') {
+          @defer (on viewport) {
+            <app-my-stats [seasonId]="selectedSeasonId()" />
+          } @placeholder {
+            <p class="muted">Chargement...</p>
+          }
         }
 
         <!-- Tab Config -->
@@ -163,13 +193,15 @@ import { mapAuthRpcError } from '../../shared/utils/rpc-error';
 
     /* Stats */
     .stats-card { padding: 1.25rem; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 1rem; }
-    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
     .stat-block { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; padding: 0.75rem 0.5rem; background: var(--bg); border-radius: 0.5rem; }
     .stat-value { font-size: 1.5rem; font-weight: 900; line-height: 1; }
     .stat-label { font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
     .stat-block.win .stat-value { color: var(--success); }
     .stat-block.loss .stat-value { color: var(--danger); }
     .stat-block.draw .stat-value { color: var(--text-muted); }
+    .stat-block.goals .stat-value { color: var(--primary); }
+    .stat-block.assists .stat-value { color: var(--warning); }
     .ratio-row { display: flex; align-items: center; justify-content: space-between; }
     .ratio-label { font-size: 0.85rem; color: var(--text-muted); }
     .ratio-value { font-size: 1.1rem; font-weight: 800; color: var(--primary); }
@@ -222,13 +254,16 @@ export class ProfileComponent implements OnInit {
   readonly auth = inject(AuthService);
   private readonly supabase = inject(SupabaseService).client;
   private readonly matchesService = inject(MatchesService);
+  private readonly seasonsService = inject(SeasonsService);
   private readonly route = inject(ActivatedRoute);
 
   newDisplayName = '';
   newPin = '';
   confirmPin = '';
 
-  activeTab = signal<'stats' | 'players' | 'config'>('stats');
+  activeTab = signal<'stats' | 'goals' | 'players' | 'config'>('stats');
+  seasons = signal<Season[]>([]);
+  selectedSeasonId = signal<string | null>(null);
 
   saving = signal(false);
   savingPin = signal(false);
@@ -252,9 +287,27 @@ export class ProfileComponent implements OnInit {
     if (player) {
       this.newDisplayName = player.display_name ?? '';
       this.loadPlayers(player.group_id);
-      this.loadStats(player.id);
-      this.loadRecentHistory(player.id);
+      this.loadSeasons(player.group_id, player.id);
     }
+  }
+
+  private async loadSeasons(groupId: string, playerId: string): Promise<void> {
+    try {
+      const seasons = await this.seasonsService.getSeasons(groupId);
+      this.seasons.set(seasons);
+      const current = seasons.find(isCurrentSeason);
+      this.selectedSeasonId.set(current?.id ?? seasons[0]?.id ?? null);
+    } catch { /* non critique */ }
+    this.loadStats(playerId);
+    this.loadRecentHistory(playerId);
+  }
+
+  onSeasonChange(seasonId: string): void {
+    this.selectedSeasonId.set(seasonId);
+    const player = this.auth.currentPlayer();
+    if (!player) return;
+    this.loadStats(player.id);
+    this.loadRecentHistory(player.id);
   }
 
   displayName(player: Player): string { return getDisplayName(player); }
@@ -268,12 +321,12 @@ export class ProfileComponent implements OnInit {
   }
 
   private async loadStats(playerId: string): Promise<void> {
-    try { this.stats.set(await this.matchesService.getPlayerStats(playerId)); } catch { /* non critique */ }
+    try { this.stats.set(await this.matchesService.getPlayerStats(playerId, this.selectedSeasonId())); } catch { /* non critique */ }
   }
 
   private async loadRecentHistory(playerId: string): Promise<void> {
     try {
-      const history = await this.matchesService.getPlayerHistory(playerId);
+      const history = await this.matchesService.getPlayerHistory(playerId, this.selectedSeasonId());
       this.recentHistory.set(history.slice(0, 3));
     } catch { /* non critique */ }
   }

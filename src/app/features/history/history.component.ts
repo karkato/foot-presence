@@ -1,8 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
+import { SeasonsService } from '../../core/seasons/seasons.service';
 import { MatchesService, MatchHistoryEntry, PlayerStats } from '../matches/matches.service';
 import { getDisplayName } from '../../shared/models/player.model';
+import { Season, isCurrentSeason } from '../../shared/models/season.model';
+import { SeasonPickerComponent } from '../../shared/components/season-picker/season-picker.component';
+import { DEFAULT_TEAM_A_NAME, DEFAULT_TEAM_B_NAME } from '../../shared/constants/team-config';
 
 type Filter = 'all' | 'win' | 'loss' | 'draw';
 
@@ -10,12 +14,18 @@ type Filter = 'all' | 'win' | 'loss' | 'draw';
   selector: 'app-history',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, SeasonPickerComponent],
   template: `
     <div class="container">
       <a class="back-link" [routerLink]="['/' + groupSlug + '/profile']">← Profil</a>
 
       <h2>Historique de {{ playerName() }}</h2>
+
+      <app-season-picker
+        [seasons]="seasons()"
+        [selectedSeasonId]="selectedSeasonId()"
+        (seasonChange)="onSeasonChange($event)"
+      />
 
       @if (stats() && stats()!.played > 0) {
         <div class="card stats-card">
@@ -77,15 +87,15 @@ type Filter = 'all' | 'win' | 'loss' | 'draw';
 
                 @if (entry.score_a !== null && entry.score_b !== null) {
                   <div class="score-row">
-                    <span class="team-name" [class.my-team]="entry.team === 0">{{ entry.team_a_name || 'Équipe A' }}</span>
+                    <span class="team-name" [class.my-team]="entry.team === 0">{{ entry.team_a_name || defaultTeamAName }}</span>
                     <span class="score">{{ entry.score_a }} – {{ entry.score_b }}</span>
-                    <span class="team-name" [class.my-team]="entry.team === 1">{{ entry.team_b_name || 'Équipe B' }}</span>
+                    <span class="team-name" [class.my-team]="entry.team === 1">{{ entry.team_b_name || defaultTeamBName }}</span>
                   </div>
                 }
 
                 <div class="entry-footer">
                   @if (entry.team !== null) {
-                    <span class="my-team-label">Tu étais : {{ entry.team === 0 ? (entry.team_a_name || 'Équipe A') : (entry.team_b_name || 'Équipe B') }}</span>
+                    <span class="my-team-label">Tu étais : {{ entry.team === 0 ? (entry.team_a_name || defaultTeamAName) : (entry.team_b_name || defaultTeamBName) }}</span>
                   } @else {
                     <span></span>
                   }
@@ -165,14 +175,19 @@ type Filter = 'all' | 'win' | 'loss' | 'draw';
 export class HistoryComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly matchesService = inject(MatchesService);
+  private readonly seasonsService = inject(SeasonsService);
   private readonly route = inject(ActivatedRoute);
 
   readonly groupSlug = this.route.snapshot.params['groupSlug'] as string;
+  readonly defaultTeamAName = DEFAULT_TEAM_A_NAME;
+  readonly defaultTeamBName = DEFAULT_TEAM_B_NAME;
 
   history = signal<MatchHistoryEntry[]>([]);
   stats = signal<PlayerStats | null>(null);
   loading = signal(true);
   activeFilter = signal<Filter>('all');
+  seasons = signal<Season[]>([]);
+  selectedSeasonId = signal<string | null>(null);
 
   playerName = computed(() => {
     const p = this.auth.currentPlayer();
@@ -198,13 +213,31 @@ export class HistoryComponent implements OnInit {
   async ngOnInit(): Promise<void> {
     const player = this.auth.currentPlayer();
     if (!player) return;
+    try {
+      const seasons = await this.seasonsService.getSeasons(player.group_id);
+      this.seasons.set(seasons);
+      const current = seasons.find(isCurrentSeason);
+      this.selectedSeasonId.set(current?.id ?? seasons[0]?.id ?? null);
+    } catch { /* non critique */ }
+    await this.loadHistory(player.id);
+  }
+
+  private async loadHistory(playerId: string): Promise<void> {
+    this.loading.set(true);
     const [history, stats] = await Promise.all([
-      this.matchesService.getPlayerHistory(player.id).catch(() => []),
-      this.matchesService.getPlayerStats(player.id).catch(() => null),
+      this.matchesService.getPlayerHistory(playerId, this.selectedSeasonId()).catch(() => []),
+      this.matchesService.getPlayerStats(playerId, this.selectedSeasonId()).catch(() => null),
     ]);
     this.history.set(history);
     this.stats.set(stats);
     this.loading.set(false);
+  }
+
+  onSeasonChange(seasonId: string): void {
+    this.selectedSeasonId.set(seasonId);
+    const player = this.auth.currentPlayer();
+    if (!player) return;
+    this.loadHistory(player.id);
   }
 
   resultLabel(result: 'win' | 'loss' | 'draw' | null): string {

@@ -9,6 +9,8 @@ export interface PlayerStats {
   wins: number;
   losses: number;
   draws: number;
+  goals: number;
+  assists: number;
 }
 
 export interface MatchHistoryEntry {
@@ -21,6 +23,13 @@ export interface MatchHistoryEntry {
   team_a_name: string;
   team_b_name: string;
   team: number | null;
+  season_id: string;
+  season_name: string;
+  goals: number;
+  assists: number;
+  team_score: number | null;
+  team_goals_other: number;
+  team_assists_other: number;
   result: 'win' | 'loss' | 'draw' | null;
 }
 
@@ -187,11 +196,29 @@ export class MatchesService {
     if (error) throw error;
   }
 
-  async assignTeam(matchId: string, playerId: string, team: number | null): Promise<void> {
+  async assignTeam(matchId: string, playerId: string, team: number | null, actorId: string): Promise<void> {
     const { error } = await this.supabase.rpc('assign_team', {
       p_match_id: matchId,
       p_player_id: playerId,
       p_team: team,
+      p_actor_id: actorId,
+    });
+    if (error) throw error;
+  }
+
+  async setPlayerMatchStats(
+    matchId: string,
+    playerId: string,
+    goals: number,
+    assists: number,
+    actorId: string
+  ): Promise<void> {
+    const { error } = await this.supabase.rpc('set_player_match_stats', {
+      p_match_id: matchId,
+      p_player_id: playerId,
+      p_goals: goals,
+      p_assists: assists,
+      p_actor_id: actorId,
     });
     if (error) throw error;
   }
@@ -223,14 +250,20 @@ export class MatchesService {
     if (error) throw error;
   }
 
-  async getPlayerStats(playerId: string): Promise<PlayerStats> {
-    const { data, error } = await this.supabase.rpc('get_player_stats', { p_player_id: playerId });
+  async getPlayerStats(playerId: string, seasonId?: string | null): Promise<PlayerStats> {
+    const { data, error } = await this.supabase.rpc('get_player_stats', {
+      p_player_id: playerId,
+      p_season_id: seasonId ?? null,
+    });
     if (error) throw error;
-    return (data as unknown as PlayerStats) ?? { played: 0, wins: 0, losses: 0, draws: 0 };
+    return (data as unknown as PlayerStats) ?? { played: 0, wins: 0, losses: 0, draws: 0, goals: 0, assists: 0 };
   }
 
-  async getPlayerHistory(playerId: string): Promise<MatchHistoryEntry[]> {
-    const { data, error } = await this.supabase.rpc('get_player_history', { p_player_id: playerId });
+  async getPlayerHistory(playerId: string, seasonId?: string | null): Promise<MatchHistoryEntry[]> {
+    const { data, error } = await this.supabase.rpc('get_player_history', {
+      p_player_id: playerId,
+      p_season_id: seasonId ?? null,
+    });
     if (error) throw error;
     return (data as unknown as MatchHistoryEntry[]) ?? [];
   }

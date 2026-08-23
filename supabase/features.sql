@@ -6,8 +6,8 @@
 -- Scores et noms des équipes sur les matchs
 ALTER TABLE matches ADD COLUMN IF NOT EXISTS score_a int;
 ALTER TABLE matches ADD COLUMN IF NOT EXISTS score_b int;
-ALTER TABLE matches ADD COLUMN IF NOT EXISTS team_a_name text DEFAULT 'Équipe A';
-ALTER TABLE matches ADD COLUMN IF NOT EXISTS team_b_name text DEFAULT 'Équipe B';
+ALTER TABLE matches ADD COLUMN IF NOT EXISTS team_a_name text DEFAULT 'Équipe Rouge';
+ALTER TABLE matches ADD COLUMN IF NOT EXISTS team_b_name text DEFAULT 'Équipe Bleue';
 
 -- Mini-match bonus
 ALTER TABLE matches ADD COLUMN IF NOT EXISTS score_a2 int;
@@ -90,8 +90,8 @@ BEGIN
         m.match_time,
         m.score_a,
         m.score_b,
-        COALESCE(m.team_a_name, 'Équipe A') AS team_a_name,
-        COALESCE(m.team_b_name, 'Équipe B') AS team_b_name,
+        COALESCE(m.team_a_name, 'Équipe Rouge') AS team_a_name,
+        COALESCE(m.team_b_name, 'Équipe Bleue') AS team_b_name,
         r.team,
         CASE
           WHEN m.score_a IS NULL OR m.score_b IS NULL OR r.team IS NULL THEN NULL

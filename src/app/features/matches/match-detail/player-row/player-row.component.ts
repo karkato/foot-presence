@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { Registration } from '../../../../shared/models/registration.model';
 import { getDisplayName } from '../../../../shared/models/player.model';
+import { TEAM_A_COLOR, TEAM_B_COLOR } from '../../../../shared/constants/team-config';
 
 @Component({
   selector: 'app-player-row',
@@ -14,6 +15,12 @@ import { getDisplayName } from '../../../../shared/models/player.model';
         <span class="team-badge team-a">A</span>
       } @else if (team() === 1) {
         <span class="team-badge team-b">B</span>
+      }
+      @if (reg().goals > 0) {
+        <span class="stat-badge" title="Buts">⚽ {{ reg().goals }}</span>
+      }
+      @if (reg().assists > 0) {
+        <span class="stat-badge" title="Passes décisives">🅰 {{ reg().assists }}</span>
       }
       @if (canWithdraw()) {
         <button class="btn-withdraw" (click)="withdraw.emit(reg().player_id)" title="Retirer">✕</button>
@@ -35,8 +42,9 @@ import { getDisplayName } from '../../../../shared/models/player.model';
     .team-badge {
       font-size: 0.7rem; font-weight: 700; padding: 0.1rem 0.4rem; border-radius: 0.3rem;
     }
-    .team-a { background: var(--primary); color: white; }
-    .team-b { background: var(--warning); color: white; }
+    .team-a { background: ${TEAM_A_COLOR}; color: white; }
+    .team-b { background: ${TEAM_B_COLOR}; color: white; }
+    .stat-badge { font-size: 0.7rem; font-weight: 700; color: var(--text-muted); white-space: nowrap; }
     .btn-withdraw {
       background: none; border: none; color: var(--danger); cursor: pointer;
       font-size: 0.8rem; padding: 0.2rem 0.4rem; border-radius: 0.3rem; opacity: 0.5; transition: opacity 0.15s;
