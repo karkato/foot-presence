@@ -47,20 +47,6 @@
 .nav-admin { color: var(--warning); font-weight: 700; }
 .nav-admin.active { color: var(--warning); }
 
-.btn-logout {
-  padding: 0.35rem 0.75rem;
-  background: none;
-  border: 1.5px solid var(--border);
-  border-radius: 0.4rem;
-  font-size: 0.85rem;
-  cursor: pointer;
-  color: var(--text-muted);
-  white-space: nowrap;
-  transition: all 0.15s;
-  font-family: inherit;
-}
-.btn-logout:hover { border-color: var(--danger); color: var(--danger); }
-
 /* ---- Nom joueur (mobile uniquement) ---- */
 .header-player {
   font-size: 0.85rem;
@@ -114,8 +100,6 @@
 .bottom-nav-item.admin { color: var(--text-muted); }
 .bottom-nav-item.admin:hover,
 .bottom-nav-item.admin.active { color: var(--warning); }
-
-.bottom-nav-item.logout-btn:hover { color: var(--danger); }
 
 /* ---- Main ---- */
 main { min-height: 100vh; }
