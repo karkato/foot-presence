@@ -34,3 +34,35 @@ export function mapAuthRpcError(err: unknown, fallback: string): string {
   if (message.includes('not_allowed')) return 'Action non autorisée.';
   return fallback;
 }
+
+/**
+ * Maps errors raised by set_player_match_stats and set_match_score
+ * (supabase/playerstats.sql) to a French user-facing message. Shared
+ * between the profile's "Buts" tab and the match-detail admin panel —
+ * both call these RPCs and need to surface the same vocabulary.
+ */
+export function mapMatchStatsError(err: unknown, fallback: string): string {
+  const message = rpcMessage(err);
+  if (message.includes('goals_exceed_score')) {
+    return "Le total des buts de l'équipe dépasserait le score du match.";
+  }
+  if (message.includes('assists_exceed_score')) {
+    return "Le total des passes de l'équipe dépasserait le score du match.";
+  }
+  if (message.includes('season_archived')) {
+    return 'Cette saison est archivée : les stats ne sont plus modifiables.';
+  }
+  if (message.includes('score_not_set')) {
+    return "Le score du match n'a pas encore été saisi.";
+  }
+  if (message.includes('team_not_assigned')) {
+    return "Aucune équipe ne t'a été assignée sur ce match.";
+  }
+  if (message.includes('not_registered')) {
+    return "Tu n'es pas inscrit sur ce match.";
+  }
+  if (message.includes('stats_exceed_score')) {
+    return 'Des buts déjà déclarés dépassent ce nouveau score — corrige d\'abord les buts des joueurs.';
+  }
+  return mapAuthRpcError(err, fallback);
+}

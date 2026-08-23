@@ -11,6 +11,7 @@ export interface Database {
           created_at: string;
           guests_enabled: boolean;
           max_guests_per_player: number | null;
+          mini_match_enabled: boolean;
         };
         Insert: {
           id?: string;
@@ -19,6 +20,7 @@ export interface Database {
           created_at?: string;
           guests_enabled?: boolean;
           max_guests_per_player?: number | null;
+          mini_match_enabled?: boolean;
         };
         Update: {
           id?: string;
@@ -27,6 +29,7 @@ export interface Database {
           created_at?: string;
           guests_enabled?: boolean;
           max_guests_per_player?: number | null;
+          mini_match_enabled?: boolean;
         };
         Relationships: [];
       };
@@ -60,6 +63,33 @@ export interface Database {
         };
         Relationships: [];
       };
+      seasons: {
+        Row: {
+          id: string;
+          group_id: string;
+          name: string;
+          started_at: string;
+          ended_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          group_id: string;
+          name: string;
+          started_at?: string;
+          ended_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          group_id?: string;
+          name?: string;
+          started_at?: string;
+          ended_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       matches: {
         Row: {
           id: string;
@@ -78,6 +108,7 @@ export interface Database {
           mini_match_target: number | null;
           team_a_name: string;
           team_b_name: string;
+          season_id: string;
         };
         Insert: {
           id?: string;
@@ -96,6 +127,7 @@ export interface Database {
           mini_match_target?: number | null;
           team_a_name?: string;
           team_b_name?: string;
+          season_id: string;
         };
         Update: {
           id?: string;
@@ -114,6 +146,7 @@ export interface Database {
           score_b?: number | null;
           team_a_name?: string;
           team_b_name?: string;
+          season_id?: string;
         };
         Relationships: [];
       };
@@ -127,6 +160,8 @@ export interface Database {
           is_withdrawn: boolean;
           plus_ones: number;
           team: number | null;
+          goals: number;
+          assists: number;
         };
         Insert: {
           id?: string;
@@ -137,6 +172,8 @@ export interface Database {
           is_withdrawn?: boolean;
           plus_ones?: number;
           team?: number | null;
+          goals?: number;
+          assists?: number;
         };
         Update: {
           id?: string;
@@ -147,6 +184,8 @@ export interface Database {
           is_withdrawn?: boolean;
           plus_ones?: number;
           team?: number | null;
+          goals?: number;
+          assists?: number;
         };
         Relationships: [];
       };
@@ -187,12 +226,13 @@ export interface Database {
         Args: { p_match_id: string; p_player_id: string; p_count: number; p_actor_id: string };
         Returns: undefined;
       };
-      set_group_guest_settings: {
+      set_group_settings: {
         Args: {
           p_group_id: string;
           p_actor_id: string;
           p_guests_enabled: boolean;
           p_max_guests_per_player: number | null;
+          p_mini_match_enabled: boolean;
         };
         Returns: undefined;
       };
@@ -226,19 +266,33 @@ export interface Database {
         Returns: Json;
       };
       assign_team: {
-        Args: { p_match_id: string; p_player_id: string; p_team: number | null };
+        Args: { p_match_id: string; p_player_id: string; p_team: number | null; p_actor_id: string };
         Returns: undefined;
       };
       set_match_score: {
         Args: { p_match_id: string; p_score_a: number; p_score_b: number; p_actor_id: string };
         Returns: undefined;
       };
+      set_player_match_stats: {
+        Args: {
+          p_match_id: string;
+          p_player_id: string;
+          p_goals: number;
+          p_assists: number;
+          p_actor_id: string;
+        };
+        Returns: undefined;
+      };
       get_player_stats: {
-        Args: { p_player_id: string };
+        Args: { p_player_id: string; p_season_id?: string | null };
         Returns: Json;
       };
       get_player_history: {
-        Args: { p_player_id: string };
+        Args: { p_player_id: string; p_season_id?: string | null };
+        Returns: Json;
+      };
+      get_group_player_stats: {
+        Args: { p_group_id: string; p_season_id?: string | null };
         Returns: Json;
       };
       create_match: {
@@ -285,6 +339,14 @@ export interface Database {
           p_score_b2: number;
           p_mini_match_target: number;
         };
+        Returns: undefined;
+      };
+      start_new_season: {
+        Args: { p_actor_id: string; p_group_id: string; p_name?: string | null };
+        Returns: Json;
+      };
+      set_match_season: {
+        Args: { p_actor_id: string; p_match_id: string; p_season_id: string };
         Returns: undefined;
       };
     };

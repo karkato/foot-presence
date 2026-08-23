@@ -15,4 +15,5 @@ export interface Match {
   mini_match_target: number | null;
   team_a_name: string;
   team_b_name: string;
+  season_id: string;
 }

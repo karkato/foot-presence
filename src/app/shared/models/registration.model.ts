@@ -7,6 +7,8 @@ export interface Registration {
   is_withdrawn: boolean;
   plus_ones: number;
   team: number | null;
+  goals: number;
+  assists: number;
   player: {
     id: string;
     username: string;
