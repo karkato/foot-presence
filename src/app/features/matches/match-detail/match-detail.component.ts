@@ -628,11 +628,15 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
     const admin = this.auth.currentPlayer();
     if (!admin) return;
     const currentTeam = this.getPlayerTeam(playerId);
-    const newTeam = currentTeam === team ? null : team;
+    if (currentTeam === team) return;
+    this.actionError.set('');
     try {
-      await this.matchesService.assignTeam(this.matchId, playerId, newTeam, admin.id);
+      await this.matchesService.assignTeam(this.matchId, playerId, team, admin.id);
       await this.loadRegistrations();
-    } catch { /* silently fail */ }
+    } catch (err) {
+      this.actionError.set(mapAuthRpcError(err, "Impossible de modifier l'équipe"));
+      await this.loadRegistrations();
+    }
   }
 
   getPlayerGoals(playerId: string): number {
