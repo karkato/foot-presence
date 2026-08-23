@@ -39,6 +39,13 @@ import { GroupsService } from '../../../core/groups/groups.service';
             />
           </div>
 
+          <div class="field checkbox-field">
+            <label>
+              <input type="checkbox" [(ngModel)]="form.miniMatchEnabled" name="miniMatchEnabled" />
+              Activer le mini-match
+            </label>
+          </div>
+
           @if (error()) {
             <p class="error">{{ error() }}</p>
           }
@@ -104,6 +111,7 @@ export class GroupSettingsComponent implements OnInit {
   form = {
     guestsEnabled: true,
     maxGuestsPerPlayer: null as number | null,
+    miniMatchEnabled: false,
   };
 
   async ngOnInit(): Promise<void> {
@@ -114,6 +122,7 @@ export class GroupSettingsComponent implements OnInit {
       const group = await this.groupsService.getGroup(this.groupId);
       this.form.guestsEnabled = group.guests_enabled;
       this.form.maxGuestsPerPlayer = group.max_guests_per_player;
+      this.form.miniMatchEnabled = group.mini_match_enabled;
     } catch {
       this.error.set('Erreur lors du chargement des réglages');
     } finally {
@@ -129,11 +138,12 @@ export class GroupSettingsComponent implements OnInit {
     this.success.set('');
 
     try {
-      await this.groupsService.updateGuestSettings(
+      await this.groupsService.updateGroupSettings(
         this.groupId,
         player.id,
         this.form.guestsEnabled,
-        this.form.maxGuestsPerPlayer
+        this.form.maxGuestsPerPlayer,
+        this.form.miniMatchEnabled
       );
       this.success.set('Réglages enregistrés !');
     } catch {
