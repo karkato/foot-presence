@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   inject,
   OnInit,
   signal,
@@ -25,13 +26,25 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
       <h2>Administration</h2>
 
       <!-- Tabs -->
-      <div class="tabs">
-        <button class="tab" [class.active]="activeTab() === 'matches'" (click)="activeTab.set('matches')">Matchs</button>
-        <button class="tab" [class.active]="activeTab() === 'players'" (click)="activeTab.set('players')">Joueurs</button>
-        <button class="tab" [class.active]="activeTab() === 'audit'" (click)="activeTab.set('audit')">Historique</button>
-        <button class="tab" [class.active]="activeTab() === 'seasons'" (click)="activeTab.set('seasons')">Saisons</button>
-        <button class="tab" [class.active]="activeTab() === 'settings'" (click)="activeTab.set('settings')">Réglages</button>
+      <div class="tabs" role="tablist" aria-label="Sections d'administration">
+        <button type="button" class="tab" role="tab" [attr.aria-selected]="topTab() === 'management'"
+          [class.active]="topTab() === 'management'" (click)="openManagement()">Gestion</button>
+        <button type="button" class="tab" role="tab" [attr.aria-selected]="topTab() === 'audit'"
+          [class.active]="topTab() === 'audit'" (click)="activeTab.set('audit')">Historique</button>
+        <button type="button" class="tab" role="tab" [attr.aria-selected]="topTab() === 'settings'"
+          [class.active]="topTab() === 'settings'" (click)="activeTab.set('settings')">Réglages</button>
       </div>
+
+      @if (topTab() === 'management') {
+        <div class="tabs subtabs" role="tablist" aria-label="Sous-sections de gestion">
+          <button type="button" class="tab subtab" role="tab" [attr.aria-selected]="activeTab() === 'matches'"
+            [class.active]="activeTab() === 'matches'" (click)="activeTab.set('matches')">Matchs</button>
+          <button type="button" class="tab subtab" role="tab" [attr.aria-selected]="activeTab() === 'players'"
+            [class.active]="activeTab() === 'players'" (click)="activeTab.set('players')">Joueurs</button>
+          <button type="button" class="tab subtab" role="tab" [attr.aria-selected]="activeTab() === 'seasons'"
+            [class.active]="activeTab() === 'seasons'" (click)="activeTab.set('seasons')">Saisons</button>
+        </div>
+      }
 
       <!-- Matchs -->
       @if (activeTab() === 'matches') {
@@ -154,6 +167,8 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
     .tabs { display: flex; gap: 0.25rem; background: var(--card); border: 1.5px solid var(--border); border-radius: 0.6rem; padding: 0.25rem; margin-bottom: 1.25rem; }
     .tab { flex: 1; padding: 0.5rem; border: none; background: none; border-radius: 0.4rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; color: var(--text-muted); transition: all 0.15s; }
     .tab.active { background: var(--primary); color: white; }
+    .tabs.subtabs { background: var(--bg); border-color: transparent; margin-top: -0.75rem; }
+    .tab.subtab { font-size: 0.8rem; }
     .section { margin-bottom: 1.5rem; }
     .section-header { display: flex; align-items: center; justify-content: flex-end; margin-bottom: 0.75rem; }
     h3 { margin: 0; }
@@ -238,6 +253,12 @@ export class AdminDashboardComponent implements OnInit {
 
   activeTab = signal<'matches' | 'players' | 'audit' | 'seasons' | 'settings'>('matches');
 
+  // Groupe les 3 sous-onglets sous "Gestion" sans dupliquer l'état dans un second signal.
+  topTab = computed<'management' | 'audit' | 'settings'>(() => {
+    const tab = this.activeTab();
+    return tab === 'matches' || tab === 'players' || tab === 'seasons' ? 'management' : tab;
+  });
+
   matches = signal<Match[]>([]);
   players = signal<Player[]>([]);
   auditLog = signal<AuditEntry[]>([]);
@@ -285,6 +306,10 @@ export class AdminDashboardComponent implements OnInit {
     if (!player) return;
     this.loadingAudit.set(true);
     await this.loadAudit(player.group_id);
+  }
+
+  openManagement(): void {
+    if (this.topTab() !== 'management') this.activeTab.set('matches');
   }
 
   editMatch(match: Match): void {
