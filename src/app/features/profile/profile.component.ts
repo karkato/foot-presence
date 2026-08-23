@@ -357,7 +357,7 @@ export class ProfileComponent implements OnInit {
 
   logout(): void {
     this.auth.logout();
-    this.router.navigate(['/']);
+    void this.router.navigate(['/']);
   }
 
   resultLabel(result: 'win' | 'loss' | 'draw' | null): string {
