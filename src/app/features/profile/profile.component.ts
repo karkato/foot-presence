@@ -247,7 +247,7 @@ import { MyStatsComponent } from './my-stats/my-stats.component';
     /* Form inputs */
     .field { display: flex; flex-direction: column; gap: 0.35rem; flex: 1; }
     .field label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
-    .field-input { padding: 0.65rem 0.85rem; border: 1.5px solid var(--border); border-radius: 0.5rem; font-size: 0.95rem; background: var(--card); color: var(--text); font-family: inherit; width: 100%; box-sizing: border-box; }
+    .field-input { padding: 0.65rem 0.85rem; border: 1.5px solid var(--border); border-radius: 0.5rem; font-size: var(--fs-field); background: var(--card); color: var(--text); font-family: inherit; width: 100%; box-sizing: border-box; }
     .field-input:focus { outline: none; border-color: var(--primary); }
     .input-row { display: flex; gap: 0.5rem; align-items: center; }
     .input-row .field-input { flex: 1; }

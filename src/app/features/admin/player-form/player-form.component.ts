@@ -106,7 +106,7 @@ import { mapAuthRpcError, rpcMessage } from '../../../shared/utils/rpc-error';
       padding: 0.65rem 0.85rem;
       border: 1.5px solid var(--border);
       border-radius: 0.5rem;
-      font-size: 0.95rem;
+      font-size: var(--fs-field);
       background: var(--card);
       color: var(--text);
     }

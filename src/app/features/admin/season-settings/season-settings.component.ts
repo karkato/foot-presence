@@ -68,7 +68,7 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
     .field label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
     .field input {
       padding: 0.65rem 0.85rem; border: 1.5px solid var(--border); border-radius: 0.5rem;
-      font-size: 0.95rem; background: var(--card); color: var(--text); font-family: inherit;
+      font-size: var(--fs-field); background: var(--card); color: var(--text); font-family: inherit;
     }
     .field input:focus { outline: none; border-color: var(--primary); }
     .feedback-error { color: var(--danger); font-size: 0.9rem; }

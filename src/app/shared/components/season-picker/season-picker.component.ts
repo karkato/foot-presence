@@ -30,7 +30,7 @@ import { Season, isCurrentSeason } from '../../models/season.model';
     label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
     select {
       flex: 1; padding: 0.55rem 0.75rem; border: 1.5px solid var(--border); border-radius: 0.5rem;
-      font-size: 0.9rem; font-weight: 600; background: var(--card); color: var(--text); font-family: inherit;
+      font-size: var(--fs-field); font-weight: 600; background: var(--card); color: var(--text); font-family: inherit;
     }
     select:focus { outline: none; border-color: var(--primary); }
   `,

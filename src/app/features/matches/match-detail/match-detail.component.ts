@@ -410,7 +410,7 @@ type PresentEntry =
     .team-btn-b.active { background: ${TEAM_B_COLOR}; color: white; border-color: ${TEAM_B_COLOR}; }
     .stats-mini { display: flex; align-items: center; gap: 0.25rem; }
     .stats-icon { font-size: 0.8rem; }
-    .stats-input { width: 2.6rem; text-align: center; font-size: 0.85rem; font-weight: 700; padding: 0.2rem; border: 1.5px solid var(--border); border-radius: 0.35rem; background: var(--card); color: var(--text); font-family: inherit; }
+    .stats-input { width: 2.6rem; text-align: center; font-size: var(--fs-field); font-weight: 700; padding: 0.2rem; border: 1.5px solid var(--border); border-radius: 0.35rem; background: var(--card); color: var(--text); font-family: inherit; }
     .stats-input:focus { outline: none; border-color: var(--primary); }
   `,
 })
