@@ -198,6 +198,12 @@ p { margin: 0 0 0.75rem; line-height: 1.6; }
   outline: none;
   border-color: var(--primary);
 }
+.form-field input:focus-visible,
+.form-field select:focus-visible,
+.form-field textarea:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
 
 /* The primitives below overlap with existing component classes: only
    properties every current consumer already declares locally are
