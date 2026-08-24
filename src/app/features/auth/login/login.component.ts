@@ -63,7 +63,7 @@ import { AuthService } from '../../../core/auth/auth.service';
   `,
   styles: `
     .login-page {
-      min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -103,6 +103,7 @@ import { AuthService } from '../../../core/auth/auth.service';
       transition: border-color 0.2s;
     }
     input:focus { outline: none; border-color: var(--primary); }
+    input:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     .error-msg { color: var(--danger); font-size: 0.9rem; margin-bottom: 0.75rem; }
     .btn-primary {
       width: 100%;
