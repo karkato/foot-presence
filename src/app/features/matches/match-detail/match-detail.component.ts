@@ -32,16 +32,16 @@ type PresentEntry =
     } @else if (!match()) {
       <div class="center-msg">Match introuvable.</div>
     } @else {
-      <div class="container">
+      <div class="container-md">
 
         <!-- En-tête -->
         <div class="header">
           <div class="header-top">
             <h2>{{ match()!.title }}</h2>
             @if (match()!.score_a !== null) {
-              <span class="badge-finished">Terminé</span>
+              <span class="badge badge-finished">Terminé</span>
             } @else if (match()!.is_closed) {
-              <span class="badge-closed">Fermé</span>
+              <span class="badge badge-closed">Fermé</span>
             }
           </div>
           <p class="match-meta">
@@ -50,8 +50,8 @@ type PresentEntry =
             <strong [class.text-danger]="isFull()">{{ presentCount() }}/{{ match()!.max_players }}</strong>
           </p>
           <div class="action-row">
-            <button class="btn-stroked" (click)="copyMatchLink()">Copier lien</button>
-            <button class="btn-stroked" (click)="shareList()">Copier liste</button>
+            <button class="btn btn-stroked" (click)="copyMatchLink()">Copier lien</button>
+            <button class="btn btn-stroked" (click)="shareList()">Copier liste</button>
           </div>
           @if (copyFeedback()) {
             <p class="feedback-success">{{ copyFeedback() }}</p>
@@ -145,16 +145,16 @@ type PresentEntry =
         @if (!match()!.is_closed && !isFinished()) {
           <div class="player-actions">
             @if (!isRegistered()) {
-              <button class="btn-primary btn-full" (click)="onRegister()" [disabled]="actionLoading()">Je viens</button>
+              <button class="btn btn-primary btn-full" (click)="onRegister()" [disabled]="actionLoading()">Je viens</button>
             } @else if (!isWithdrawn()) {
-              <button class="btn-danger btn-full" (click)="onWithdraw(currentPlayerId())" [disabled]="actionLoading()">Je me retire</button>
+              <button class="btn btn-danger btn-full" (click)="onWithdraw(currentPlayerId())" [disabled]="actionLoading()">Je me retire</button>
             } @else {
-              <button class="btn-primary btn-full" (click)="onRegister()" [disabled]="actionLoading()">Je reviens</button>
+              <button class="btn btn-primary btn-full" (click)="onRegister()" [disabled]="actionLoading()">Je reviens</button>
             }
             @if (isRegistered() && !isWithdrawn()) {
               <div class="proxy-row">
                 @if (canAddProxy()) {
-                  <button class="btn-stroked proxy-btn" (click)="showModal.set(true)">
+                  <button class="btn btn-stroked proxy-btn" (click)="showModal.set(true)">
                     + Inscrire quelqu'un ({{ proxyCount() }}/2)
                   </button>
                 }
@@ -185,11 +185,11 @@ type PresentEntry =
         @if (isAdmin() && !isFinished()) {
           <div class="admin-row">
             @if (!match()!.is_closed) {
-              <button class="btn-stroked btn-full" (click)="toggleClose()" [disabled]="actionLoading()">
+              <button class="btn btn-stroked btn-full" (click)="toggleClose()" [disabled]="actionLoading()">
                 Figer la liste
               </button>
             } @else {
-              <button class="btn-stroked btn-full" (click)="toggleClose()" [disabled]="actionLoading()">
+              <button class="btn btn-stroked btn-full" (click)="toggleClose()" [disabled]="actionLoading()">
                 Rouvrir les inscriptions
               </button>
             }
@@ -210,7 +210,7 @@ type PresentEntry =
                 <label>{{ match()!.team_b_name }}</label>
                 <input type="number" min="0" [(ngModel)]="scoreB" class="score-input" />
               </div>
-              <button class="btn-primary" (click)="saveScore()" [disabled]="actionLoading()">
+              <button class="btn btn-primary" (click)="saveScore()" [disabled]="actionLoading()">
                 Enregistrer
               </button>
             </div>
@@ -238,7 +238,7 @@ type PresentEntry =
                     <option [ngValue]="7">7</option>
                   </select>
                 </div>
-                <button class="btn-primary" (click)="saveMiniScore()" [disabled]="actionLoading()">
+                <button class="btn btn-primary" (click)="saveMiniScore()" [disabled]="actionLoading()">
                   Enregistrer
                 </button>
               </div>
@@ -319,10 +319,8 @@ type PresentEntry =
   `,
   styles: `
     .center-msg { display: flex; align-items: center; justify-content: center; min-height: 50vh; color: var(--text-muted); }
-    .container { padding: 1rem; max-width: 600px; margin: 0 auto; }
-    .card { background: var(--card); border: 1.5px solid var(--border); border-radius: 0.75rem; padding: 1rem; }
+    .card { border: var(--border-1); padding: var(--sp-lg); }
     .mb-sm { margin-bottom: 0.75rem; }
-    .muted { color: var(--text-muted); }
     .italic { font-style: italic; }
     .text-danger { color: var(--danger); }
 
@@ -330,24 +328,15 @@ type PresentEntry =
     .header { margin-bottom: 1.25rem; }
     .header-top { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.25rem; }
     .header-top h2 { margin: 0; font-size: 1.2rem; }
-    .badge-closed { font-size: 0.75rem; font-weight: 600; background: var(--border); color: var(--text-muted); padding: 0.2rem 0.6rem; border-radius: 1rem; }
-    .badge-finished { font-size: 0.75rem; font-weight: 600; background: var(--success); color: white; padding: 0.2rem 0.6rem; border-radius: 1rem; }
     .match-meta { font-size: 0.85rem; color: var(--text-muted); margin: 0 0 0.75rem; }
     .action-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
     .feedback-success { color: var(--success); font-size: 0.85rem; margin: 0.4rem 0 0; }
     .feedback-error { color: var(--danger); font-size: 0.85rem; text-align: center; margin: 0.5rem 0 0; }
 
     /* Buttons */
-    .btn-primary { padding: 0.65rem 1.25rem; background: var(--primary); color: white; border: none; border-radius: 0.5rem; font-size: 0.95rem; font-weight: 600; cursor: pointer; font-family: inherit; }
-    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
-    .btn-danger { padding: 0.65rem 1.25rem; background: var(--danger); color: white; border: none; border-radius: 0.5rem; font-size: 0.95rem; font-weight: 600; cursor: pointer; font-family: inherit; }
-    .btn-danger:disabled { opacity: 0.6; cursor: not-allowed; }
-    .btn-stroked { padding: 0.6rem 1.1rem; background: transparent; border: 1.5px solid var(--border); border-radius: 0.5rem; font-size: 0.9rem; font-weight: 500; cursor: pointer; color: var(--text); font-family: inherit; }
     .btn-stroked:hover { border-color: var(--primary); }
-    .btn-full { width: 100%; }
     .btn-icon { width: 2rem; height: 2rem; border-radius: 50%; border: 1.5px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; font-family: inherit; }
     .btn-icon:disabled { opacity: 0.4; cursor: not-allowed; }
-    .btn-close { background: none; border: none; font-size: 1rem; cursor: pointer; color: var(--text-muted); padding: 0.25rem; }
 
     /* Score display */
     .score-display { display: flex; align-items: center; justify-content: center; gap: 1.5rem; margin-bottom: 0.75rem; text-align: center; }
@@ -357,7 +346,6 @@ type PresentEntry =
     .score-sep { font-size: 1.5rem; font-weight: 700; color: var(--text-muted); }
 
     /* Player list */
-    .section-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin: 0 0 0.75rem; }
     .player-list { list-style: none; padding: 0; margin: 0; }
     .guest-row { display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 0.75rem; opacity: 0.7; }
     .rank-label { min-width: 2rem; text-align: right; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); }
