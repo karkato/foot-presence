@@ -26,6 +26,8 @@
     --text-muted: #94a3b8;
     --border: #334155;
     --primary-light: #1e3a8a22;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.5), 0 0 0 1px rgba(148,163,184,0.10);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.5), 0 0 0 1px rgba(148,163,184,0.10);
   }
 
   input[type="date"]::-webkit-calendar-picker-indicator,
@@ -37,6 +39,12 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
 html, body {
   margin: 0;
   padding: 0;
@@ -47,6 +55,10 @@ html, body {
   -webkit-font-smoothing: antialiased;
 }
 
+body {
+  overflow-x: hidden;
+}
+
 a { color: inherit; }
 
 button { font-family: inherit; color: inherit; }
@@ -55,3 +67,16 @@ input, select, textarea { font-family: inherit; }
 
 h1, h2, h3, h4 { margin: 0 0 0.75rem; line-height: 1.25; }
 p { margin: 0 0 0.75rem; line-height: 1.6; }
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
