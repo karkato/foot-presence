@@ -40,7 +40,12 @@
   /* Base font size for form fields, kept distinct from body text size */
   --fs-field: 1rem;
 
-  /* Max-widths for the three standard page container sizes */
+  /* Max-widths for the three standard page container sizes.
+     --w-narrow is reserved for the auth/group-select screens (login,
+     group-select) — it averages their current 360px/380px widths, and
+     is NOT a generic fallback for every narrow container. In particular
+     it is not the migration target for the unrelated 480px cluster
+     (see the container-narrow/-md/-wide contract below). */
   --w-narrow: 420px;
   --w-md: 600px;
   --w-wide: 680px;
