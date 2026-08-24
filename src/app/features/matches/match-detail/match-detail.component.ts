@@ -355,9 +355,9 @@ type PresentEntry =
 
     /* Player actions */
     .player-actions { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem; }
-    .proxy-row { display: flex; gap: 0.5rem; align-items: stretch; }
+    .proxy-row { display: flex; gap: 0.5rem; align-items: stretch; flex-wrap: wrap; }
     .proxy-btn { flex: 1; }
-    .plus-ones-row { display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 1rem; }
+    .plus-ones-row { display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 1rem; flex: 1 1 auto; }
     .plus-ones-label { font-size: 0.9rem; font-weight: 600; }
     .plus-ones-controls { display: flex; align-items: center; gap: 0.75rem; }
     .plus-ones-count { font-weight: 700; font-size: 1.1rem; min-width: 1.5rem; text-align: center; }
