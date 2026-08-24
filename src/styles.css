@@ -45,6 +45,14 @@ html {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Minimal tap feedback fallback: native tap highlight is disabled above,
+   so provide a generic pressed state until cycle 2 introduces .btn primitives. */
+button:active,
+a:active {
+  opacity: 0.7;
+  transition: opacity 0.1s;
+}
+
 html, body {
   margin: 0;
   padding: 0;
