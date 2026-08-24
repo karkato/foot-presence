@@ -135,6 +135,11 @@ p { margin: 0 0 0.75rem; line-height: 1.6; }
    in a non-flex layout). Full tap-target geometry for .tab/.badge
    and the scrollable behavior of tab strips stay local until their
    dedicated cycles.
+   The 7-file 480px cluster (history, profile, match-form, player-form,
+   group-settings, season-settings, registration-modal) has no assigned
+   target token yet — neither --w-md (600px, a 120px widening) nor a
+   potential future --w-form: 480px. That decision is deferred to each
+   file's own migration cycle, not made here.
    ============================================================ */
 
 .btn {
