@@ -16,6 +16,34 @@
   --border: #e2e8f0;
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.07);
   --shadow-md: 0 4px 16px rgba(0,0,0,0.10);
+
+  /* Spacing scale: use for padding/gap/margin instead of ad-hoc rem values */
+  --sp-xs: 0.25rem;
+  --sp-sm: 0.5rem;
+  --sp-md: 0.75rem;
+  --sp-lg: 1rem;
+  --sp-xl: 1.5rem;
+
+  /* Corner radii: sm for small controls, lg for cards, pill for fully-rounded badges */
+  --r-sm: 0.35rem;
+  --r-md: 0.5rem;
+  --r-lg: 0.75rem;
+  --r-pill: 999px;
+
+  /* Shared 1.5px border built on the --border color token */
+  --border-1: 1.5px solid var(--border);
+
+  /* Minimum touch target sizes; --tap-compact is for dense/inline rows only */
+  --tap: 44px;
+  --tap-compact: 40px;
+
+  /* Base font size for form fields, kept distinct from body text size */
+  --fs-field: 1rem;
+
+  /* Max-widths for the three standard page container sizes */
+  --w-narrow: 420px;
+  --w-md: 600px;
+  --w-wide: 680px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -45,8 +73,9 @@ html {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Minimal tap feedback fallback: native tap highlight is disabled above,
-   so provide a generic pressed state until cycle 2 introduces .btn primitives. */
+/* Minimal tap feedback fallback: native tap highlight is disabled above.
+   Kept as the pressed state for every button/link, including the .btn-*
+   primitives below, which intentionally declare no :active of their own. */
 button:active,
 a:active {
   opacity: 0.7;
@@ -88,3 +117,105 @@ p { margin: 0 0 0.75rem; line-height: 1.6; }
     scroll-behavior: auto !important;
   }
 }
+
+/* ============================================================
+   Global primitives (Cycle 2)
+   ------------------------------------------------------------
+   .btn is a base and must always be paired with a modifier
+   (.btn-primary / .btn-danger / .btn-stroked), never used alone.
+   .container-narrow/-md/-wide are the migration target for the
+   local .container rules scattered across feature components,
+   starting cycle 3. .form-field is the migration target for the
+   local .field pattern (login.component.ts currently uses .field
+   in a non-flex layout). Full tap-target geometry for .tab/.badge
+   and the scrollable behavior of tab strips stay local until their
+   dedicated cycles.
+   ============================================================ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-sm);
+  min-height: var(--tap);
+  padding: var(--sp-md) var(--sp-lg);
+  border: none;
+  border-radius: var(--r-md);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+}
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.btn.btn-primary { background: var(--primary); color: #fff; }
+.btn.btn-primary:hover:not(:disabled) { background: var(--primary-dark); }
+
+.btn.btn-danger { background: var(--danger); color: #fff; }
+
+.btn.btn-stroked { background: transparent; border: var(--border-1); color: var(--text); }
+
+.btn.btn-full { width: 100%; }
+
+.container-narrow, .container-md, .container-wide {
+  width: 100%;
+  margin-inline: auto;
+  padding: var(--sp-lg);
+}
+.container-narrow { max-width: var(--w-narrow); }
+.container-md { max-width: var(--w-md); }
+.container-wide { max-width: var(--w-wide); }
+
+.card-outlined { border: var(--border-1); }
+
+.form-field { display: flex; flex-direction: column; gap: var(--sp-xs); }
+.form-field label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
+.form-field input, .form-field select, .form-field textarea {
+  min-height: var(--tap);
+  padding: var(--sp-sm) var(--sp-md);
+  border: var(--border-1);
+  border-radius: var(--r-md);
+  font-family: inherit;
+  font-size: var(--fs-field);
+  background: var(--card);
+  color: var(--text);
+  width: 100%;
+  box-sizing: border-box;
+}
+.form-field input:focus, .form-field select:focus, .form-field textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+/* The primitives below overlap with existing component classes: only
+   properties every current consumer already declares locally are
+   included, since local component styles always win on specificity
+   (Angular's [_ngcontent] attribute). Visual no-op for this cycle. */
+
+.card { background: var(--card); border-radius: var(--r-lg); }
+
+.muted { color: var(--text-muted); }
+
+.section-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--r-pill);
+}
+
+.badge-closed { background: var(--border); color: var(--text-muted); }
+.badge-finished { background: var(--success); color: #fff; }
+
+.tabs { display: flex; gap: var(--sp-xs); margin-bottom: 1.25rem; }
+
+.tab { flex-shrink: 0; }
