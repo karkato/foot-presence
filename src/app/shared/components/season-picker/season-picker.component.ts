@@ -26,6 +26,7 @@ import { Season, isCurrentSeason } from '../../models/season.model';
     }
   `,
   styles: `
+    :host { display: block; }
     .season-picker { display: flex; flex-direction: column; gap: var(--sp-xs); margin-bottom: var(--sp-lg); }
     label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
     select {
