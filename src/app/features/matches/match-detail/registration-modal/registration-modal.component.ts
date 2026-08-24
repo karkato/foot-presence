@@ -54,15 +54,18 @@ import { AuthService } from '../../../../core/auth/auth.service';
       justify-content: center;
       z-index: 100;
       padding: 0;
+      overscroll-behavior: contain;
     }
     .modal {
       background: var(--card);
       border-radius: 1.25rem 1.25rem 0 0;
       padding: 1.5rem;
+      padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
       width: 100%;
       max-width: 480px;
-      max-height: 70vh;
+      max-height: 70dvh;
       overflow-y: auto;
+      overscroll-behavior: contain;
     }
     .modal-header {
       display: flex;
