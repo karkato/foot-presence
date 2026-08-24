@@ -385,7 +385,7 @@ type PresentEntry =
     .admin-player-row { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0.5rem; border-radius: 0.5rem; transition: background 0.1s; flex-wrap: wrap; row-gap: var(--sp-sm); }
     .admin-player-row:hover { background: var(--bg); }
     .admin-player-row.is-present { background: var(--primary-light); }
-    .admin-player-check { display: flex; align-items: center; gap: 0.6rem; cursor: pointer; flex: 1; min-width: 0; min-height: var(--tap-compact); }
+    .admin-player-check { display: flex; align-items: center; gap: 0.6rem; cursor: pointer; flex: 1 1 auto; min-width: 0; min-height: var(--tap-compact); }
     .admin-player-check input[type="checkbox"] { width: 1.25rem; height: 1.25rem; cursor: pointer; accent-color: var(--primary); flex-shrink: 0; }
     .player-name { font-size: 0.95rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .admin-player-controls { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; justify-content: flex-end; flex-basis: 100%; }
