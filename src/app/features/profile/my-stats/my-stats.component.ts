@@ -73,11 +73,11 @@ import { mapMatchStatsError } from '../../../shared/utils/rpc-error';
     .field { display: flex; flex-direction: column; gap: 0.25rem; }
     .field label { font-size: 0.78rem; font-weight: 600; color: var(--text-muted); }
     .field input {
-      width: 4rem; text-align: center; padding: 0.5rem; border: 1.5px solid var(--border); border-radius: 0.5rem;
+      width: 4rem; min-height: var(--tap-compact); text-align: center; padding: 0.5rem; border: 1.5px solid var(--border); border-radius: 0.5rem;
       font-size: 1rem; font-weight: 700; background: var(--bg); color: var(--text); font-family: inherit;
     }
     .field input:focus { outline: none; border-color: var(--primary); }
-    .btn-primary { padding: 0.55rem 1.1rem; background: var(--primary); color: white; border: none; border-radius: 0.5rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .btn-primary { min-height: var(--tap-compact); padding: 0.55rem 1.1rem; background: var(--primary); color: white; border: none; border-radius: 0.5rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; font-family: inherit; }
     .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
     .feedback { font-size: 0.8rem; color: var(--success); margin: 0.4rem 0 0; }
     .feedback.error { color: var(--danger); }
