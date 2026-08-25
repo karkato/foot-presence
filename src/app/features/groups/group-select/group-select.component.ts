@@ -86,6 +86,7 @@ import { Group } from '../../../shared/models/group.model';
     .group-list li { margin-bottom: 0.5rem; }
     .group-btn {
       width: 100%;
+      min-height: var(--tap);
       padding: 0.75rem 1rem;
       background: var(--bg);
       border: 1.5px solid var(--border);
@@ -100,6 +101,7 @@ import { Group } from '../../../shared/models/group.model';
       white-space: nowrap;
     }
     .group-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+    .group-btn:focus-visible { outline-offset: -2px; }
     .divider {
       color: var(--text-muted);
       font-size: 0.85rem;
@@ -130,6 +132,7 @@ import { Group } from '../../../shared/models/group.model';
       color: var(--text);
     }
     input:focus { outline: none; border-color: var(--primary); }
+    input:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     .btn-primary {
       padding: 0.65rem 1rem;
       background: var(--primary);
