@@ -370,10 +370,10 @@ type PresentEntry =
     .score-input-group label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
     .score-input { width: 4rem; text-align: center; font-size: 1.1rem; font-weight: 700; padding: 0.5rem; border: 1.5px solid var(--border); border-radius: 0.5rem; background: var(--card); color: var(--text); font-family: inherit; min-height: var(--tap-compact); }
     .score-input:focus { outline: none; border-color: var(--primary); }
-    .score-name, .mini-score-name, .score-input-group label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .score-name, .mini-score-name, .score-input-group label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
     .mini-match-display { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; margin-bottom: 0.75rem; padding: 0.75rem 1rem; }
     .mini-match-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); }
-    .mini-match-score { display: flex; align-items: center; gap: 0.75rem; }
+    .mini-match-score { display: flex; align-items: center; gap: 0.75rem; width: 100%; justify-content: center; }
     .mini-score-name { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); flex: 1 1 0; min-width: 0; }
     .mini-score-value { font-size: 1.4rem; font-weight: 900; color: var(--text); flex: 0 0 auto; }
     .score-sep-sm { font-size: 1.25rem; font-weight: 700; color: var(--text-muted); padding-bottom: 0.5rem; }
