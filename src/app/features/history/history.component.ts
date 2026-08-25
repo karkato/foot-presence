@@ -114,13 +114,13 @@ type Filter = 'all' | 'win' | 'loss' | 'draw';
     .container { padding: 1rem; max-width: 480px; margin: 0 auto; }
     h2 { margin-top: 0; }
     .muted { color: var(--text-muted); }
-    .back-link { display: inline-block; font-size: 0.875rem; font-weight: 600; color: var(--primary); text-decoration: none; margin-bottom: 1rem; }
+    .back-link { display: inline-flex; align-items: center; min-height: var(--tap); font-size: 0.875rem; font-weight: 600; color: var(--primary); text-decoration: none; margin-bottom: 1rem; }
     .back-link:hover { text-decoration: underline; }
     .card { background: var(--card); border: 1.5px solid var(--border); border-radius: 0.75rem; }
 
     /* Stats */
     .stats-card { padding: 1.25rem; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 1rem; }
-    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
+    .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
     .stat-block { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; padding: 0.75rem 0.5rem; background: var(--bg); border-radius: 0.5rem; }
     .stat-value { font-size: 1.5rem; font-weight: 900; line-height: 1; }
     .stat-label { font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
@@ -132,9 +132,10 @@ type Filter = 'all' | 'win' | 'loss' | 'draw';
     .ratio-value { font-size: 1rem; font-weight: 700; color: var(--primary); }
 
     /* Tabs */
-    .tabs { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; overflow-x: auto; padding-bottom: 2px; }
+    .tabs { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; overflow-x: auto; padding-block: 4px; }
     .tabs button {
-      flex-shrink: 0; padding: 0.4rem 0.9rem; border: 1.5px solid var(--border);
+      flex-shrink: 0; min-height: var(--tap); display: inline-flex; align-items: center; justify-content: center;
+      padding: 0.4rem 0.9rem; border: 1.5px solid var(--border);
       border-radius: 2rem; background: var(--card); color: var(--text-muted);
       font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.15s;
     }
@@ -157,7 +158,7 @@ type Filter = 'all' | 'win' | 'loss' | 'draw';
 
     /* Score row */
     .score-row { display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding: 0.25rem 0; }
-    .team-name { font-size: 0.8rem; color: var(--text-muted); flex: 1; text-align: center; }
+    .team-name { font-size: 0.8rem; color: var(--text-muted); flex: 1; text-align: center; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
     .team-name.my-team { font-weight: 700; color: var(--text); }
     .score { font-size: 1.5rem; font-weight: 900; letter-spacing: 0.05em; flex-shrink: 0; }
 
@@ -170,6 +171,10 @@ type Filter = 'all' | 'win' | 'loss' | 'draw';
     .result-win { background: color-mix(in srgb, var(--success) 15%, transparent); color: var(--success); }
     .result-loss { background: color-mix(in srgb, var(--danger) 15%, transparent); color: var(--danger); }
     .result-draw, .result-none { background: var(--border); color: var(--text-muted); }
+
+    @media (min-width: 768px) {
+      .stats-grid { grid-template-columns: repeat(4, 1fr); }
+    }
   `,
 })
 export class HistoryComponent implements OnInit {
