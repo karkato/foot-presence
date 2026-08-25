@@ -104,10 +104,10 @@ import { MatchWithCount } from '../matches.service';
       transition: border-color 0.15s, box-shadow 0.15s;
     }
     .match-card:hover { border-color: var(--primary); box-shadow: var(--shadow-sm); }
-    .match-info { display: flex; flex-direction: column; gap: 0.25rem; }
-    .match-title { font-weight: 700; font-size: 1rem; color: var(--text); }
-    .match-date { font-size: 0.85rem; color: var(--text-muted); }
-    .match-meta { display: flex; align-items: center; gap: 0.5rem; }
+    .match-info { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
+    .match-title { font-weight: 700; font-size: 1rem; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+    .match-date { font-size: 0.85rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+    .match-meta { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
     .badge {
       font-size: 0.75rem;
       padding: 0.2rem 0.5rem;
@@ -136,6 +136,7 @@ import { MatchWithCount } from '../matches.service';
     .finished-panel { margin-top: 1.5rem; }
     .finished-toggle {
       width: 100%;
+      min-height: var(--tap);
       display: flex;
       align-items: center;
       justify-content: space-between;
