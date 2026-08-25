@@ -100,8 +100,9 @@ import { mapAuthRpcError, rpcMessage } from '../../../shared/utils/rpc-error';
     .form { display: flex; flex-direction: column; gap: 1rem; }
     .field { display: flex; flex-direction: column; gap: 0.35rem; }
     .checkbox-field { flex-direction: row; align-items: center; gap: 0.5rem; }
-    .checkbox-field label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.95rem; font-weight: 500; cursor: pointer; color: var(--text); }
+    .checkbox-field label { display: flex; align-items: center; gap: 0.6rem; min-height: var(--tap); font-size: 0.95rem; font-weight: 500; cursor: pointer; color: var(--text); }
     label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
+    input[type="checkbox"] { width: 1.25rem; height: 1.25rem; accent-color: var(--primary); flex-shrink: 0; cursor: pointer; }
     input[type="text"], input[type="password"] {
       padding: 0.65rem 0.85rem;
       border: 1.5px solid var(--border);
@@ -114,6 +115,10 @@ import { mapAuthRpcError, rpcMessage } from '../../../shared/utils/rpc-error';
     .error { color: var(--danger); font-size: 0.9rem; }
     .actions { display: flex; gap: 0.75rem; justify-content: flex-end; }
     .btn-cancel {
+      min-height: var(--tap);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       padding: 0.65rem 1.25rem;
       background: var(--border);
       border: none;
@@ -122,6 +127,10 @@ import { mapAuthRpcError, rpcMessage } from '../../../shared/utils/rpc-error';
       cursor: pointer;
     }
     .btn-primary {
+      min-height: var(--tap);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       padding: 0.65rem 1.25rem;
       background: var(--primary);
       color: white;
