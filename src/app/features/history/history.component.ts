@@ -132,6 +132,8 @@ type Filter = 'all' | 'win' | 'loss' | 'draw';
     .ratio-value { font-size: 1rem; font-weight: 700; color: var(--primary); }
 
     /* Tabs */
+    /* padding-block: 4px matches the global :focus-visible ring extension
+       (outline: 2px + outline-offset: 2px = 4px, src/styles.css:113-116) */
     .tabs { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; overflow-x: auto; padding-block: 4px; }
     .tabs button {
       flex-shrink: 0; min-height: var(--tap); display: inline-flex; align-items: center; justify-content: center;
@@ -139,6 +141,7 @@ type Filter = 'all' | 'win' | 'loss' | 'draw';
       border-radius: 2rem; background: var(--card); color: var(--text-muted);
       font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.15s;
     }
+    .tabs button:focus-visible { outline-offset: -2px; }
     .tabs button.active { border-color: var(--primary); color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, transparent); }
     .tabs button:hover:not(.active) { border-color: var(--text-muted); color: var(--text); }
 
@@ -158,7 +161,7 @@ type Filter = 'all' | 'win' | 'loss' | 'draw';
 
     /* Score row */
     .score-row { display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding: 0.25rem 0; }
-    .team-name { font-size: 0.8rem; color: var(--text-muted); flex: 1; text-align: center; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+    .team-name { font-size: 0.8rem; color: var(--text-muted); flex: 1; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .team-name.my-team { font-weight: 700; color: var(--text); }
     .score { font-size: 1.5rem; font-weight: 900; letter-spacing: 0.05em; flex-shrink: 0; }
 
@@ -172,7 +175,7 @@ type Filter = 'all' | 'win' | 'loss' | 'draw';
     .result-loss { background: color-mix(in srgb, var(--danger) 15%, transparent); color: var(--danger); }
     .result-draw, .result-none { background: var(--border); color: var(--text-muted); }
 
-    @media (min-width: 768px) {
+    @media (min-width: 480px) {
       .stats-grid { grid-template-columns: repeat(4, 1fr); }
     }
   `,
