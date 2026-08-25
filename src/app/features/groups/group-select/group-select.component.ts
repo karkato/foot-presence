@@ -79,7 +79,10 @@ import { Group } from '../../../shared/models/group.model';
     h1 { margin: 0 0 0.25rem; font-size: 1.5rem; }
     .subtitle { color: var(--text-muted); margin-bottom: 1.5rem; }
     .muted { color: var(--text-muted); }
-    .group-list { list-style: none; padding: 0; margin: 0 0 1rem; }
+    .group-list {
+      list-style: none; padding: 0; margin: 0 0 1rem;
+      max-height: 18rem; overflow-y: auto; overscroll-behavior: contain;
+    }
     .group-list li { margin-bottom: 0.5rem; }
     .group-btn {
       width: 100%;
@@ -92,6 +95,9 @@ import { Group } from '../../../shared/models/group.model';
       color: var(--text);
       cursor: pointer;
       transition: all 0.15s;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .group-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
     .divider {
@@ -110,9 +116,12 @@ import { Group } from '../../../shared/models/group.model';
     }
     .divider::before { left: 0; }
     .divider::after { right: 0; }
-    .slug-form { display: flex; gap: 0.5rem; }
+    .slug-form { display: flex; flex-direction: column; gap: 0.5rem; }
+    @media (min-width: 768px) { .slug-form { flex-direction: row; } }
     input {
       flex: 1;
+      min-width: 0;
+      min-height: var(--tap);
       padding: 0.65rem 0.85rem;
       border: 1.5px solid var(--border);
       border-radius: 0.5rem;
@@ -131,6 +140,10 @@ import { Group } from '../../../shared/models/group.model';
       font-weight: 600;
       cursor: pointer;
       white-space: nowrap;
+      min-height: var(--tap);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
     .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
   `,
