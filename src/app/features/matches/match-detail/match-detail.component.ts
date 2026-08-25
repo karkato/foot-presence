@@ -347,7 +347,8 @@ type PresentEntry =
 
     /* Player list */
     .player-list { list-style: none; padding: 0; margin: 0; }
-    .guest-row { display: flex; align-items: center; gap: 0.6rem; min-height: var(--tap); padding: 0.55rem 0.75rem; opacity: 0.7; }
+    .guest-row { display: flex; align-items: center; gap: 0.6rem; min-height: var(--tap); padding: 0 0.75rem; opacity: 0.7; }
+    .guest-row .muted { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .rank-label { min-width: 2rem; text-align: right; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); }
     .sub-divider { display: flex; align-items: center; gap: 0.5rem; margin: 0.75rem 0; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--warning); }
     .divider-line { flex: 1; height: 1px; background: var(--warning); opacity: 0.3; }
