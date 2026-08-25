@@ -35,7 +35,8 @@ import { MatchWithCount } from '../matches.service';
               <li class="match-card" (click)="openMatch(match)">
                 <div class="match-info">
                   <span class="match-title">{{ match.title }}</span>
-                  <span class="match-date">{{ formatDate(match.match_date) }} à {{ formatTime(match.match_time) }}</span>
+                  <span class="match-date match-date-full">{{ formatDate(match.match_date) }} à {{ formatTime(match.match_time) }}</span>
+                  <span class="match-date match-date-short">{{ formatDateShort(match.match_date, match.match_time) }}</span>
                 </div>
                 <div class="match-meta">
                   <span class="badge badge-count" [class.badge-full]="match.registration_count >= match.max_players">
@@ -68,7 +69,8 @@ import { MatchWithCount } from '../matches.service';
                   <li class="match-card" (click)="openMatch(match)">
                     <div class="match-info">
                       <span class="match-title">{{ match.title }}</span>
-                      <span class="match-date">{{ formatDate(match.match_date) }} à {{ formatTime(match.match_time) }}</span>
+                      <span class="match-date match-date-full">{{ formatDate(match.match_date) }} à {{ formatTime(match.match_time) }}</span>
+                      <span class="match-date match-date-short">{{ formatDateShort(match.match_date, match.match_time) }}</span>
                     </div>
                     <div class="match-meta">
                       <span class="badge badge-count">
@@ -105,8 +107,16 @@ import { MatchWithCount } from '../matches.service';
     }
     .match-card:hover { border-color: var(--primary); box-shadow: var(--shadow-sm); }
     .match-info { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
-    .match-title { font-weight: 700; font-size: 1rem; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
-    .match-date { font-size: 0.85rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+    .match-title {
+      font-weight: 700; font-size: 1rem; color: var(--text); max-width: 100%;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      white-space: normal;
+      overflow: hidden;
+    }
+    .match-date { font-size: 0.85rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .match-date-short { display: none; }
     .match-meta { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
     .badge {
       font-size: 0.75rem;
@@ -154,6 +164,18 @@ import { MatchWithCount } from '../matches.service';
     .chevron { display: inline-block; transform: rotate(90deg); transition: transform 0.15s; }
     .chevron.open { transform: rotate(-90deg); }
     .finished-list { margin-top: 0.75rem; }
+
+    /* Exception to this chunk's usual mobile-first (min-width) pattern:
+       here the compact format IS the mobile version, so it is opted into
+       under a max-width query instead of opted out of one. Below 480px,
+       .match-meta (2 badges + arrow) can leave as little as ~115-170px
+       for .match-info, so the long weekday/month format gets truncated
+       and drops the time — the most actionable info in this list. The
+       short format keeps the time visible at every width down to 320px. */
+    @media (max-width: 479px) {
+      .match-date-full { display: none; }
+      .match-date-short { display: inline; }
+    }
   `,
 })
 export class MatchListComponent implements OnInit, OnDestroy {
@@ -214,5 +236,14 @@ export class MatchListComponent implements OnInit, OnDestroy {
 
   formatTime(timeStr: string): string {
     return timeStr.slice(0, 5);
+  }
+
+  formatDateShort(dateStr: string, timeStr: string): string {
+    const shortDate = new Date(dateStr).toLocaleDateString('fr-FR', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+    });
+    return `${shortDate} ${this.formatTime(timeStr)}`;
   }
 }
