@@ -207,13 +207,14 @@ import { MyStatsComponent } from './my-stats/my-stats.component';
     .section-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin: 0 0 0.6rem; }
 
     /* Tabs */
-    .tabs { display: flex; gap: 0.25rem; background: var(--card); border: 1.5px solid var(--border); border-radius: 0.6rem; padding: 0.25rem; margin-bottom: 1.25rem; }
-    .tab { flex: 1; padding: 0.5rem; border: none; background: none; border-radius: 0.4rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; color: var(--text-muted); transition: all 0.15s; }
+    .tabs { display: flex; gap: 0.25rem; background: var(--card); border: 1.5px solid var(--border); border-radius: 0.6rem; padding: 0.25rem; margin-bottom: 1.25rem; overflow-x: auto; }
+    .tab { flex: 1 0 auto; min-height: var(--tap); display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem; border: none; background: none; border-radius: 0.4rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; color: var(--text-muted); transition: all 0.15s; }
+    .tab:focus-visible { outline-offset: -2px; }
     .tab.active { background: var(--primary); color: white; }
 
     /* Stats */
     .stats-card { padding: 1.25rem; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 1rem; }
-    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+    .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
     .stat-block { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; padding: 0.75rem 0.5rem; background: var(--bg); border-radius: 0.5rem; }
     .stat-value { font-size: 1.5rem; font-weight: 900; line-height: 1; }
     .stat-label { font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
@@ -245,20 +246,20 @@ import { MyStatsComponent } from './my-stats/my-stats.component';
     .btn-history:hover { border-color: var(--primary); }
 
     /* Form inputs */
-    .field { display: flex; flex-direction: column; gap: 0.35rem; flex: 1; }
+    .field { display: flex; flex-direction: column; gap: 0.35rem; flex: 1; min-width: 0; }
     .field label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
     .field-input { padding: 0.65rem 0.85rem; border: 1.5px solid var(--border); border-radius: 0.5rem; font-size: var(--fs-field); background: var(--card); color: var(--text); font-family: inherit; width: 100%; box-sizing: border-box; }
     .field-input:focus { outline: none; border-color: var(--primary); }
     .input-row { display: flex; gap: 0.5rem; align-items: center; }
-    .input-row .field-input { flex: 1; }
+    .input-row .field-input { flex: 1; min-width: 0; }
     .pin-row { display: flex; gap: 0.75rem; margin-bottom: 0.75rem; }
     .feedback-success { color: var(--success); font-size: 0.85rem; margin: 0.4rem 0 0; }
     .feedback-error { color: var(--danger); font-size: 0.85rem; margin: 0 0 0.5rem; }
 
     /* Buttons */
-    .btn-primary { padding: 0.65rem 1.25rem; background: var(--primary); color: white; border: none; border-radius: 0.5rem; font-size: 0.95rem; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; }
+    .btn-primary { min-height: var(--tap); padding: 0.65rem 1.25rem; background: var(--primary); color: white; border: none; border-radius: 0.5rem; font-size: 0.95rem; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; }
     .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
-    .btn-danger { padding: 0.65rem 1.25rem; background: var(--danger); color: white; border: none; border-radius: 0.5rem; font-size: 0.95rem; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .btn-danger { min-height: var(--tap); padding: 0.65rem 1.25rem; background: var(--danger); color: white; border: none; border-radius: 0.5rem; font-size: 0.95rem; font-weight: 600; cursor: pointer; font-family: inherit; }
     .btn-danger:disabled { opacity: 0.6; cursor: not-allowed; }
     .btn-full { width: 100%; }
 
@@ -266,11 +267,15 @@ import { MyStatsComponent } from './my-stats/my-stats.component';
     .player-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.1rem; }
     .player-row { display: flex; align-items: center; padding: 0.5rem 0.5rem; border-radius: 0.4rem; }
     .player-row.current-player { background: var(--primary-light); font-weight: 700; }
-    .player-name { flex: 1; font-size: 0.9rem; }
-    .player-badges { display: flex; gap: 0.35rem; }
+    .player-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9rem; }
+    .player-badges { display: flex; gap: 0.35rem; flex-shrink: 0; }
     .badge { font-size: 0.7rem; font-weight: 700; padding: 0.1rem 0.45rem; border-radius: 0.3rem; }
     .badge-primary { background: var(--primary); color: white; }
     .badge-warning { background: var(--warning); color: white; }
+
+    @media (min-width: 480px) {
+      .stats-grid { grid-template-columns: repeat(3, 1fr); }
+    }
   `,
 })
 export class ProfileComponent implements OnInit {
