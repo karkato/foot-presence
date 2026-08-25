@@ -108,7 +108,7 @@ import { MatchWithCount } from '../matches.service';
     .match-card:hover { border-color: var(--primary); box-shadow: var(--shadow-sm); }
     .match-info { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
     .match-title {
-      font-weight: 700; font-size: 1rem; color: var(--text); max-width: 100%;
+      font-weight: 700; font-size: 1rem; color: var(--text);
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
@@ -171,10 +171,15 @@ import { MatchWithCount } from '../matches.service';
        .match-meta (2 badges + arrow) can leave as little as ~115-170px
        for .match-info, so the long weekday/month format gets truncated
        and drops the time — the most actionable info in this list. The
-       short format keeps the time visible at every width down to 320px. */
+       short format keeps the time visible down to 330px; the tighter
+       gap/padding below shaves the remaining ~10px needed on finished
+       cards (badge-count + badge-finished, the widest .match-meta combo)
+       so it holds at 320px too. */
     @media (max-width: 479px) {
       .match-date-full { display: none; }
       .match-date-short { display: inline; }
+      .match-meta { gap: 0.3rem; }
+      .badge { padding: 0.2rem 0.4rem; }
     }
   `,
 })

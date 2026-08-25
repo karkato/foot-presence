@@ -132,9 +132,7 @@ type Filter = 'all' | 'win' | 'loss' | 'draw';
     .ratio-value { font-size: 1rem; font-weight: 700; color: var(--primary); }
 
     /* Tabs */
-    /* padding-block: 4px matches the global :focus-visible ring extension
-       (outline: 2px + outline-offset: 2px = 4px, src/styles.css:113-116) */
-    .tabs { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; overflow-x: auto; padding-block: 4px; }
+    .tabs { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; overflow-x: auto; padding-bottom: 2px; }
     .tabs button {
       flex-shrink: 0; min-height: var(--tap); display: inline-flex; align-items: center; justify-content: center;
       padding: 0.4rem 0.9rem; border: 1.5px solid var(--border);
