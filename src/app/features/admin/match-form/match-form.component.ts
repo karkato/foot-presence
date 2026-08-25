@@ -66,24 +66,29 @@ import { DEFAULT_TEAM_A_NAME, DEFAULT_TEAM_B_NAME } from '../../../shared/consta
     .container { padding: 1rem; max-width: 480px; margin: 0 auto; }
     h2 { margin-top: 0; }
     .form { display: flex; flex-direction: column; gap: 1rem; }
-    .row { display: flex; gap: 0.75rem; }
-    .row .field { flex: 1; }
-    .field { display: flex; flex-direction: column; gap: 0.35rem; }
+    .row { display: flex; flex-direction: column; gap: 0.75rem; }
+    @media (min-width: 768px) { .row { flex-direction: row; } }
+    .row .field { flex: 1; min-width: 0; }
+    .field { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
     label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
     input {
       padding: 0.65rem 0.85rem; border: 1.5px solid var(--border);
       border-radius: 0.5rem; font-size: var(--fs-field); background: var(--card); color: var(--text);
+      min-height: var(--tap);
     }
     input:focus { outline: none; border-color: var(--primary); }
+    input:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     .error { color: var(--danger); font-size: 0.9rem; }
     .actions { display: flex; gap: 0.75rem; justify-content: flex-end; }
     .btn-cancel {
       padding: 0.65rem 1.25rem; background: var(--border); border: none;
       border-radius: 0.5rem; font-size: 0.95rem; cursor: pointer;
+      min-height: var(--tap); display: inline-flex; align-items: center; justify-content: center;
     }
     .btn-primary {
       padding: 0.65rem 1.25rem; background: var(--primary); color: white;
       border: none; border-radius: 0.5rem; font-size: 0.95rem; font-weight: 600; cursor: pointer;
+      min-height: var(--tap); display: inline-flex; align-items: center; justify-content: center;
     }
     .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
   `,
