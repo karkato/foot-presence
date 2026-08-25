@@ -19,6 +19,7 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
+  min-height: var(--tap);
   font-size: 1rem;
   font-weight: 800;
   color: var(--primary);
@@ -35,6 +36,9 @@
 }
 
 .desktop-nav-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
   padding: 0.4rem 0.7rem;
   border-radius: 0.4rem;
   font-size: 0.9rem;
@@ -51,6 +55,8 @@
 
 /* ---- Nom joueur (mobile uniquement) ---- */
 .header-player {
+  display: inline-block;
+  line-height: var(--tap);
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-muted);
