@@ -69,7 +69,7 @@ import { GroupsService } from '../../../core/groups/groups.service';
     .checkbox-field { flex-direction: row; align-items: center; gap: 0.5rem; }
     .checkbox-field label { display: flex; align-items: center; gap: 0.6rem; min-height: var(--tap); font-size: 0.95rem; font-weight: 500; cursor: pointer; color: var(--text); }
     label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
-    input[type="checkbox"] { width: 1.25rem; height: 1.25rem; accent-color: var(--primary); flex-shrink: 0; cursor: pointer; }
+    input[type="checkbox"] { width: 1.25rem; height: 1.25rem; accent-color: var(--primary); flex-shrink: 0; cursor: pointer; font-size: var(--fs-field); }
     input[type="number"] {
       padding: 0.65rem 0.85rem;
       border: 1.5px solid var(--border);
