@@ -211,7 +211,7 @@ import { MyStatsComponent } from './my-stats/my-stats.component';
     .tab { flex: 1 0 auto; min-height: var(--tap); display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem; border: none; background: none; border-radius: 0.4rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; color: var(--text-muted); transition: all 0.15s; }
     .tab:focus-visible { outline-offset: -2px; }
     .tab.active { background: var(--primary); color: white; }
-    .tab.active:focus-visible { outline-color: #fff; }
+    .tab.active:focus-visible { outline-color: var(--text); }
 
     /* Stats */
     .stats-card { padding: 1.25rem; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 1rem; }

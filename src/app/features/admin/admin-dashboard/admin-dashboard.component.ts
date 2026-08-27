@@ -174,7 +174,7 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
     .tab { flex: 1 0 auto; min-height: var(--tap); display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem; border: none; background: none; border-radius: 0.4rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; color: var(--text-muted); transition: all 0.15s; }
     .tab:focus-visible { outline-offset: -2px; }
     .tab.active { background: var(--primary); color: white; }
-    .tab.active:focus-visible { outline-color: #fff; }
+    .tab.active:focus-visible { outline-color: var(--text); }
     .tabs.subtabs { background: var(--bg); border-color: transparent; margin-top: -0.75rem; }
     .tab.subtab { flex: 1 0 auto; min-height: var(--tap); display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem; }
     .section { margin-bottom: 1.5rem; }
