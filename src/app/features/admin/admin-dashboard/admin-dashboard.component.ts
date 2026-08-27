@@ -174,6 +174,7 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
     .tab { flex: 1 0 auto; min-height: var(--tap); display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem; border: none; background: none; border-radius: 0.4rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; color: var(--text-muted); transition: all 0.15s; }
     .tab:focus-visible { outline-offset: -2px; }
     .tab.active { background: var(--primary); color: white; }
+    .tab.active:focus-visible { outline-color: #fff; }
     .tabs.subtabs { background: var(--bg); border-color: transparent; margin-top: -0.75rem; }
     .tab.subtab { flex: 1 0 auto; min-height: var(--tap); display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem; }
     .section { margin-bottom: 1.5rem; }
@@ -219,7 +220,7 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
       gap: 0.5rem;
       flex-wrap: wrap;
     }
-    .item-info { display: flex; flex-direction: column; gap: 0.15rem; flex: 1; min-width: 0; }
+    .item-info { display: flex; flex-direction: column; gap: 0.15rem; flex: 1 1 auto; min-width: 0; }
     .item-title { font-weight: 600; font-size: 0.95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .item-sub { font-size: 0.8rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .item-actions { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
