@@ -59,7 +59,7 @@ type Filter = 'all' | 'win' | 'loss' | 'draw';
       } @else if (history().length === 0) {
         <p class="muted">Aucun match joué pour l'instant.</p>
       } @else {
-        <div class="tabs">
+        <div class="filter-chips">
           <button [class.active]="activeFilter() === 'all'" (click)="activeFilter.set('all')">
             Tous ({{ history().length }})
           </button>
@@ -129,17 +129,17 @@ type Filter = 'all' | 'win' | 'loss' | 'draw';
     .ratio-label { font-size: 0.85rem; color: var(--text-muted); }
     .ratio-value { font-size: 1rem; font-weight: 700; color: var(--primary); }
 
-    /* Tabs */
-    .tabs { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; overflow-x: auto; padding-bottom: 2px; }
-    .tabs button {
+    /* Filter chips */
+    .filter-chips { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; overflow-x: auto; padding-bottom: 2px; }
+    .filter-chips button {
       flex-shrink: 0; min-height: var(--tap); display: inline-flex; align-items: center; justify-content: center;
       padding: 0.4rem 0.9rem; border: var(--border-1);
       border-radius: 2rem; background: var(--card); color: var(--text-muted);
       font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.15s;
     }
-    .tabs button:focus-visible { outline-offset: -2px; }
-    .tabs button.active { border-color: var(--primary); color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, transparent); }
-    .tabs button:hover:not(.active) { border-color: var(--text-muted); color: var(--text); }
+    .filter-chips button:focus-visible { outline-offset: -2px; }
+    .filter-chips button.active { border-color: var(--primary); color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, transparent); }
+    .filter-chips button:hover:not(.active) { border-color: var(--text-muted); color: var(--text); }
 
     /* History list */
     .history-list { display: flex; flex-direction: column; gap: 0.625rem; }
