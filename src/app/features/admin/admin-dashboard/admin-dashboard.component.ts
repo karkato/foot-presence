@@ -74,7 +74,7 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
                   </div>
                   <div class="item-actions">
                     @if (match.is_closed) {
-                      <span class="badge-closed">Fermé</span>
+                      <span class="badge badge-closed">Fermé</span>
                     } @else {
                       <button class="btn-sm btn-warning" (click)="toggleClose(match)">Fermer</button>
                     }
@@ -237,13 +237,10 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
     .btn-warning { background: var(--warning); color: white; }
     .btn-danger { background: var(--danger); color: white; }
     .btn-sm.btn-danger { margin-left: var(--sp-xs); }
+    /* Exception: keeps a 1rem radius instead of the global .badge pill
+       (--r-pill), which this admin item-card badge shape predates. */
     .badge-closed {
-      font-size: 0.75rem;
-      background: var(--border);
-      color: var(--text-muted);
-      padding: 0.2rem 0.5rem;
       border-radius: 1rem;
-      font-weight: 600;
     }
     .audit-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0; }
     .audit-item {

@@ -116,11 +116,10 @@ import { MatchWithCount } from '../matches.service';
     .match-date { font-size: 0.85rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .match-date-short { display: none; }
     .match-meta { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+    /* Exception: keeps a 1rem radius instead of the global .badge pill
+       (--r-pill), which this compact list-meta badge shape predates. */
     .badge {
-      font-size: 0.75rem;
-      padding: 0.2rem 0.5rem;
       border-radius: 1rem;
-      font-weight: 600;
     }
     .badge-count {
       background: var(--primary-light);
@@ -131,14 +130,6 @@ import { MatchWithCount } from '../matches.service';
     .badge-count.badge-full {
       background: #fef3c7;
       color: #d97706;
-    }
-    .badge-finished {
-      background: var(--success);
-      color: white;
-    }
-    .badge-closed {
-      background: var(--border);
-      color: var(--text-muted);
     }
     .arrow { font-size: 1.5rem; color: var(--text-muted); line-height: 1; }
     .finished-panel { margin-top: 1.5rem; }
