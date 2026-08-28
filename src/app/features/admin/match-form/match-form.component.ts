@@ -55,7 +55,7 @@ import { DEFAULT_TEAM_A_NAME, DEFAULT_TEAM_B_NAME } from '../../../shared/consta
 
         <div class="actions">
           <button type="button" class="btn-cancel" (click)="goBack()">Annuler</button>
-          <button type="submit" class="btn-primary" [disabled]="saving()">
+          <button type="submit" class="btn btn-primary" [disabled]="saving()">
             @if (saving()) { ... } @else { Enregistrer }
           </button>
         </div>
@@ -85,11 +85,8 @@ import { DEFAULT_TEAM_A_NAME, DEFAULT_TEAM_B_NAME } from '../../../shared/consta
       min-height: var(--tap); display: inline-flex; align-items: center; justify-content: center;
     }
     .btn-primary {
-      padding: 0.65rem 1.25rem; background: var(--primary); color: white;
-      border: none; border-radius: 0.5rem; font-size: 0.95rem; font-weight: 600; cursor: pointer;
-      min-height: var(--tap); display: inline-flex; align-items: center; justify-content: center;
+      padding: 0.65rem 1.25rem;
     }
-    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
   `,
 })
 export class MatchFormComponent implements OnInit {

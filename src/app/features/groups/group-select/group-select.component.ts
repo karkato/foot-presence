@@ -49,7 +49,7 @@ import { Group } from '../../../shared/models/group.model';
             placeholder="entrez un slug de groupe"
             autocapitalize="none"
           />
-          <button type="submit" class="btn-primary" [disabled]="!slugInput.trim()">
+          <button type="submit" class="btn btn-primary" [disabled]="!slugInput.trim()">
             Rejoindre
           </button>
         </form>
@@ -133,20 +133,8 @@ import { Group } from '../../../shared/models/group.model';
     input:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     .btn-primary {
       padding: 0.65rem 1rem;
-      background: var(--primary);
-      color: white;
-      border: none;
-      border-radius: 0.5rem;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
       white-space: nowrap;
-      min-height: var(--tap);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
     }
-    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
   `,
 })
 export class GroupSelectComponent implements OnInit {

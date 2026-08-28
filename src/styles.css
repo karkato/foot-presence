@@ -162,7 +162,7 @@ p { margin: 0 0 0.75rem; line-height: 1.6; }
 .btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .btn.btn-primary { background: var(--primary); color: #fff; }
-.btn.btn-primary:hover { background: var(--primary-dark); }
+.btn.btn-primary:hover:not(:disabled) { background: var(--primary-dark); }
 
 .btn.btn-danger { background: var(--danger); color: #fff; }
 
