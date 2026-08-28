@@ -9,13 +9,16 @@ import { Player, getDisplayName } from '../../shared/models/player.model';
 import { Season, isCurrentSeason } from '../../shared/models/season.model';
 import { mapAuthRpcError } from '../../shared/utils/rpc-error';
 import { SeasonPickerComponent } from '../../shared/components/season-picker/season-picker.component';
+import { TabBarComponent, TabItem } from '../../shared/components/tab-bar/tab-bar.component';
 import { MyStatsComponent } from './my-stats/my-stats.component';
+
+type ProfileTab = 'stats' | 'goals' | 'players' | 'config';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, RouterLink, SeasonPickerComponent, MyStatsComponent],
+  imports: [FormsModule, RouterLink, SeasonPickerComponent, TabBarComponent, MyStatsComponent],
   template: `
     <div class="container-form">
       <h2>Mon profil</h2>
@@ -23,20 +26,12 @@ import { MyStatsComponent } from './my-stats/my-stats.component';
       @if (auth.currentPlayer(); as player) {
 
         <!-- Tabs -->
-        <div class="tabs" role="tablist" aria-label="Sections du profil">
-          <button id="tab-stats" type="button" class="tab" role="tab" [attr.aria-selected]="activeTab() === 'stats'"
-            aria-controls="panel-stats"
-            [class.active]="activeTab() === 'stats'" (click)="activeTab.set('stats')">Stats</button>
-          <button id="tab-goals" type="button" class="tab" role="tab" [attr.aria-selected]="activeTab() === 'goals'"
-            aria-controls="panel-goals"
-            [class.active]="activeTab() === 'goals'" (click)="activeTab.set('goals')">Buts</button>
-          <button id="tab-players" type="button" class="tab" role="tab" [attr.aria-selected]="activeTab() === 'players'"
-            aria-controls="panel-players"
-            [class.active]="activeTab() === 'players'" (click)="activeTab.set('players')">Joueurs</button>
-          <button id="tab-config" type="button" class="tab" role="tab" [attr.aria-selected]="activeTab() === 'config'"
-            aria-controls="panel-config"
-            [class.active]="activeTab() === 'config'" (click)="activeTab.set('config')">Config</button>
-        </div>
+        <app-tab-bar
+          [tabs]="profileTabs"
+          [selected]="activeTab()"
+          (selectedChange)="activeTab.set($event)"
+          ariaLabel="Sections du profil"
+        />
 
         @if (activeTab() === 'stats' || activeTab() === 'goals') {
           <app-season-picker
@@ -205,13 +200,6 @@ import { MyStatsComponent } from './my-stats/my-stats.component';
     .section { padding: 1.25rem; margin-bottom: 1rem; }
     .section-label { margin: 0 0 0.6rem; }
 
-    /* Tabs */
-    .tabs { background: var(--card); border: var(--border-1); border-radius: 0.6rem; padding: 0.25rem; overflow-x: auto; }
-    .tab { flex: 1 0 auto; min-height: var(--tap); display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem; border: none; background: none; border-radius: 0.4rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; color: var(--text-muted); transition: all 0.15s; }
-    .tab:focus-visible { outline-offset: -2px; }
-    .tab.active { background: var(--primary); color: white; }
-    .tab.active:focus-visible { outline-color: var(--text); }
-
     /* Stats */
     .stats-card { padding: 1.25rem; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 1rem; }
     .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
@@ -287,7 +275,14 @@ export class ProfileComponent implements OnInit {
   newPin = '';
   confirmPin = '';
 
-  activeTab = signal<'stats' | 'goals' | 'players' | 'config'>('stats');
+  readonly profileTabs: readonly TabItem<ProfileTab>[] = [
+    { value: 'stats', label: 'Stats', panelId: 'panel-stats' },
+    { value: 'goals', label: 'Buts', panelId: 'panel-goals' },
+    { value: 'players', label: 'Joueurs', panelId: 'panel-players' },
+    { value: 'config', label: 'Config', panelId: 'panel-config' },
+  ];
+
+  activeTab = signal<ProfileTab>('stats');
   seasons = signal<Season[]>([]);
   selectedSeasonId = signal<string | null>(null);
 
