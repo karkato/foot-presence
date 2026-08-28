@@ -47,6 +47,7 @@
      it is not the migration target for the unrelated 480px cluster
      (see the container-narrow/-md/-wide contract below). */
   --w-narrow: 420px;
+  --w-form: 480px;
   --w-md: 600px;
   --w-wide: 680px;
 }
@@ -169,12 +170,13 @@ p { margin: 0 0 0.75rem; line-height: 1.6; }
 
 .btn.btn-full { width: 100%; }
 
-.container-narrow, .container-md, .container-wide {
+.container-narrow, .container-form, .container-md, .container-wide {
   width: 100%;
   margin-inline: auto;
   padding: var(--sp-lg);
 }
 .container-narrow { max-width: var(--w-narrow); }
+.container-form { max-width: var(--w-form); }
 .container-md { max-width: var(--w-md); }
 .container-wide { max-width: var(--w-wide); }
 

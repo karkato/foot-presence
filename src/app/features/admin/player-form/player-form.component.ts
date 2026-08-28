@@ -19,7 +19,7 @@ import { mapAuthRpcError, rpcMessage } from '../../../shared/utils/rpc-error';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [FormsModule],
   template: `
-    <div class="container">
+    <div class="container-form">
       <h2>{{ isEdit() ? 'Modifier le joueur' : 'Nouveau joueur' }}</h2>
 
       <form (ngSubmit)="onSubmit()" class="form">
@@ -95,7 +95,6 @@ import { mapAuthRpcError, rpcMessage } from '../../../shared/utils/rpc-error';
     </div>
   `,
   styles: `
-    .container { padding: 1rem; max-width: 480px; margin: 0 auto; }
     h2 { margin-top: 0; }
     .form { display: flex; flex-direction: column; gap: 1rem; }
     .field { display: flex; flex-direction: column; gap: 0.35rem; }

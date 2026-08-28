@@ -16,7 +16,7 @@ type Filter = 'all' | 'win' | 'loss' | 'draw';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, SeasonPickerComponent],
   template: `
-    <div class="container">
+    <div class="container-form">
       <a class="back-link" [routerLink]="['/' + groupSlug + '/profile']">← Profil</a>
 
       <h2>Historique de {{ playerName() }}</h2>
@@ -111,7 +111,6 @@ type Filter = 'all' | 'win' | 'loss' | 'draw';
     </div>
   `,
   styles: `
-    .container { padding: 1rem; max-width: 480px; margin: 0 auto; }
     h2 { margin-top: 0; }
     .back-link { display: inline-flex; align-items: center; min-height: var(--tap); font-size: 0.875rem; font-weight: 600; color: var(--primary); text-decoration: none; margin-bottom: 1rem; }
     .back-link:hover { text-decoration: underline; }

@@ -70,7 +70,7 @@ import { Group } from '../../../shared/models/group.model';
       border-radius: 1rem;
       padding: 2rem;
       width: 100%;
-      max-width: 380px;
+      max-width: var(--w-narrow);
       box-shadow: var(--shadow-md);
       text-align: center;
     }

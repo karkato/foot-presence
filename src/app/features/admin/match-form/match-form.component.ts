@@ -12,7 +12,7 @@ import { DEFAULT_TEAM_A_NAME, DEFAULT_TEAM_B_NAME } from '../../../shared/consta
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [FormsModule],
   template: `
-    <div class="container">
+    <div class="container-form">
       <h2>{{ isEdit() ? 'Modifier le match' : 'Nouveau match' }}</h2>
 
       <form (ngSubmit)="onSubmit()" class="form">
@@ -63,7 +63,6 @@ import { DEFAULT_TEAM_A_NAME, DEFAULT_TEAM_B_NAME } from '../../../shared/consta
     </div>
   `,
   styles: `
-    .container { padding: 1rem; max-width: 480px; margin: 0 auto; }
     h2 { margin-top: 0; }
     .form { display: flex; flex-direction: column; gap: 1rem; }
     .row { display: flex; flex-direction: column; gap: 0.75rem; }

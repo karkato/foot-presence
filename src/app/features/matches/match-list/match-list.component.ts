@@ -19,7 +19,7 @@ import { MatchWithCount } from '../matches.service';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="container">
+    <div class="container-md">
       <h2>Matchs</h2>
 
       @if (loading()) {
@@ -89,7 +89,6 @@ import { MatchWithCount } from '../matches.service';
     </div>
   `,
   styles: `
-    .container { padding: 1rem; max-width: 600px; margin: 0 auto; }
     h2 { margin-top: 0; }
     .empty { text-align: center; padding: 2rem 0; }
     .match-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.75rem; }

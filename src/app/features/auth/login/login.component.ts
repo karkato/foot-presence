@@ -76,7 +76,7 @@ import { AuthService } from '../../../core/auth/auth.service';
       border-radius: 1rem;
       padding: 2rem;
       width: 100%;
-      max-width: 360px;
+      max-width: var(--w-narrow);
       box-shadow: var(--shadow-md);
       text-align: center;
     }

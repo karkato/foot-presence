@@ -22,7 +22,7 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [GroupSettingsComponent, SeasonSettingsComponent],
   template: `
-    <div class="container">
+    <div class="container-wide">
       <h2>Administration</h2>
 
       <!-- Tabs -->
@@ -168,7 +168,6 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
     </div>
   `,
   styles: `
-    .container { padding: 1rem; max-width: 680px; margin: 0 auto; }
     h2 { margin-top: 0; }
     .tabs { display: flex; gap: 0.25rem; background: var(--card); border: var(--border-1); border-radius: 0.6rem; padding: 0.25rem; margin-bottom: 1.25rem; overflow-x: auto; }
     .tab { flex: 1 0 auto; min-height: var(--tap); display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem; border: none; background: none; border-radius: 0.4rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; color: var(--text-muted); transition: all 0.15s; }

@@ -17,7 +17,7 @@ import { MyStatsComponent } from './my-stats/my-stats.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [FormsModule, RouterLink, SeasonPickerComponent, MyStatsComponent],
   template: `
-    <div class="container">
+    <div class="container-form">
       <h2>Mon profil</h2>
 
       @if (auth.currentPlayer(); as player) {
@@ -199,7 +199,6 @@ import { MyStatsComponent } from './my-stats/my-stats.component';
     </div>
   `,
   styles: `
-    .container { padding: 1rem; max-width: 480px; margin: 0 auto; }
     h2 { margin-top: 0; }
     .muted { font-size: 0.9rem; }
     .card { border: var(--border-1); }
