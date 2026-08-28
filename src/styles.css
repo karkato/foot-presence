@@ -133,8 +133,10 @@ p { margin: 0 0 0.75rem; line-height: 1.6; }
    local .container rules scattered across feature components.
    .form-field is the migration target for the local .field pattern
    (login.component.ts currently uses .field in a non-flex layout).
-   Full tap-target geometry for .tab/.badge and the scrollable behavior
-   of tab strips stay local until their dedicated cycles.
+   Full tap-target geometry for .badge stays local until its dedicated
+   cycle. Tab strip geometry (.tab), the flex layout and the scrollable
+   behavior now live in shared/components/tab-bar/tab-bar.component.ts
+   (cycle 11) instead of these global primitives.
    --w-form (480px) / .container-form now cover profile, history,
    match-form and player-form (cycle 10). group-settings, season-settings
    and registration-modal are sub-components nested inside another
@@ -232,7 +234,3 @@ p { margin: 0 0 0.75rem; line-height: 1.6; }
 
 .badge-closed { background: var(--border); color: var(--text-muted); }
 .badge-finished { background: var(--success); color: #fff; }
-
-.tabs { display: flex; gap: var(--sp-xs); margin-bottom: 1.25rem; }
-
-.tab { flex-shrink: 0; }
