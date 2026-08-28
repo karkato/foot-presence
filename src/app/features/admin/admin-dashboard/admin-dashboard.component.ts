@@ -170,7 +170,7 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
   styles: `
     .container { padding: 1rem; max-width: 680px; margin: 0 auto; }
     h2 { margin-top: 0; }
-    .tabs { display: flex; gap: 0.25rem; background: var(--card); border: 1.5px solid var(--border); border-radius: 0.6rem; padding: 0.25rem; margin-bottom: 1.25rem; overflow-x: auto; }
+    .tabs { display: flex; gap: 0.25rem; background: var(--card); border: var(--border-1); border-radius: 0.6rem; padding: 0.25rem; margin-bottom: 1.25rem; overflow-x: auto; }
     .tab { flex: 1 0 auto; min-height: var(--tap); display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem; border: none; background: none; border-radius: 0.4rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; color: var(--text-muted); transition: all 0.15s; }
     .tab:focus-visible { outline-offset: -2px; }
     .tab.active { background: var(--primary); color: white; }
@@ -199,7 +199,7 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
       align-items: center;
       padding: 0.35rem 0.75rem;
       background: none;
-      border: 1.5px solid var(--border);
+      border: var(--border-1);
       border-radius: 0.4rem;
       font-size: 0.8rem;
       cursor: pointer;
@@ -211,7 +211,7 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
     .item-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
     .item-card {
       background: var(--card);
-      border: 1.5px solid var(--border);
+      border: var(--border-1);
       border-radius: 0.6rem;
       padding: 0.75rem 1rem;
       display: flex;

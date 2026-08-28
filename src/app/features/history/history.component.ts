@@ -116,7 +116,7 @@ type Filter = 'all' | 'win' | 'loss' | 'draw';
     .muted { color: var(--text-muted); }
     .back-link { display: inline-flex; align-items: center; min-height: var(--tap); font-size: 0.875rem; font-weight: 600; color: var(--primary); text-decoration: none; margin-bottom: 1rem; }
     .back-link:hover { text-decoration: underline; }
-    .card { background: var(--card); border: 1.5px solid var(--border); border-radius: 0.75rem; }
+    .card { background: var(--card); border: var(--border-1); border-radius: 0.75rem; }
 
     /* Stats */
     .stats-card { padding: 1.25rem; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 1rem; }
@@ -135,7 +135,7 @@ type Filter = 'all' | 'win' | 'loss' | 'draw';
     .tabs { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; overflow-x: auto; padding-bottom: 2px; }
     .tabs button {
       flex-shrink: 0; min-height: var(--tap); display: inline-flex; align-items: center; justify-content: center;
-      padding: 0.4rem 0.9rem; border: 1.5px solid var(--border);
+      padding: 0.4rem 0.9rem; border: var(--border-1);
       border-radius: 2rem; background: var(--card); color: var(--text-muted);
       font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.15s;
     }

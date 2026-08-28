@@ -4,7 +4,7 @@
   top: 0;
   z-index: 50;
   background: var(--card);
-  border-bottom: 1.5px solid var(--border);
+  border-bottom: var(--border-1);
   padding-top: env(safe-area-inset-top, 0px);
   padding-left: max(1rem, env(safe-area-inset-left, 0px));
   padding-right: max(1rem, env(safe-area-inset-right, 0px));
@@ -76,7 +76,7 @@
   right: 0;
   z-index: 50;
   background: var(--card);
-  border-top: 1.5px solid var(--border);
+  border-top: var(--border-1);
   display: flex;
   align-items: stretch;
   height: calc(60px + env(safe-area-inset-bottom, 0px));

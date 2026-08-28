@@ -102,7 +102,7 @@ import { MatchWithCount } from '../matches.service';
       align-items: center;
       justify-content: space-between;
       cursor: pointer;
-      border: 1.5px solid var(--border);
+      border: var(--border-1);
       transition: border-color 0.15s, box-shadow 0.15s;
     }
     .match-card:hover { border-color: var(--primary); box-shadow: var(--shadow-sm); }
@@ -151,7 +151,7 @@ import { MatchWithCount } from '../matches.service';
       align-items: center;
       justify-content: space-between;
       background: none;
-      border: 1.5px solid var(--border);
+      border: var(--border-1);
       border-radius: 0.75rem;
       padding: 0.75rem 1.25rem;
       font-size: 0.9rem;

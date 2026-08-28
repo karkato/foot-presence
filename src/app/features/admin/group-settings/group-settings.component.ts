@@ -72,7 +72,7 @@ import { GroupsService } from '../../../core/groups/groups.service';
     input[type="checkbox"] { width: 1.25rem; height: 1.25rem; accent-color: var(--primary); flex-shrink: 0; cursor: pointer; font-size: var(--fs-field); }
     input[type="number"] {
       padding: 0.65rem 0.85rem;
-      border: 1.5px solid var(--border);
+      border: var(--border-1);
       border-radius: 0.5rem;
       font-size: var(--fs-field);
       background: var(--card);

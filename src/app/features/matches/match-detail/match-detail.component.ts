@@ -335,7 +335,7 @@ type PresentEntry =
 
     /* Buttons */
     .btn-stroked:hover { border-color: var(--primary); }
-    .btn-icon { width: var(--tap-compact); height: var(--tap-compact); border-radius: 50%; border: 1.5px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; font-family: inherit; }
+    .btn-icon { width: var(--tap-compact); height: var(--tap-compact); border-radius: 50%; border: var(--border-1); background: var(--card); color: var(--text); cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; font-family: inherit; }
     .btn-icon:disabled { opacity: 0.4; cursor: not-allowed; }
 
     /* Score display */
@@ -369,7 +369,7 @@ type PresentEntry =
     .score-inputs { display: flex; align-items: flex-end; gap: 0.75rem; flex-wrap: wrap; }
     .score-input-group { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
     .score-input-group label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
-    .score-input { width: 4rem; text-align: center; font-size: 1.1rem; font-weight: 700; padding: 0.5rem; border: 1.5px solid var(--border); border-radius: 0.5rem; background: var(--card); color: var(--text); font-family: inherit; min-height: var(--tap-compact); }
+    .score-input { width: 4rem; text-align: center; font-size: 1.1rem; font-weight: 700; padding: 0.5rem; border: var(--border-1); border-radius: 0.5rem; background: var(--card); color: var(--text); font-family: inherit; min-height: var(--tap-compact); }
     .score-input:focus { outline: none; border-color: var(--primary); }
     .score-name, .mini-score-name, .score-input-group label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
     .mini-match-display { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; margin-bottom: 0.75rem; padding: 0.75rem 1rem; }
@@ -392,15 +392,15 @@ type PresentEntry =
     .admin-player-controls { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; justify-content: flex-end; flex-basis: 100%; }
     .plus-ones-mini { display: flex; align-items: center; gap: 0.3rem; }
     .plus-ones-mini-count { font-size: 0.8rem; font-weight: 700; min-width: 1.75rem; text-align: center; color: var(--text-muted); }
-    .btn-mini { width: var(--tap-compact); height: var(--tap-compact); border-radius: 50%; border: 1.5px solid var(--border); background: var(--card); cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; font-family: inherit; line-height: 1; padding: 0; color: var(--text); }
+    .btn-mini { width: var(--tap-compact); height: var(--tap-compact); border-radius: 50%; border: var(--border-1); background: var(--card); cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; font-family: inherit; line-height: 1; padding: 0; color: var(--text); }
     .btn-mini:disabled { opacity: 0.35; cursor: not-allowed; }
     .team-btns { display: flex; gap: 0.4rem; }
-    .team-btn { padding: 0.2rem 0.65rem; border: 1.5px solid var(--border); border-radius: 0.35rem; font-size: 0.8rem; font-weight: 700; cursor: pointer; background: transparent; color: var(--text-muted); font-family: inherit; transition: all 0.1s; min-height: var(--tap-compact); }
+    .team-btn { padding: 0.2rem 0.65rem; border: var(--border-1); border-radius: 0.35rem; font-size: 0.8rem; font-weight: 700; cursor: pointer; background: transparent; color: var(--text-muted); font-family: inherit; transition: all 0.1s; min-height: var(--tap-compact); }
     .team-btn-a.active { background: ${TEAM_A_COLOR}; color: white; border-color: ${TEAM_A_COLOR}; }
     .team-btn-b.active { background: ${TEAM_B_COLOR}; color: white; border-color: ${TEAM_B_COLOR}; }
     .stats-mini { display: flex; align-items: center; gap: 0.25rem; }
     .stats-icon { font-size: 0.8rem; }
-    .stats-input { width: 2.6rem; text-align: center; font-size: var(--fs-field); font-weight: 700; padding: 0.2rem; border: 1.5px solid var(--border); border-radius: 0.35rem; background: var(--card); color: var(--text); font-family: inherit; min-height: var(--tap-compact); }
+    .stats-input { width: 2.6rem; text-align: center; font-size: var(--fs-field); font-weight: 700; padding: 0.2rem; border: var(--border-1); border-radius: 0.35rem; background: var(--card); color: var(--text); font-family: inherit; min-height: var(--tap-compact); }
     .stats-input:focus { outline: none; border-color: var(--primary); }
 
     @media (min-width: 768px) {

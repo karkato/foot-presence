@@ -202,12 +202,12 @@ import { MyStatsComponent } from './my-stats/my-stats.component';
     .container { padding: 1rem; max-width: 480px; margin: 0 auto; }
     h2 { margin-top: 0; }
     .muted { color: var(--text-muted); font-size: 0.9rem; }
-    .card { background: var(--card); border: 1.5px solid var(--border); border-radius: 0.75rem; }
+    .card { background: var(--card); border: var(--border-1); border-radius: 0.75rem; }
     .section { padding: 1.25rem; margin-bottom: 1rem; }
     .section-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin: 0 0 0.6rem; }
 
     /* Tabs */
-    .tabs { display: flex; gap: 0.25rem; background: var(--card); border: 1.5px solid var(--border); border-radius: 0.6rem; padding: 0.25rem; margin-bottom: 1.25rem; overflow-x: auto; }
+    .tabs { display: flex; gap: 0.25rem; background: var(--card); border: var(--border-1); border-radius: 0.6rem; padding: 0.25rem; margin-bottom: 1.25rem; overflow-x: auto; }
     .tab { flex: 1 0 auto; min-height: var(--tap); display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem; border: none; background: none; border-radius: 0.4rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; color: var(--text-muted); transition: all 0.15s; }
     .tab:focus-visible { outline-offset: -2px; }
     .tab.active { background: var(--primary); color: white; }
@@ -243,13 +243,13 @@ import { MyStatsComponent } from './my-stats/my-stats.component';
     .result-win { background: color-mix(in srgb, var(--success) 15%, transparent); color: var(--success); }
     .result-loss { background: color-mix(in srgb, var(--danger) 15%, transparent); color: var(--danger); }
     .result-draw, .result-none { background: var(--border); color: var(--text-muted); }
-    .btn-history { display: block; text-align: center; padding: 0.65rem; background: var(--card); border: 1.5px solid var(--border); border-radius: 0.75rem; font-size: 0.875rem; font-weight: 600; color: var(--primary); text-decoration: none; margin-bottom: 1rem; transition: border-color 0.15s; }
+    .btn-history { display: block; text-align: center; padding: 0.65rem; background: var(--card); border: var(--border-1); border-radius: 0.75rem; font-size: 0.875rem; font-weight: 600; color: var(--primary); text-decoration: none; margin-bottom: 1rem; transition: border-color 0.15s; }
     .btn-history:hover { border-color: var(--primary); }
 
     /* Form inputs */
     .field { display: flex; flex-direction: column; gap: 0.35rem; flex: 1; min-width: 0; }
     .field label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
-    .field-input { padding: 0.65rem 0.85rem; border: 1.5px solid var(--border); border-radius: 0.5rem; font-size: var(--fs-field); background: var(--card); color: var(--text); font-family: inherit; width: 100%; box-sizing: border-box; }
+    .field-input { padding: 0.65rem 0.85rem; border: var(--border-1); border-radius: 0.5rem; font-size: var(--fs-field); background: var(--card); color: var(--text); font-family: inherit; width: 100%; box-sizing: border-box; }
     .field-input:focus { outline: none; border-color: var(--primary); }
     .input-row { display: flex; gap: 0.5rem; align-items: center; }
     .input-row .field-input { flex: 1; min-width: 0; }

@@ -72,7 +72,7 @@ import { DEFAULT_TEAM_A_NAME, DEFAULT_TEAM_B_NAME } from '../../../shared/consta
     .field { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
     label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
     input {
-      padding: 0.65rem 0.85rem; border: 1.5px solid var(--border);
+      padding: 0.65rem 0.85rem; border: var(--border-1);
       border-radius: 0.5rem; font-size: var(--fs-field); background: var(--card); color: var(--text);
       min-height: var(--tap);
     }

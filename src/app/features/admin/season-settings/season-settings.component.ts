@@ -60,14 +60,14 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
   styles: `
     .container { padding: 0; max-width: 480px; }
     .muted { color: var(--text-muted); }
-    .card { background: var(--card); border: 1.5px solid var(--border); border-radius: 0.75rem; }
+    .card { background: var(--card); border: var(--border-1); border-radius: 0.75rem; }
     .current-season { display: flex; flex-direction: column; gap: 0.25rem; padding: 1rem; margin-bottom: 1.25rem; }
     .season-name { font-size: 1.1rem; font-weight: 800; }
     .season-meta { font-size: 0.85rem; color: var(--text-muted); }
     .field { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1rem; }
     .field label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
     .field input {
-      padding: 0.65rem 0.85rem; border: 1.5px solid var(--border); border-radius: 0.5rem;
+      padding: 0.65rem 0.85rem; border: var(--border-1); border-radius: 0.5rem;
       font-size: var(--fs-field); background: var(--card); color: var(--text); font-family: inherit;
     }
     .field input:focus { outline: none; border-color: var(--primary); }
