@@ -134,7 +134,7 @@ import { MyStatsComponent } from './my-stats/my-stats.component';
               <div class="input-row">
                 <input type="text" class="field-input" [(ngModel)]="newDisplayName"
                   [placeholder]="player.username" maxlength="30" />
-                <button class="btn-primary" (click)="saveDisplayName()" [disabled]="saving()">
+                <button class="btn btn-primary" (click)="saveDisplayName()" [disabled]="saving()">
                   @if (saving()) { ... } @else { OK }
                 </button>
               </div>
@@ -158,7 +158,7 @@ import { MyStatsComponent } from './my-stats/my-stats.component';
               </div>
               @if (pinError()) { <p class="feedback-error">{{ pinError() }}</p> }
               @if (pinFeedback()) { <p class="feedback-success">{{ pinFeedback() }}</p> }
-              <button class="btn-primary" (click)="savePin()" [disabled]="savingPin() || !newPin || !confirmPin">
+              <button class="btn btn-primary" (click)="savePin()" [disabled]="savingPin() || !newPin || !confirmPin">
                 @if (savingPin()) { ... } @else { Confirmer }
               </button>
             </div>
@@ -166,7 +166,7 @@ import { MyStatsComponent } from './my-stats/my-stats.component';
             <!-- Session -->
             <div class="card section">
               <h3 class="section-label">Session</h3>
-              <button class="btn-danger btn-full" (click)="logout()">Se déconnecter</button>
+              <button class="btn btn-danger btn-full" (click)="logout()">Se déconnecter</button>
             </div>
           </div>
         }
@@ -257,11 +257,8 @@ import { MyStatsComponent } from './my-stats/my-stats.component';
     .feedback-error { color: var(--danger); font-size: 0.85rem; margin: 0 0 0.5rem; }
 
     /* Buttons */
-    .btn-primary { min-height: var(--tap); padding: 0.65rem 1.25rem; background: var(--primary); color: white; border: none; border-radius: 0.5rem; font-size: 0.95rem; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; }
-    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
-    .btn-danger { min-height: var(--tap); padding: 0.65rem 1.25rem; background: var(--danger); color: white; border: none; border-radius: 0.5rem; font-size: 0.95rem; font-weight: 600; cursor: pointer; font-family: inherit; }
-    .btn-danger:disabled { opacity: 0.6; cursor: not-allowed; }
-    .btn-full { width: 100%; }
+    .btn-primary { padding: 0.65rem 1.25rem; white-space: nowrap; }
+    .btn-danger { padding: 0.65rem 1.25rem; }
 
     /* Players list */
     .player-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.1rem; }
