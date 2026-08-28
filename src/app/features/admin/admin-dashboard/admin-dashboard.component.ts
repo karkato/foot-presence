@@ -15,41 +15,36 @@ import { Player, getDisplayName } from '../../../shared/models/player.model';
 import { GroupSettingsComponent } from '../group-settings/group-settings.component';
 import { SeasonSettingsComponent } from '../season-settings/season-settings.component';
 import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
+import { TabBarComponent, TabItem } from '../../../shared/components/tab-bar/tab-bar.component';
+
+type TopTab = 'management' | 'audit' | 'settings';
+type ManagementTab = 'matches' | 'players' | 'seasons';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [GroupSettingsComponent, SeasonSettingsComponent],
+  imports: [GroupSettingsComponent, SeasonSettingsComponent, TabBarComponent],
   template: `
     <div class="container-wide">
       <h2>Administration</h2>
 
       <!-- Tabs -->
-      <div class="tabs" role="tablist" aria-label="Sections d'administration">
-        <button id="tab-management" type="button" class="tab" role="tab" [attr.aria-selected]="topTab() === 'management'"
-          [attr.aria-controls]="'panel-' + activeTab()"
-          [class.active]="topTab() === 'management'" (click)="openManagement()">Gestion</button>
-        <button id="tab-audit" type="button" class="tab" role="tab" [attr.aria-selected]="topTab() === 'audit'"
-          aria-controls="panel-audit"
-          [class.active]="topTab() === 'audit'" (click)="activeTab.set('audit')">Historique</button>
-        <button id="tab-settings" type="button" class="tab" role="tab" [attr.aria-selected]="topTab() === 'settings'"
-          aria-controls="panel-settings"
-          [class.active]="topTab() === 'settings'" (click)="activeTab.set('settings')">Réglages</button>
-      </div>
+      <app-tab-bar
+        [tabs]="topTabs"
+        [selected]="topTab()"
+        (selectedChange)="onTopTabChange($event)"
+        ariaLabel="Sections d'administration"
+      />
 
       @if (topTab() === 'management') {
-        <div class="tabs subtabs" role="tablist" aria-label="Sous-sections de gestion">
-          <button id="tab-matches" type="button" class="tab subtab" role="tab" [attr.aria-selected]="activeTab() === 'matches'"
-            aria-controls="panel-matches"
-            [class.active]="activeTab() === 'matches'" (click)="selectManagementTab('matches')">Matchs</button>
-          <button id="tab-players" type="button" class="tab subtab" role="tab" [attr.aria-selected]="activeTab() === 'players'"
-            aria-controls="panel-players"
-            [class.active]="activeTab() === 'players'" (click)="selectManagementTab('players')">Joueurs</button>
-          <button id="tab-seasons" type="button" class="tab subtab" role="tab" [attr.aria-selected]="activeTab() === 'seasons'"
-            aria-controls="panel-seasons"
-            [class.active]="activeTab() === 'seasons'" (click)="selectManagementTab('seasons')">Saisons</button>
-        </div>
+        <app-tab-bar
+          variant="sub"
+          [tabs]="managementTabs"
+          [selected]="managementTab()"
+          (selectedChange)="selectManagementTab($event)"
+          ariaLabel="Sous-sections de gestion"
+        />
       }
 
       <!-- Matchs -->
@@ -169,13 +164,6 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
   `,
   styles: `
     h2 { margin-top: 0; }
-    .tabs { background: var(--card); border: var(--border-1); border-radius: 0.6rem; padding: 0.25rem; overflow-x: auto; }
-    .tab { flex: 1 0 auto; min-height: var(--tap); display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem; border: none; background: none; border-radius: 0.4rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; color: var(--text-muted); transition: all 0.15s; }
-    .tab:focus-visible { outline-offset: -2px; }
-    .tab.active { background: var(--primary); color: white; }
-    .tab.active:focus-visible { outline-color: var(--text); }
-    .tabs.subtabs { background: var(--bg); border-color: transparent; margin-top: -0.75rem; }
-    .tab.subtab { flex: 1 0 auto; min-height: var(--tap); display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem; }
     .section { margin-bottom: 1.5rem; }
     .section-header { display: flex; align-items: center; justify-content: flex-end; margin-bottom: 0.75rem; }
     h3 { margin: 0; }
@@ -264,18 +252,37 @@ export class AdminDashboardComponent implements OnInit {
 
   readonly getDisplayName = getDisplayName;
 
+  readonly topTabs: readonly TabItem<TopTab>[] = [
+    { value: 'management', label: 'Gestion' },
+    { value: 'audit', label: 'Historique', panelId: 'panel-audit' },
+    { value: 'settings', label: 'Réglages', panelId: 'panel-settings' },
+  ];
+
+  readonly managementTabs: readonly TabItem<ManagementTab>[] = [
+    { value: 'matches', label: 'Matchs', panelId: 'panel-matches' },
+    { value: 'players', label: 'Joueurs', panelId: 'panel-players' },
+    { value: 'seasons', label: 'Saisons', panelId: 'panel-seasons' },
+  ];
+
   activeTab = signal<'matches' | 'players' | 'audit' | 'seasons' | 'settings'>('matches');
 
   // Groupe les 3 sous-onglets sous "Gestion".
-  topTab = computed<'management' | 'audit' | 'settings'>(() => {
+  topTab = computed<TopTab>(() => {
     const tab = this.activeTab();
     return tab === 'matches' || tab === 'players' || tab === 'seasons' ? 'management' : tab;
+  });
+
+  // Narrows activeTab to the 3 management sub-values for app-tab-bar's [selected] input.
+  // Only meaningful while topTab() === 'management'; falls back to 'matches' otherwise.
+  managementTab = computed<ManagementTab>(() => {
+    const tab = this.activeTab();
+    return tab === 'matches' || tab === 'players' || tab === 'seasons' ? tab : 'matches';
   });
 
   // Mémorise la dernière sous-section de "Gestion" visitée (pas un doublon de topTab :
   // topTab dérive l'état de navigation actif, ceci ne fait que se souvenir du dernier choix
   // pour le restaurer quand on revient sur "Gestion" depuis un autre onglet top-level).
-  private lastManagementTab = signal<'matches' | 'players' | 'seasons'>('matches');
+  private lastManagementTab = signal<ManagementTab>('matches');
 
   matches = signal<Match[]>([]);
   players = signal<Player[]>([]);
@@ -330,7 +337,15 @@ export class AdminDashboardComponent implements OnInit {
     this.activeTab.set(this.lastManagementTab());
   }
 
-  selectManagementTab(tab: 'matches' | 'players' | 'seasons'): void {
+  onTopTabChange(tab: TopTab): void {
+    if (tab === 'management') {
+      this.openManagement();
+    } else {
+      this.activeTab.set(tab);
+    }
+  }
+
+  selectManagementTab(tab: ManagementTab): void {
     this.lastManagementTab.set(tab);
     this.activeTab.set(tab);
   }
