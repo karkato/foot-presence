@@ -20,7 +20,7 @@ export interface TabItem<T extends string = string> {
   template: `
     @for (tab of tabs(); track tab.value; let i = $index) {
       <button #btnRef type="button" class="tab" role="tab"
-        [id]="'tab-' + tab.value"
+        [id]="idPrefix() + tab.value"
         [attr.aria-selected]="tab.value === selected()"
         [attr.aria-controls]="tab.panelId ?? null"
         [attr.tabindex]="i === selectedIndex() ? 0 : -1"
@@ -71,6 +71,7 @@ export class TabBarComponent<T extends string = string> {
   selected = input.required<T>();
   ariaLabel = input.required<string>();
   variant = input<'primary' | 'sub'>('primary');
+  idPrefix = input<string>('tab-');
 
   selectedChange = output<T>();
 
