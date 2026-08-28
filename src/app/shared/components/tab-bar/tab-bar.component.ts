@@ -12,8 +12,8 @@ export interface TabItem<T extends string = string> {
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     role: 'tablist',
+    'aria-orientation': 'horizontal',
     '[attr.aria-label]': 'ariaLabel()',
-    '[attr.aria-orientation]': "'horizontal'",
     '[class.sub]': "variant() === 'sub'",
     '(keydown)': 'onKeydown($event)',
   },
