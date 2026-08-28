@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -94,6 +94,7 @@ export class MatchFormComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   isEdit = signal(false);
   saving = signal(false);
@@ -121,6 +122,7 @@ export class MatchFormComponent implements OnInit {
         team_a_name: match.team_a_name ?? DEFAULT_TEAM_A_NAME,
         team_b_name: match.team_b_name ?? DEFAULT_TEAM_B_NAME,
       };
+      this.cdr.markForCheck();
     }
   }
 
