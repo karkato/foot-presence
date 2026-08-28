@@ -129,18 +129,17 @@ p { margin: 0 0 0.75rem; line-height: 1.6; }
    ------------------------------------------------------------
    .btn is a base and must always be paired with a modifier
    (.btn-primary / .btn-danger / .btn-stroked), never used alone.
-   .container-narrow/-md/-wide are the migration target for the
-   local .container rules scattered across feature components,
-   starting cycle 3. .form-field is the migration target for the
-   local .field pattern (login.component.ts currently uses .field
-   in a non-flex layout). Full tap-target geometry for .tab/.badge
-   and the scrollable behavior of tab strips stay local until their
-   dedicated cycles.
-   The 7-file 480px cluster (history, profile, match-form, player-form,
-   group-settings, season-settings, registration-modal) has no assigned
-   target token yet — neither --w-md (600px, a 120px widening) nor a
-   potential future --w-form: 480px. That decision is deferred to each
-   file's own migration cycle, not made here.
+   .container-narrow/-form/-md/-wide are the migration target for the
+   local .container rules scattered across feature components.
+   .form-field is the migration target for the local .field pattern
+   (login.component.ts currently uses .field in a non-flex layout).
+   Full tap-target geometry for .tab/.badge and the scrollable behavior
+   of tab strips stay local until their dedicated cycles.
+   --w-form (480px) / .container-form now cover profile, history,
+   match-form and player-form (cycle 10). group-settings, season-settings
+   and registration-modal are sub-components nested inside another
+   page's layout, not standalone page containers — they stay out of
+   this token family on purpose.
    ============================================================ */
 
 .btn {
