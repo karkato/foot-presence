@@ -77,9 +77,9 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
                       <span class="badge badge-closed">Fermé</span>
                     } @else {
                       <button class="btn-sm btn-warning" (click)="toggleClose(match)">Fermer</button>
+                      <button class="btn-sm btn-edit" (click)="editMatch(match)">Modifier</button>
+                      <button class="btn-sm btn-danger" (click)="deleteMatch(match)">Supprimer</button>
                     }
-                    <button class="btn-sm btn-edit" (click)="editMatch(match)">Modifier</button>
-                    <button class="btn-sm btn-danger" (click)="deleteMatch(match)">Supprimer</button>
                   </div>
                 </li>
               }
