@@ -113,10 +113,9 @@ type Filter = 'all' | 'win' | 'loss' | 'draw';
   styles: `
     .container { padding: 1rem; max-width: 480px; margin: 0 auto; }
     h2 { margin-top: 0; }
-    .muted { color: var(--text-muted); }
     .back-link { display: inline-flex; align-items: center; min-height: var(--tap); font-size: 0.875rem; font-weight: 600; color: var(--primary); text-decoration: none; margin-bottom: 1rem; }
     .back-link:hover { text-decoration: underline; }
-    .card { background: var(--card); border: var(--border-1); border-radius: 0.75rem; }
+    .card { border: var(--border-1); }
 
     /* Stats */
     .stats-card { padding: 1.25rem; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 1rem; }

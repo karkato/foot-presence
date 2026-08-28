@@ -206,7 +206,6 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
       color: var(--text-muted);
       font-family: inherit;
     }
-    .muted { color: var(--text-muted); }
     .feedback-error { color: var(--danger); font-size: 0.85rem; text-align: center; margin: 0.5rem 0 0; }
     .item-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
     .item-card {

@@ -201,10 +201,10 @@ import { MyStatsComponent } from './my-stats/my-stats.component';
   styles: `
     .container { padding: 1rem; max-width: 480px; margin: 0 auto; }
     h2 { margin-top: 0; }
-    .muted { color: var(--text-muted); font-size: 0.9rem; }
-    .card { background: var(--card); border: var(--border-1); border-radius: 0.75rem; }
+    .muted { font-size: 0.9rem; }
+    .card { border: var(--border-1); }
     .section { padding: 1.25rem; margin-bottom: 1rem; }
-    .section-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin: 0 0 0.6rem; }
+    .section-label { margin: 0 0 0.6rem; }
 
     /* Tabs */
     .tabs { display: flex; gap: 0.25rem; background: var(--card); border: var(--border-1); border-radius: 0.6rem; padding: 0.25rem; margin-bottom: 1.25rem; overflow-x: auto; }

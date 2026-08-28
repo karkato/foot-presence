@@ -91,7 +91,6 @@ import { MatchWithCount } from '../matches.service';
   styles: `
     .container { padding: 1rem; max-width: 600px; margin: 0 auto; }
     h2 { margin-top: 0; }
-    .muted { color: var(--text-muted); }
     .empty { text-align: center; padding: 2rem 0; }
     .match-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.75rem; }
     .match-card {

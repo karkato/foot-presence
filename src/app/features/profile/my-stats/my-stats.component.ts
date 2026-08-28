@@ -61,9 +61,9 @@ import { mapMatchStatsError } from '../../../shared/utils/rpc-error';
   `,
   styles: `
     .container { display: flex; flex-direction: column; gap: 0.6rem; }
-    .muted { color: var(--text-muted); font-size: 0.9rem; }
+    .muted { font-size: 0.9rem; }
     .muted.small { font-size: 0.8rem; margin: 0.4rem 0 0; }
-    .card { background: var(--card); border: var(--border-1); border-radius: 0.75rem; padding: 0.9rem 1rem; }
+    .card { border: var(--border-1); padding: 0.9rem 1rem; }
     .entries { display: flex; flex-direction: column; gap: 0.6rem; }
     .entry-header { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.4rem; }
     .entry-title { font-weight: 600; font-size: 0.9rem; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

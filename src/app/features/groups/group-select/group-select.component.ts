@@ -67,7 +67,6 @@ import { Group } from '../../../shared/models/group.model';
       background: var(--bg);
     }
     .card {
-      background: var(--card);
       border-radius: 1rem;
       padding: 2rem;
       width: 100%;
@@ -78,7 +77,6 @@ import { Group } from '../../../shared/models/group.model';
     .logo { font-size: 3rem; margin-bottom: 0.5rem; }
     h1 { margin: 0 0 0.25rem; font-size: 1.5rem; }
     .subtitle { color: var(--text-muted); margin-bottom: 1.5rem; }
-    .muted { color: var(--text-muted); }
     .group-list {
       list-style: none; padding: 0; margin: 0 0 1rem;
       max-height: 18rem; overflow-y: auto; overscroll-behavior: contain;

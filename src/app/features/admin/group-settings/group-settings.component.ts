@@ -83,7 +83,6 @@ import { GroupsService } from '../../../core/groups/groups.service';
     input:disabled { opacity: 0.5; }
     .error { color: var(--danger); font-size: 0.9rem; }
     .feedback-success { color: var(--success); font-size: 0.9rem; }
-    .muted { color: var(--text-muted); }
     .actions { display: flex; gap: 0.75rem; justify-content: flex-end; }
     .btn-primary {
       min-height: var(--tap);

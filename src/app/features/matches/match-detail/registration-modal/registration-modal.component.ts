@@ -84,7 +84,7 @@ import { AuthService } from '../../../../core/auth/auth.service';
       padding: 0.25rem;
     }
     .proxy-info { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem; }
-    .muted { color: var(--text-muted); text-align: center; padding: 1rem 0; }
+    .muted { text-align: center; padding: 1rem 0; }
     .player-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.4rem; }
     .player-btn {
       width: 100%;
