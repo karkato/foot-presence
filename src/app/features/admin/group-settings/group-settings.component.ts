@@ -54,7 +54,7 @@ import { GroupsService } from '../../../core/groups/groups.service';
           }
 
           <div class="actions">
-            <button type="submit" class="btn-primary" [disabled]="saving()">
+            <button type="submit" class="btn btn-primary" [disabled]="saving()">
               @if (saving()) { ... } @else { Enregistrer }
             </button>
           </div>
@@ -67,13 +67,14 @@ import { GroupsService } from '../../../core/groups/groups.service';
     .form { display: flex; flex-direction: column; gap: 1rem; }
     .field { display: flex; flex-direction: column; gap: 0.35rem; }
     .checkbox-field { flex-direction: row; align-items: center; gap: 0.5rem; }
-    .checkbox-field label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.95rem; font-weight: 500; cursor: pointer; color: var(--text); }
+    .checkbox-field label { display: flex; align-items: center; gap: 0.6rem; min-height: var(--tap); font-size: 0.95rem; font-weight: 500; cursor: pointer; color: var(--text); }
     label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
+    input[type="checkbox"] { width: 1.25rem; height: 1.25rem; accent-color: var(--primary); flex-shrink: 0; cursor: pointer; font-size: var(--fs-field); }
     input[type="number"] {
       padding: 0.65rem 0.85rem;
-      border: 1.5px solid var(--border);
+      border: var(--border-1);
       border-radius: 0.5rem;
-      font-size: 0.95rem;
+      font-size: var(--fs-field);
       background: var(--card);
       color: var(--text);
       max-width: 10rem;
@@ -82,19 +83,10 @@ import { GroupsService } from '../../../core/groups/groups.service';
     input:disabled { opacity: 0.5; }
     .error { color: var(--danger); font-size: 0.9rem; }
     .feedback-success { color: var(--success); font-size: 0.9rem; }
-    .muted { color: var(--text-muted); }
     .actions { display: flex; gap: 0.75rem; justify-content: flex-end; }
     .btn-primary {
       padding: 0.65rem 1.25rem;
-      background: var(--primary);
-      color: white;
-      border: none;
-      border-radius: 0.5rem;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
     }
-    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
   `,
 })
 export class GroupSettingsComponent implements OnInit {

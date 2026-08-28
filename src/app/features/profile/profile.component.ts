@@ -17,7 +17,7 @@ import { MyStatsComponent } from './my-stats/my-stats.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [FormsModule, RouterLink, SeasonPickerComponent, MyStatsComponent],
   template: `
-    <div class="container">
+    <div class="container-form">
       <h2>Mon profil</h2>
 
       @if (auth.currentPlayer(); as player) {
@@ -134,7 +134,7 @@ import { MyStatsComponent } from './my-stats/my-stats.component';
               <div class="input-row">
                 <input type="text" class="field-input" [(ngModel)]="newDisplayName"
                   [placeholder]="player.username" maxlength="30" />
-                <button class="btn-primary" (click)="saveDisplayName()" [disabled]="saving()">
+                <button class="btn btn-primary" (click)="saveDisplayName()" [disabled]="saving()">
                   @if (saving()) { ... } @else { OK }
                 </button>
               </div>
@@ -158,7 +158,7 @@ import { MyStatsComponent } from './my-stats/my-stats.component';
               </div>
               @if (pinError()) { <p class="feedback-error">{{ pinError() }}</p> }
               @if (pinFeedback()) { <p class="feedback-success">{{ pinFeedback() }}</p> }
-              <button class="btn-primary" (click)="savePin()" [disabled]="savingPin() || !newPin || !confirmPin">
+              <button class="btn btn-primary" (click)="savePin()" [disabled]="savingPin() || !newPin || !confirmPin">
                 @if (savingPin()) { ... } @else { Confirmer }
               </button>
             </div>
@@ -166,7 +166,7 @@ import { MyStatsComponent } from './my-stats/my-stats.component';
             <!-- Session -->
             <div class="card section">
               <h3 class="section-label">Session</h3>
-              <button class="btn-danger btn-full" (click)="logout()">Se déconnecter</button>
+              <button class="btn btn-danger btn-full" (click)="logout()">Se déconnecter</button>
             </div>
           </div>
         }
@@ -199,21 +199,22 @@ import { MyStatsComponent } from './my-stats/my-stats.component';
     </div>
   `,
   styles: `
-    .container { padding: 1rem; max-width: 480px; margin: 0 auto; }
     h2 { margin-top: 0; }
-    .muted { color: var(--text-muted); font-size: 0.9rem; }
-    .card { background: var(--card); border: 1.5px solid var(--border); border-radius: 0.75rem; }
+    .muted { font-size: 0.9rem; }
+    .card { border: var(--border-1); }
     .section { padding: 1.25rem; margin-bottom: 1rem; }
-    .section-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin: 0 0 0.6rem; }
+    .section-label { margin: 0 0 0.6rem; }
 
     /* Tabs */
-    .tabs { display: flex; gap: 0.25rem; background: var(--card); border: 1.5px solid var(--border); border-radius: 0.6rem; padding: 0.25rem; margin-bottom: 1.25rem; }
-    .tab { flex: 1; padding: 0.5rem; border: none; background: none; border-radius: 0.4rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; color: var(--text-muted); transition: all 0.15s; }
+    .tabs { background: var(--card); border: var(--border-1); border-radius: 0.6rem; padding: 0.25rem; overflow-x: auto; }
+    .tab { flex: 1 0 auto; min-height: var(--tap); display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem; border: none; background: none; border-radius: 0.4rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; color: var(--text-muted); transition: all 0.15s; }
+    .tab:focus-visible { outline-offset: -2px; }
     .tab.active { background: var(--primary); color: white; }
+    .tab.active:focus-visible { outline-color: var(--text); }
 
     /* Stats */
     .stats-card { padding: 1.25rem; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 1rem; }
-    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+    .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
     .stat-block { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; padding: 0.75rem 0.5rem; background: var(--bg); border-radius: 0.5rem; }
     .stat-value { font-size: 1.5rem; font-weight: 900; line-height: 1; }
     .stat-label { font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
@@ -241,36 +242,37 @@ import { MyStatsComponent } from './my-stats/my-stats.component';
     .result-win { background: color-mix(in srgb, var(--success) 15%, transparent); color: var(--success); }
     .result-loss { background: color-mix(in srgb, var(--danger) 15%, transparent); color: var(--danger); }
     .result-draw, .result-none { background: var(--border); color: var(--text-muted); }
-    .btn-history { display: block; text-align: center; padding: 0.65rem; background: var(--card); border: 1.5px solid var(--border); border-radius: 0.75rem; font-size: 0.875rem; font-weight: 600; color: var(--primary); text-decoration: none; margin-bottom: 1rem; transition: border-color 0.15s; }
+    .btn-history { display: block; text-align: center; padding: 0.65rem; background: var(--card); border: var(--border-1); border-radius: 0.75rem; font-size: 0.875rem; font-weight: 600; color: var(--primary); text-decoration: none; margin-bottom: 1rem; transition: border-color 0.15s; }
     .btn-history:hover { border-color: var(--primary); }
 
     /* Form inputs */
-    .field { display: flex; flex-direction: column; gap: 0.35rem; flex: 1; }
+    .field { display: flex; flex-direction: column; gap: 0.35rem; flex: 1; min-width: 0; }
     .field label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
-    .field-input { padding: 0.65rem 0.85rem; border: 1.5px solid var(--border); border-radius: 0.5rem; font-size: 0.95rem; background: var(--card); color: var(--text); font-family: inherit; width: 100%; box-sizing: border-box; }
+    .field-input { padding: 0.65rem 0.85rem; border: var(--border-1); border-radius: 0.5rem; font-size: var(--fs-field); background: var(--card); color: var(--text); font-family: inherit; width: 100%; box-sizing: border-box; }
     .field-input:focus { outline: none; border-color: var(--primary); }
     .input-row { display: flex; gap: 0.5rem; align-items: center; }
-    .input-row .field-input { flex: 1; }
+    .input-row .field-input { flex: 1; min-width: 0; }
     .pin-row { display: flex; gap: 0.75rem; margin-bottom: 0.75rem; }
     .feedback-success { color: var(--success); font-size: 0.85rem; margin: 0.4rem 0 0; }
     .feedback-error { color: var(--danger); font-size: 0.85rem; margin: 0 0 0.5rem; }
 
     /* Buttons */
-    .btn-primary { padding: 0.65rem 1.25rem; background: var(--primary); color: white; border: none; border-radius: 0.5rem; font-size: 0.95rem; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; }
-    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
-    .btn-danger { padding: 0.65rem 1.25rem; background: var(--danger); color: white; border: none; border-radius: 0.5rem; font-size: 0.95rem; font-weight: 600; cursor: pointer; font-family: inherit; }
-    .btn-danger:disabled { opacity: 0.6; cursor: not-allowed; }
-    .btn-full { width: 100%; }
+    .btn-primary { padding: 0.65rem 1.25rem; white-space: nowrap; }
+    .btn-danger { padding: 0.65rem 1.25rem; }
 
     /* Players list */
     .player-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.1rem; }
     .player-row { display: flex; align-items: center; padding: 0.5rem 0.5rem; border-radius: 0.4rem; }
     .player-row.current-player { background: var(--primary-light); font-weight: 700; }
-    .player-name { flex: 1; font-size: 0.9rem; }
-    .player-badges { display: flex; gap: 0.35rem; }
+    .player-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9rem; }
+    .player-badges { display: flex; gap: 0.35rem; flex-shrink: 0; }
     .badge { font-size: 0.7rem; font-weight: 700; padding: 0.1rem 0.45rem; border-radius: 0.3rem; }
     .badge-primary { background: var(--primary); color: white; }
     .badge-warning { background: var(--warning); color: white; }
+
+    @media (min-width: 480px) {
+      .stats-grid { grid-template-columns: repeat(3, 1fr); }
+    }
   `,
 })
 export class ProfileComponent implements OnInit {

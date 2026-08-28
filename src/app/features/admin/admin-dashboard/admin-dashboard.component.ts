@@ -22,7 +22,7 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [GroupSettingsComponent, SeasonSettingsComponent],
   template: `
-    <div class="container">
+    <div class="container-wide">
       <h2>Administration</h2>
 
       <!-- Tabs -->
@@ -74,7 +74,7 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
                   </div>
                   <div class="item-actions">
                     @if (match.is_closed) {
-                      <span class="badge-closed">Fermé</span>
+                      <span class="badge badge-closed">Fermé</span>
                     } @else {
                       <button class="btn-sm btn-warning" (click)="toggleClose(match)">Fermer</button>
                     }
@@ -168,17 +168,21 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
     </div>
   `,
   styles: `
-    .container { padding: 1rem; max-width: 680px; margin: 0 auto; }
     h2 { margin-top: 0; }
-    .tabs { display: flex; gap: 0.25rem; background: var(--card); border: 1.5px solid var(--border); border-radius: 0.6rem; padding: 0.25rem; margin-bottom: 1.25rem; }
-    .tab { flex: 1; padding: 0.5rem; border: none; background: none; border-radius: 0.4rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; color: var(--text-muted); transition: all 0.15s; }
+    .tabs { background: var(--card); border: var(--border-1); border-radius: 0.6rem; padding: 0.25rem; overflow-x: auto; }
+    .tab { flex: 1 0 auto; min-height: var(--tap); display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem; border: none; background: none; border-radius: 0.4rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; color: var(--text-muted); transition: all 0.15s; }
+    .tab:focus-visible { outline-offset: -2px; }
     .tab.active { background: var(--primary); color: white; }
+    .tab.active:focus-visible { outline-color: var(--text); }
     .tabs.subtabs { background: var(--bg); border-color: transparent; margin-top: -0.75rem; }
-    .tab.subtab { font-size: 0.8rem; }
+    .tab.subtab { flex: 1 0 auto; min-height: var(--tap); display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem; }
     .section { margin-bottom: 1.5rem; }
     .section-header { display: flex; align-items: center; justify-content: flex-end; margin-bottom: 0.75rem; }
     h3 { margin: 0; }
     .btn-add {
+      min-height: var(--tap);
+      display: inline-flex;
+      align-items: center;
       padding: 0.45rem 0.9rem;
       background: var(--primary);
       color: white;
@@ -189,21 +193,23 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
       cursor: pointer;
     }
     .btn-refresh {
+      min-height: var(--tap);
+      display: inline-flex;
+      align-items: center;
       padding: 0.35rem 0.75rem;
       background: none;
-      border: 1.5px solid var(--border);
+      border: var(--border-1);
       border-radius: 0.4rem;
       font-size: 0.8rem;
       cursor: pointer;
       color: var(--text-muted);
       font-family: inherit;
     }
-    .muted { color: var(--text-muted); }
     .feedback-error { color: var(--danger); font-size: 0.85rem; text-align: center; margin: 0.5rem 0 0; }
     .item-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
     .item-card {
       background: var(--card);
-      border: 1.5px solid var(--border);
+      border: var(--border-1);
       border-radius: 0.6rem;
       padding: 0.75rem 1rem;
       display: flex;
@@ -212,11 +218,14 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
       gap: 0.5rem;
       flex-wrap: wrap;
     }
-    .item-info { display: flex; flex-direction: column; gap: 0.15rem; }
-    .item-title { font-weight: 600; font-size: 0.95rem; }
-    .item-sub { font-size: 0.8rem; color: var(--text-muted); }
-    .item-actions { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+    .item-info { display: flex; flex-direction: column; gap: 0.15rem; flex: 1 1 auto; min-width: 0; }
+    .item-title { font-weight: 600; font-size: 0.95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .item-sub { font-size: 0.8rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .item-actions { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
     .btn-sm {
+      min-height: var(--tap-compact);
+      display: inline-flex;
+      align-items: center;
       padding: 0.3rem 0.65rem;
       border: none;
       border-radius: 0.4rem;
@@ -227,13 +236,11 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
     .btn-edit { background: var(--border); color: var(--text); }
     .btn-warning { background: var(--warning); color: white; }
     .btn-danger { background: var(--danger); color: white; }
+    .btn-sm.btn-danger { margin-left: var(--sp-xs); }
+    /* Exception: keeps a 1rem radius instead of the global .badge pill
+       (--r-pill), which this admin item-card badge shape predates. */
     .badge-closed {
-      font-size: 0.75rem;
-      background: var(--border);
-      color: var(--text-muted);
-      padding: 0.2rem 0.5rem;
       border-radius: 1rem;
-      font-weight: 600;
     }
     .audit-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0; }
     .audit-item {

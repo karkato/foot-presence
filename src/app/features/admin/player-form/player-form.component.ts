@@ -19,7 +19,7 @@ import { mapAuthRpcError, rpcMessage } from '../../../shared/utils/rpc-error';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [FormsModule],
   template: `
-    <div class="container">
+    <div class="container-form">
       <h2>{{ isEdit() ? 'Modifier le joueur' : 'Nouveau joueur' }}</h2>
 
       <form (ngSubmit)="onSubmit()" class="form">
@@ -87,7 +87,7 @@ import { mapAuthRpcError, rpcMessage } from '../../../shared/utils/rpc-error';
 
         <div class="actions">
           <button type="button" class="btn-cancel" (click)="goBack()">Annuler</button>
-          <button type="submit" class="btn-primary" [disabled]="saving()">
+          <button type="submit" class="btn btn-primary" [disabled]="saving()">
             @if (saving()) { ... } @else { Enregistrer }
           </button>
         </div>
@@ -95,18 +95,18 @@ import { mapAuthRpcError, rpcMessage } from '../../../shared/utils/rpc-error';
     </div>
   `,
   styles: `
-    .container { padding: 1rem; max-width: 480px; margin: 0 auto; }
     h2 { margin-top: 0; }
     .form { display: flex; flex-direction: column; gap: 1rem; }
     .field { display: flex; flex-direction: column; gap: 0.35rem; }
     .checkbox-field { flex-direction: row; align-items: center; gap: 0.5rem; }
-    .checkbox-field label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.95rem; font-weight: 500; cursor: pointer; color: var(--text); }
+    .checkbox-field label { display: flex; align-items: center; gap: 0.6rem; min-height: var(--tap); font-size: 0.95rem; font-weight: 500; cursor: pointer; color: var(--text); }
     label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
+    input[type="checkbox"] { width: 1.25rem; height: 1.25rem; accent-color: var(--primary); flex-shrink: 0; cursor: pointer; font-size: var(--fs-field); }
     input[type="text"], input[type="password"] {
       padding: 0.65rem 0.85rem;
-      border: 1.5px solid var(--border);
+      border: var(--border-1);
       border-radius: 0.5rem;
-      font-size: 0.95rem;
+      font-size: var(--fs-field);
       background: var(--card);
       color: var(--text);
     }
@@ -114,6 +114,10 @@ import { mapAuthRpcError, rpcMessage } from '../../../shared/utils/rpc-error';
     .error { color: var(--danger); font-size: 0.9rem; }
     .actions { display: flex; gap: 0.75rem; justify-content: flex-end; }
     .btn-cancel {
+      min-height: var(--tap);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       padding: 0.65rem 1.25rem;
       background: var(--border);
       border: none;
@@ -123,15 +127,7 @@ import { mapAuthRpcError, rpcMessage } from '../../../shared/utils/rpc-error';
     }
     .btn-primary {
       padding: 0.65rem 1.25rem;
-      background: var(--primary);
-      color: white;
-      border: none;
-      border-radius: 0.5rem;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
     }
-    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
   `,
 })
 export class PlayerFormComponent implements OnInit {

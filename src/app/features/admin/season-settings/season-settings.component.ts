@@ -59,16 +59,15 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
   `,
   styles: `
     .container { padding: 0; max-width: 480px; }
-    .muted { color: var(--text-muted); }
-    .card { background: var(--card); border: 1.5px solid var(--border); border-radius: 0.75rem; }
+    .card { border: var(--border-1); }
     .current-season { display: flex; flex-direction: column; gap: 0.25rem; padding: 1rem; margin-bottom: 1.25rem; }
     .season-name { font-size: 1.1rem; font-weight: 800; }
     .season-meta { font-size: 0.85rem; color: var(--text-muted); }
     .field { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1rem; }
     .field label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
     .field input {
-      padding: 0.65rem 0.85rem; border: 1.5px solid var(--border); border-radius: 0.5rem;
-      font-size: 0.95rem; background: var(--card); color: var(--text); font-family: inherit;
+      padding: 0.65rem 0.85rem; border: var(--border-1); border-radius: 0.5rem;
+      font-size: var(--fs-field); background: var(--card); color: var(--text); font-family: inherit;
     }
     .field input:focus { outline: none; border-color: var(--primary); }
     .feedback-error { color: var(--danger); font-size: 0.9rem; }
@@ -78,7 +77,7 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
       border-radius: 0.5rem; font-size: 0.95rem; font-weight: 700; cursor: pointer; font-family: inherit;
     }
     .btn-warning:disabled { opacity: 0.6; cursor: not-allowed; }
-    .section-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin: 1.5rem 0 0.6rem; }
+    .section-label { margin: 1.5rem 0 0.6rem; }
     .archived-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.4rem; }
     .archived-item { display: flex; flex-direction: column; gap: 0.1rem; padding: 0.5rem 0.6rem; border-radius: 0.4rem; background: var(--bg); }
     .archived-name { font-size: 0.9rem; font-weight: 700; }

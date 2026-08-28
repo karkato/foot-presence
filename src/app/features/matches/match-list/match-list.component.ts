@@ -19,7 +19,7 @@ import { MatchWithCount } from '../matches.service';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="container">
+    <div class="container-md">
       <h2>Matchs</h2>
 
       @if (loading()) {
@@ -35,7 +35,8 @@ import { MatchWithCount } from '../matches.service';
               <li class="match-card" (click)="openMatch(match)">
                 <div class="match-info">
                   <span class="match-title">{{ match.title }}</span>
-                  <span class="match-date">{{ formatDate(match.match_date) }} à {{ formatTime(match.match_time) }}</span>
+                  <span class="match-date match-date-full">{{ formatDate(match.match_date) }} à {{ formatTime(match.match_time) }}</span>
+                  <span class="match-date match-date-short">{{ formatDateShort(match.match_date, match.match_time) }}</span>
                 </div>
                 <div class="match-meta">
                   <span class="badge badge-count" [class.badge-full]="match.registration_count >= match.max_players">
@@ -68,7 +69,8 @@ import { MatchWithCount } from '../matches.service';
                   <li class="match-card" (click)="openMatch(match)">
                     <div class="match-info">
                       <span class="match-title">{{ match.title }}</span>
-                      <span class="match-date">{{ formatDate(match.match_date) }} à {{ formatTime(match.match_time) }}</span>
+                      <span class="match-date match-date-full">{{ formatDate(match.match_date) }} à {{ formatTime(match.match_time) }}</span>
+                      <span class="match-date match-date-short">{{ formatDateShort(match.match_date, match.match_time) }}</span>
                     </div>
                     <div class="match-meta">
                       <span class="badge badge-count">
@@ -87,9 +89,7 @@ import { MatchWithCount } from '../matches.service';
     </div>
   `,
   styles: `
-    .container { padding: 1rem; max-width: 600px; margin: 0 auto; }
     h2 { margin-top: 0; }
-    .muted { color: var(--text-muted); }
     .empty { text-align: center; padding: 2rem 0; }
     .match-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.75rem; }
     .match-card {
@@ -100,19 +100,26 @@ import { MatchWithCount } from '../matches.service';
       align-items: center;
       justify-content: space-between;
       cursor: pointer;
-      border: 1.5px solid var(--border);
+      border: var(--border-1);
       transition: border-color 0.15s, box-shadow 0.15s;
     }
     .match-card:hover { border-color: var(--primary); box-shadow: var(--shadow-sm); }
-    .match-info { display: flex; flex-direction: column; gap: 0.25rem; }
-    .match-title { font-weight: 700; font-size: 1rem; color: var(--text); }
-    .match-date { font-size: 0.85rem; color: var(--text-muted); }
-    .match-meta { display: flex; align-items: center; gap: 0.5rem; }
+    .match-info { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
+    .match-title {
+      font-weight: 700; font-size: 1rem; color: var(--text);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      white-space: normal;
+      overflow: hidden;
+    }
+    .match-date { font-size: 0.85rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .match-date-short { display: none; }
+    .match-meta { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+    /* Exception: keeps a 1rem radius instead of the global .badge pill
+       (--r-pill), which this compact list-meta badge shape predates. */
     .badge {
-      font-size: 0.75rem;
-      padding: 0.2rem 0.5rem;
       border-radius: 1rem;
-      font-weight: 600;
     }
     .badge-count {
       background: var(--primary-light);
@@ -124,23 +131,16 @@ import { MatchWithCount } from '../matches.service';
       background: #fef3c7;
       color: #d97706;
     }
-    .badge-finished {
-      background: var(--success);
-      color: white;
-    }
-    .badge-closed {
-      background: var(--border);
-      color: var(--text-muted);
-    }
     .arrow { font-size: 1.5rem; color: var(--text-muted); line-height: 1; }
     .finished-panel { margin-top: 1.5rem; }
     .finished-toggle {
       width: 100%;
+      min-height: var(--tap);
       display: flex;
       align-items: center;
       justify-content: space-between;
       background: none;
-      border: 1.5px solid var(--border);
+      border: var(--border-1);
       border-radius: 0.75rem;
       padding: 0.75rem 1.25rem;
       font-size: 0.9rem;
@@ -153,6 +153,23 @@ import { MatchWithCount } from '../matches.service';
     .chevron { display: inline-block; transform: rotate(90deg); transition: transform 0.15s; }
     .chevron.open { transform: rotate(-90deg); }
     .finished-list { margin-top: 0.75rem; }
+
+    /* Exception to this chunk's usual mobile-first (min-width) pattern:
+       here the compact format IS the mobile version, so it is opted into
+       under a max-width query instead of opted out of one. Below 480px,
+       .match-meta (2 badges + arrow) can leave as little as ~115-170px
+       for .match-info, so the long weekday/month format gets truncated
+       and drops the time — the most actionable info in this list. The
+       short format keeps the time visible down to 330px; the tighter
+       gap/padding below shaves the remaining ~10px needed on finished
+       cards (badge-count + badge-finished, the widest .match-meta combo)
+       so it holds at 320px too. */
+    @media (max-width: 479px) {
+      .match-date-full { display: none; }
+      .match-date-short { display: inline; }
+      .match-meta { gap: 0.3rem; }
+      .badge { padding: 0.2rem 0.4rem; }
+    }
   `,
 })
 export class MatchListComponent implements OnInit, OnDestroy {
@@ -213,5 +230,14 @@ export class MatchListComponent implements OnInit, OnDestroy {
 
   formatTime(timeStr: string): string {
     return timeStr.slice(0, 5);
+  }
+
+  formatDateShort(dateStr: string, timeStr: string): string {
+    const shortDate = new Date(dateStr).toLocaleDateString('fr-FR', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+    });
+    return `${shortDate} ${this.formatTime(timeStr)}`;
   }
 }

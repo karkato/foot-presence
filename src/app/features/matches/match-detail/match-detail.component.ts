@@ -32,16 +32,16 @@ type PresentEntry =
     } @else if (!match()) {
       <div class="center-msg">Match introuvable.</div>
     } @else {
-      <div class="container">
+      <div class="container-md">
 
         <!-- En-tête -->
         <div class="header">
           <div class="header-top">
             <h2>{{ match()!.title }}</h2>
             @if (match()!.score_a !== null) {
-              <span class="badge-finished">Terminé</span>
+              <span class="badge badge-finished">Terminé</span>
             } @else if (match()!.is_closed) {
-              <span class="badge-closed">Fermé</span>
+              <span class="badge badge-closed">Fermé</span>
             }
           </div>
           <p class="match-meta">
@@ -50,8 +50,8 @@ type PresentEntry =
             <strong [class.text-danger]="isFull()">{{ presentCount() }}/{{ match()!.max_players }}</strong>
           </p>
           <div class="action-row">
-            <button class="btn-stroked" (click)="copyMatchLink()">Copier lien</button>
-            <button class="btn-stroked" (click)="shareList()">Copier liste</button>
+            <button class="btn btn-stroked" (click)="copyMatchLink()">Copier lien</button>
+            <button class="btn btn-stroked" (click)="shareList()">Copier liste</button>
           </div>
           @if (copyFeedback()) {
             <p class="feedback-success">{{ copyFeedback() }}</p>
@@ -145,16 +145,16 @@ type PresentEntry =
         @if (!match()!.is_closed && !isFinished()) {
           <div class="player-actions">
             @if (!isRegistered()) {
-              <button class="btn-primary btn-full" (click)="onRegister()" [disabled]="actionLoading()">Je viens</button>
+              <button class="btn btn-primary btn-full" (click)="onRegister()" [disabled]="actionLoading()">Je viens</button>
             } @else if (!isWithdrawn()) {
-              <button class="btn-danger btn-full" (click)="onWithdraw(currentPlayerId())" [disabled]="actionLoading()">Je me retire</button>
+              <button class="btn btn-danger btn-full" (click)="onWithdraw(currentPlayerId())" [disabled]="actionLoading()">Je me retire</button>
             } @else {
-              <button class="btn-primary btn-full" (click)="onRegister()" [disabled]="actionLoading()">Je reviens</button>
+              <button class="btn btn-primary btn-full" (click)="onRegister()" [disabled]="actionLoading()">Je reviens</button>
             }
             @if (isRegistered() && !isWithdrawn()) {
               <div class="proxy-row">
                 @if (canAddProxy()) {
-                  <button class="btn-stroked proxy-btn" (click)="showModal.set(true)">
+                  <button class="btn btn-stroked proxy-btn" (click)="showModal.set(true)">
                     + Inscrire quelqu'un ({{ proxyCount() }}/2)
                   </button>
                 }
@@ -185,11 +185,11 @@ type PresentEntry =
         @if (isAdmin() && !isFinished()) {
           <div class="admin-row">
             @if (!match()!.is_closed) {
-              <button class="btn-stroked btn-full" (click)="toggleClose()" [disabled]="actionLoading()">
+              <button class="btn btn-stroked btn-full" (click)="toggleClose()" [disabled]="actionLoading()">
                 Figer la liste
               </button>
             } @else {
-              <button class="btn-stroked btn-full" (click)="toggleClose()" [disabled]="actionLoading()">
+              <button class="btn btn-stroked btn-full" (click)="toggleClose()" [disabled]="actionLoading()">
                 Rouvrir les inscriptions
               </button>
             }
@@ -210,7 +210,7 @@ type PresentEntry =
                 <label>{{ match()!.team_b_name }}</label>
                 <input type="number" min="0" [(ngModel)]="scoreB" class="score-input" />
               </div>
-              <button class="btn-primary" (click)="saveScore()" [disabled]="actionLoading()">
+              <button class="btn btn-primary" (click)="saveScore()" [disabled]="actionLoading()">
                 Enregistrer
               </button>
             </div>
@@ -238,7 +238,7 @@ type PresentEntry =
                     <option [ngValue]="7">7</option>
                   </select>
                 </div>
-                <button class="btn-primary" (click)="saveMiniScore()" [disabled]="actionLoading()">
+                <button class="btn btn-primary" (click)="saveMiniScore()" [disabled]="actionLoading()">
                   Enregistrer
                 </button>
               </div>
@@ -319,10 +319,8 @@ type PresentEntry =
   `,
   styles: `
     .center-msg { display: flex; align-items: center; justify-content: center; min-height: 50vh; color: var(--text-muted); }
-    .container { padding: 1rem; max-width: 600px; margin: 0 auto; }
-    .card { background: var(--card); border: 1.5px solid var(--border); border-radius: 0.75rem; padding: 1rem; }
+    .card { border: var(--border-1); padding: var(--sp-lg); }
     .mb-sm { margin-bottom: 0.75rem; }
-    .muted { color: var(--text-muted); }
     .italic { font-style: italic; }
     .text-danger { color: var(--danger); }
 
@@ -330,36 +328,27 @@ type PresentEntry =
     .header { margin-bottom: 1.25rem; }
     .header-top { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.25rem; }
     .header-top h2 { margin: 0; font-size: 1.2rem; }
-    .badge-closed { font-size: 0.75rem; font-weight: 600; background: var(--border); color: var(--text-muted); padding: 0.2rem 0.6rem; border-radius: 1rem; }
-    .badge-finished { font-size: 0.75rem; font-weight: 600; background: var(--success); color: white; padding: 0.2rem 0.6rem; border-radius: 1rem; }
     .match-meta { font-size: 0.85rem; color: var(--text-muted); margin: 0 0 0.75rem; }
     .action-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
     .feedback-success { color: var(--success); font-size: 0.85rem; margin: 0.4rem 0 0; }
     .feedback-error { color: var(--danger); font-size: 0.85rem; text-align: center; margin: 0.5rem 0 0; }
 
     /* Buttons */
-    .btn-primary { padding: 0.65rem 1.25rem; background: var(--primary); color: white; border: none; border-radius: 0.5rem; font-size: 0.95rem; font-weight: 600; cursor: pointer; font-family: inherit; }
-    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
-    .btn-danger { padding: 0.65rem 1.25rem; background: var(--danger); color: white; border: none; border-radius: 0.5rem; font-size: 0.95rem; font-weight: 600; cursor: pointer; font-family: inherit; }
-    .btn-danger:disabled { opacity: 0.6; cursor: not-allowed; }
-    .btn-stroked { padding: 0.6rem 1.1rem; background: transparent; border: 1.5px solid var(--border); border-radius: 0.5rem; font-size: 0.9rem; font-weight: 500; cursor: pointer; color: var(--text); font-family: inherit; }
     .btn-stroked:hover { border-color: var(--primary); }
-    .btn-full { width: 100%; }
-    .btn-icon { width: 2rem; height: 2rem; border-radius: 50%; border: 1.5px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; font-family: inherit; }
+    .btn-icon { width: var(--tap-compact); height: var(--tap-compact); border-radius: 50%; border: var(--border-1); background: var(--card); color: var(--text); cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; font-family: inherit; }
     .btn-icon:disabled { opacity: 0.4; cursor: not-allowed; }
-    .btn-close { background: none; border: none; font-size: 1rem; cursor: pointer; color: var(--text-muted); padding: 0.25rem; }
 
     /* Score display */
-    .score-display { display: flex; align-items: center; justify-content: center; gap: 1.5rem; margin-bottom: 0.75rem; text-align: center; }
-    .score-team { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; }
+    .score-display { display: flex; align-items: center; justify-content: center; gap: var(--sp-lg); margin-bottom: 0.75rem; text-align: center; }
+    .score-team { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; flex: 1 1 0; min-width: 0; }
     .score-name { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
     .score-value { font-size: 2.25rem; font-weight: 900; line-height: 1; }
-    .score-sep { font-size: 1.5rem; font-weight: 700; color: var(--text-muted); }
+    .score-sep { font-size: 1.5rem; font-weight: 700; color: var(--text-muted); flex-shrink: 0; }
 
     /* Player list */
-    .section-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin: 0 0 0.75rem; }
     .player-list { list-style: none; padding: 0; margin: 0; }
-    .guest-row { display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 0.75rem; opacity: 0.7; }
+    .guest-row { display: flex; align-items: center; gap: 0.6rem; min-height: var(--tap); padding: 0 0.75rem; opacity: 0.7; }
+    .guest-row .muted { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .rank-label { min-width: 2rem; text-align: right; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); }
     .sub-divider { display: flex; align-items: center; gap: 0.5rem; margin: 0.75rem 0; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--warning); }
     .divider-line { flex: 1; height: 1px; background: var(--warning); opacity: 0.3; }
@@ -367,9 +356,9 @@ type PresentEntry =
 
     /* Player actions */
     .player-actions { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem; }
-    .proxy-row { display: flex; gap: 0.5rem; align-items: stretch; }
+    .proxy-row { display: flex; gap: 0.5rem; align-items: stretch; flex-wrap: wrap; }
     .proxy-btn { flex: 1; }
-    .plus-ones-row { display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 1rem; }
+    .plus-ones-row { display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 1rem; flex: 1 1 auto; }
     .plus-ones-label { font-size: 0.9rem; font-weight: 600; }
     .plus-ones-controls { display: flex; align-items: center; gap: 0.75rem; }
     .plus-ones-count { font-weight: 700; font-size: 1.1rem; min-width: 1.5rem; text-align: center; }
@@ -378,40 +367,45 @@ type PresentEntry =
     .admin-row { margin-top: 0.75rem; }
     .admin-section { margin-top: 0.75rem; }
     .score-inputs { display: flex; align-items: flex-end; gap: 0.75rem; flex-wrap: wrap; }
-    .score-input-group { display: flex; flex-direction: column; gap: 0.25rem; }
+    .score-input-group { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
     .score-input-group label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
-    .score-input { width: 4rem; text-align: center; font-size: 1.1rem; font-weight: 700; padding: 0.5rem; border: 1.5px solid var(--border); border-radius: 0.5rem; background: var(--card); color: var(--text); font-family: inherit; }
+    .score-input { width: 4rem; text-align: center; font-size: 1.1rem; font-weight: 700; padding: 0.5rem; border: var(--border-1); border-radius: 0.5rem; background: var(--card); color: var(--text); font-family: inherit; min-height: var(--tap-compact); }
     .score-input:focus { outline: none; border-color: var(--primary); }
+    .score-name, .mini-score-name, .score-input-group label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
     .mini-match-display { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; margin-bottom: 0.75rem; padding: 0.75rem 1rem; }
     .mini-match-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); }
-    .mini-match-score { display: flex; align-items: center; gap: 0.75rem; }
-    .mini-score-name { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
-    .mini-score-value { font-size: 1.4rem; font-weight: 900; color: var(--text); }
+    .mini-match-score { display: flex; align-items: center; gap: 0.75rem; width: 100%; justify-content: center; }
+    .mini-score-name { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); flex: 1 1 0; min-width: 0; }
+    .mini-score-value { font-size: 1.4rem; font-weight: 900; color: var(--text); flex: 0 0 auto; }
     .score-sep-sm { font-size: 1.25rem; font-weight: 700; color: var(--text-muted); padding-bottom: 0.5rem; }
     .presence-count { background: var(--primary); color: white; font-size: 0.75rem; font-weight: 700; padding: 0.15rem 0.6rem; border-radius: 1rem; }
-    .presence-toggle { width: 100%; display: flex; align-items: center; justify-content: space-between; background: none; border: none; padding: 0; cursor: pointer; }
+    .presence-toggle { width: 100%; display: flex; align-items: center; justify-content: space-between; background: none; border: none; padding: 0; cursor: pointer; min-height: var(--tap); }
     .presence-toggle-right { display: flex; align-items: center; gap: 0.6rem; }
     .toggle-icon { font-size: 0.75rem; color: var(--text-muted); }
     .admin-player-list { list-style: none; padding: 0; margin: 0.75rem 0 0; display: flex; flex-direction: column; gap: 0.15rem; }
-    .admin-player-row { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0.5rem; border-radius: 0.5rem; transition: background 0.1s; }
+    .admin-player-row { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0.5rem; border-radius: 0.5rem; transition: background 0.1s; flex-wrap: wrap; row-gap: var(--sp-sm); }
     .admin-player-row:hover { background: var(--bg); }
     .admin-player-row.is-present { background: var(--primary-light); }
-    .admin-player-check { display: flex; align-items: center; gap: 0.6rem; cursor: pointer; flex: 1; }
-    .admin-player-check input[type="checkbox"] { width: 1.1rem; height: 1.1rem; cursor: pointer; accent-color: var(--primary); }
-    .player-name { font-size: 0.95rem; }
-    .admin-player-controls { display: flex; align-items: center; gap: 0.6rem; }
+    .admin-player-check { display: flex; align-items: center; gap: 0.6rem; cursor: pointer; flex: 1 1 auto; min-width: 0; min-height: var(--tap-compact); }
+    .admin-player-check input[type="checkbox"] { width: 1.25rem; height: 1.25rem; cursor: pointer; accent-color: var(--primary); flex-shrink: 0; }
+    .player-name { font-size: 0.95rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .admin-player-controls { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; justify-content: flex-end; flex-basis: 100%; }
     .plus-ones-mini { display: flex; align-items: center; gap: 0.3rem; }
     .plus-ones-mini-count { font-size: 0.8rem; font-weight: 700; min-width: 1.75rem; text-align: center; color: var(--text-muted); }
-    .btn-mini { width: 1.5rem; height: 1.5rem; border-radius: 50%; border: 1.5px solid var(--border); background: var(--card); cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; font-family: inherit; line-height: 1; padding: 0; color: var(--text); }
+    .btn-mini { width: var(--tap-compact); height: var(--tap-compact); border-radius: 50%; border: var(--border-1); background: var(--card); cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; font-family: inherit; line-height: 1; padding: 0; color: var(--text); }
     .btn-mini:disabled { opacity: 0.35; cursor: not-allowed; }
     .team-btns { display: flex; gap: 0.4rem; }
-    .team-btn { padding: 0.2rem 0.65rem; border: 1.5px solid var(--border); border-radius: 0.35rem; font-size: 0.8rem; font-weight: 700; cursor: pointer; background: transparent; color: var(--text-muted); font-family: inherit; transition: all 0.1s; }
+    .team-btn { padding: 0.2rem 0.65rem; border: var(--border-1); border-radius: 0.35rem; font-size: 0.8rem; font-weight: 700; cursor: pointer; background: transparent; color: var(--text-muted); font-family: inherit; transition: all 0.1s; min-height: var(--tap-compact); }
     .team-btn-a.active { background: ${TEAM_A_COLOR}; color: white; border-color: ${TEAM_A_COLOR}; }
     .team-btn-b.active { background: ${TEAM_B_COLOR}; color: white; border-color: ${TEAM_B_COLOR}; }
     .stats-mini { display: flex; align-items: center; gap: 0.25rem; }
     .stats-icon { font-size: 0.8rem; }
-    .stats-input { width: 2.6rem; text-align: center; font-size: 0.85rem; font-weight: 700; padding: 0.2rem; border: 1.5px solid var(--border); border-radius: 0.35rem; background: var(--card); color: var(--text); font-family: inherit; }
+    .stats-input { width: 2.6rem; text-align: center; font-size: var(--fs-field); font-weight: 700; padding: 0.2rem; border: var(--border-1); border-radius: 0.35rem; background: var(--card); color: var(--text); font-family: inherit; min-height: var(--tap-compact); }
     .stats-input:focus { outline: none; border-color: var(--primary); }
+
+    @media (min-width: 768px) {
+      .admin-player-controls { flex-basis: auto; }
+    }
   `,
 })
 export class MatchDetailComponent implements OnInit, OnDestroy {

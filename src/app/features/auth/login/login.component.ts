@@ -54,7 +54,7 @@ import { AuthService } from '../../../core/auth/auth.service';
             <p class="error-msg">{{ error() }}</p>
           }
 
-          <button type="submit" class="btn-primary" [disabled]="loading()">
+          <button type="submit" class="btn btn-primary btn-full" [disabled]="loading()">
             @if (loading()) { Connexion... } @else { Se connecter }
           </button>
         </form>
@@ -64,6 +64,7 @@ import { AuthService } from '../../../core/auth/auth.service';
   styles: `
     .login-page {
       min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -75,7 +76,7 @@ import { AuthService } from '../../../core/auth/auth.service';
       border-radius: 1rem;
       padding: 2rem;
       width: 100%;
-      max-width: 360px;
+      max-width: var(--w-narrow);
       box-shadow: var(--shadow-md);
       text-align: center;
     }
@@ -94,7 +95,7 @@ import { AuthService } from '../../../core/auth/auth.service';
     input {
       width: 100%;
       padding: 0.65rem 0.85rem;
-      border: 1.5px solid var(--border);
+      border: var(--border-1);
       border-radius: 0.5rem;
       font-size: 1rem;
       background: var(--card);
@@ -103,22 +104,15 @@ import { AuthService } from '../../../core/auth/auth.service';
       transition: border-color 0.2s;
     }
     input:focus { outline: none; border-color: var(--primary); }
+    input:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     .error-msg { color: var(--danger); font-size: 0.9rem; margin-bottom: 0.75rem; }
     .btn-primary {
-      width: 100%;
       padding: 0.75rem;
-      background: var(--primary);
-      color: white;
-      border: none;
-      border-radius: 0.5rem;
       font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
       margin-top: 0.5rem;
       transition: background 0.2s;
     }
     .btn-primary:hover:not(:disabled) { background: var(--primary-dark); }
-    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
   `,
 })
 export class LoginComponent {

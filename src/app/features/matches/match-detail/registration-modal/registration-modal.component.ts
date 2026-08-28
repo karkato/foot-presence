@@ -54,15 +54,19 @@ import { AuthService } from '../../../../core/auth/auth.service';
       justify-content: center;
       z-index: 100;
       padding: 0;
+      overscroll-behavior: contain;
     }
     .modal {
       background: var(--card);
       border-radius: 1.25rem 1.25rem 0 0;
       padding: 1.5rem;
+      padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
       width: 100%;
       max-width: 480px;
       max-height: 70vh;
+      max-height: 70dvh;
       overflow-y: auto;
+      overscroll-behavior: contain;
     }
     .modal-header {
       display: flex;
@@ -80,14 +84,14 @@ import { AuthService } from '../../../../core/auth/auth.service';
       padding: 0.25rem;
     }
     .proxy-info { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem; }
-    .muted { color: var(--text-muted); text-align: center; padding: 1rem 0; }
+    .muted { text-align: center; padding: 1rem 0; }
     .player-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.4rem; }
     .player-btn {
       width: 100%;
       padding: 0.75rem 1rem;
       background: var(--card);
       color: var(--text);
-      border: 1.5px solid var(--border);
+      border: var(--border-1);
       border-radius: 0.5rem;
       text-align: left;
       font-size: 0.95rem;

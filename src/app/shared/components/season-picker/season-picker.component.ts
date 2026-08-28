@@ -26,13 +26,18 @@ import { Season, isCurrentSeason } from '../../models/season.model';
     }
   `,
   styles: `
-    .season-picker { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem; }
-    label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+    :host { display: block; }
+    .season-picker { display: flex; flex-direction: column; gap: var(--sp-xs); margin-bottom: var(--sp-lg); }
+    label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
     select {
-      flex: 1; padding: 0.55rem 0.75rem; border: 1.5px solid var(--border); border-radius: 0.5rem;
-      font-size: 0.9rem; font-weight: 600; background: var(--card); color: var(--text); font-family: inherit;
+      width: 100%; min-height: var(--tap); padding: 0.55rem 0.75rem; border: var(--border-1); border-radius: var(--r-md);
+      font-size: var(--fs-field); font-weight: 600; background: var(--card); color: var(--text); font-family: inherit;
     }
     select:focus { outline: none; border-color: var(--primary); }
+    select:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
   `,
 })
 export class SeasonPickerComponent {

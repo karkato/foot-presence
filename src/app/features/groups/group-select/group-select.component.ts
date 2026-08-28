@@ -49,7 +49,7 @@ import { Group } from '../../../shared/models/group.model';
             placeholder="entrez un slug de groupe"
             autocapitalize="none"
           />
-          <button type="submit" class="btn-primary" [disabled]="!slugInput.trim()">
+          <button type="submit" class="btn btn-primary" [disabled]="!slugInput.trim()">
             Rejoindre
           </button>
         </form>
@@ -59,6 +59,7 @@ import { Group } from '../../../shared/models/group.model';
   styles: `
     .page-center {
       min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -66,33 +67,39 @@ import { Group } from '../../../shared/models/group.model';
       background: var(--bg);
     }
     .card {
-      background: var(--card);
       border-radius: 1rem;
       padding: 2rem;
       width: 100%;
-      max-width: 380px;
+      max-width: var(--w-narrow);
       box-shadow: var(--shadow-md);
       text-align: center;
     }
     .logo { font-size: 3rem; margin-bottom: 0.5rem; }
     h1 { margin: 0 0 0.25rem; font-size: 1.5rem; }
     .subtitle { color: var(--text-muted); margin-bottom: 1.5rem; }
-    .muted { color: var(--text-muted); }
-    .group-list { list-style: none; padding: 0; margin: 0 0 1rem; }
+    .group-list {
+      list-style: none; padding: 0; margin: 0 0 1rem;
+      max-height: 18rem; overflow-y: auto; overscroll-behavior: contain;
+    }
     .group-list li { margin-bottom: 0.5rem; }
     .group-btn {
       width: 100%;
+      min-height: var(--tap);
       padding: 0.75rem 1rem;
       background: var(--bg);
-      border: 1.5px solid var(--border);
+      border: var(--border-1);
       border-radius: 0.6rem;
       font-size: 1rem;
       font-weight: 600;
       color: var(--text);
       cursor: pointer;
       transition: all 0.15s;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .group-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+    .group-btn:focus-visible { outline-offset: -2px; }
     .divider {
       color: var(--text-muted);
       font-size: 0.85rem;
@@ -109,29 +116,25 @@ import { Group } from '../../../shared/models/group.model';
     }
     .divider::before { left: 0; }
     .divider::after { right: 0; }
-    .slug-form { display: flex; gap: 0.5rem; }
+    .slug-form { display: flex; flex-direction: column; gap: 0.5rem; }
+    @media (min-width: 768px) { .slug-form { flex-direction: row; } }
     input {
       flex: 1;
+      min-width: 0;
+      min-height: var(--tap);
       padding: 0.65rem 0.85rem;
-      border: 1.5px solid var(--border);
+      border: var(--border-1);
       border-radius: 0.5rem;
-      font-size: 0.95rem;
+      font-size: var(--fs-field);
       background: var(--bg);
       color: var(--text);
     }
     input:focus { outline: none; border-color: var(--primary); }
+    input:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     .btn-primary {
       padding: 0.65rem 1rem;
-      background: var(--primary);
-      color: white;
-      border: none;
-      border-radius: 0.5rem;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
       white-space: nowrap;
     }
-    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
   `,
 })
 export class GroupSelectComponent implements OnInit {

@@ -61,9 +61,9 @@ import { mapMatchStatsError } from '../../../shared/utils/rpc-error';
   `,
   styles: `
     .container { display: flex; flex-direction: column; gap: 0.6rem; }
-    .muted { color: var(--text-muted); font-size: 0.9rem; }
+    .muted { font-size: 0.9rem; }
     .muted.small { font-size: 0.8rem; margin: 0.4rem 0 0; }
-    .card { background: var(--card); border: 1.5px solid var(--border); border-radius: 0.75rem; padding: 0.9rem 1rem; }
+    .card { border: var(--border-1); padding: 0.9rem 1rem; }
     .entries { display: flex; flex-direction: column; gap: 0.6rem; }
     .entry-header { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.4rem; }
     .entry-title { font-weight: 600; font-size: 0.9rem; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -73,11 +73,11 @@ import { mapMatchStatsError } from '../../../shared/utils/rpc-error';
     .field { display: flex; flex-direction: column; gap: 0.25rem; }
     .field label { font-size: 0.78rem; font-weight: 600; color: var(--text-muted); }
     .field input {
-      width: 4rem; text-align: center; padding: 0.5rem; border: 1.5px solid var(--border); border-radius: 0.5rem;
+      width: 4rem; min-height: var(--tap-compact); text-align: center; padding: 0.5rem; border: var(--border-1); border-radius: 0.5rem;
       font-size: 1rem; font-weight: 700; background: var(--bg); color: var(--text); font-family: inherit;
     }
     .field input:focus { outline: none; border-color: var(--primary); }
-    .btn-primary { padding: 0.55rem 1.1rem; background: var(--primary); color: white; border: none; border-radius: 0.5rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .btn-primary { min-height: var(--tap-compact); padding: 0.55rem 1.1rem; background: var(--primary); color: white; border: none; border-radius: 0.5rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; font-family: inherit; }
     .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
     .feedback { font-size: 0.8rem; color: var(--success); margin: 0.4rem 0 0; }
     .feedback.error { color: var(--danger); }
