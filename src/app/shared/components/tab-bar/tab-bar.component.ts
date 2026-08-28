@@ -82,7 +82,7 @@ export class TabBarComponent<T extends string = string> {
     return idx === -1 ? 0 : idx;
   });
 
-  select(value: T): void {
+  protected select(value: T): void {
     if (value !== this.selected()) {
       this.selectedChange.emit(value);
     }
