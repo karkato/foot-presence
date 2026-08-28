@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, ElementRef, input, output, viewChildren } from '@angular/core';
 
 export interface TabItem<T extends string = string> {
   value: T;
@@ -15,13 +15,15 @@ export interface TabItem<T extends string = string> {
     '[attr.aria-label]': 'ariaLabel()',
     '[attr.aria-orientation]': "'horizontal'",
     '[class.sub]': "variant() === 'sub'",
+    '(keydown)': 'onKeydown($event)',
   },
   template: `
-    @for (tab of tabs(); track tab.value) {
-      <button type="button" class="tab" role="tab"
+    @for (tab of tabs(); track tab.value; let i = $index) {
+      <button #btnRef type="button" class="tab" role="tab"
         [id]="'tab-' + tab.value"
         [attr.aria-selected]="tab.value === selected()"
         [attr.aria-controls]="tab.panelId ?? null"
+        [attr.tabindex]="i === selectedIndex() ? 0 : -1"
         [class.active]="tab.value === selected()"
         (click)="select(tab.value)">{{ tab.label }}</button>
     }
@@ -72,9 +74,38 @@ export class TabBarComponent<T extends string = string> {
 
   selectedChange = output<T>();
 
+  private readonly buttonRefs = viewChildren<ElementRef<HTMLButtonElement>>('btnRef');
+
+  protected readonly selectedIndex = computed(() => {
+    const idx = this.tabs().findIndex(tab => tab.value === this.selected());
+    return idx === -1 ? 0 : idx;
+  });
+
   select(value: T): void {
     if (value !== this.selected()) {
       this.selectedChange.emit(value);
     }
+  }
+
+  protected onKeydown(event: KeyboardEvent): void {
+    if (event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) return;
+
+    const tabs = this.tabs();
+    const count = tabs.length;
+    if (count === 0) return;
+
+    const currentIndex = this.selectedIndex();
+    let targetIndex: number;
+    switch (event.key) {
+      case 'ArrowRight': targetIndex = (currentIndex + 1) % count; break;
+      case 'ArrowLeft': targetIndex = (currentIndex - 1 + count) % count; break;
+      case 'Home': targetIndex = 0; break;
+      case 'End': targetIndex = count - 1; break;
+      default: return;
+    }
+
+    event.preventDefault();
+    this.buttonRefs()[targetIndex]?.nativeElement.focus();
+    this.select(tabs[targetIndex].value);
   }
 }
