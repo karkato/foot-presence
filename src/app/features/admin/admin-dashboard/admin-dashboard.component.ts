@@ -19,6 +19,11 @@ import { TabBarComponent, TabItem } from '../../../shared/components/tab-bar/tab
 
 type TopTab = 'management' | 'audit' | 'settings';
 type ManagementTab = 'matches' | 'players' | 'seasons';
+type AdminTab = ManagementTab | 'audit' | 'settings';
+
+function isManagementTab(tab: AdminTab): tab is ManagementTab {
+  return tab === 'matches' || tab === 'players' || tab === 'seasons';
+}
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -264,19 +269,19 @@ export class AdminDashboardComponent implements OnInit {
     { value: 'seasons', label: 'Saisons', panelId: 'panel-seasons' },
   ];
 
-  activeTab = signal<'matches' | 'players' | 'audit' | 'seasons' | 'settings'>('matches');
+  activeTab = signal<AdminTab>('matches');
 
   // Groupe les 3 sous-onglets sous "Gestion".
   topTab = computed<TopTab>(() => {
     const tab = this.activeTab();
-    return tab === 'matches' || tab === 'players' || tab === 'seasons' ? 'management' : tab;
+    return isManagementTab(tab) ? 'management' : tab;
   });
 
   // Narrows activeTab to the 3 management sub-values for app-tab-bar's [selected] input.
   // Only meaningful while topTab() === 'management'; falls back to 'matches' otherwise.
   managementTab = computed<ManagementTab>(() => {
     const tab = this.activeTab();
-    return tab === 'matches' || tab === 'players' || tab === 'seasons' ? tab : 'matches';
+    return isManagementTab(tab) ? tab : 'matches';
   });
 
   // Mémorise la dernière sous-section de "Gestion" visitée (pas un doublon de topTab :
