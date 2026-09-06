@@ -131,8 +131,8 @@ CREATE TRIGGER set_match_season_trigger
 -- ============================================================
 -- D. create_match — le trigger ci-dessus fait le vrai rattachement,
 -- ensure_current_season ne sert plus qu'à garantir qu'un groupe tout
--- neuf (sans aucune saison) a au moins une saison pour que
--- season_for_date ait quelque chose à répler dessus. Corps recopié à
+-- neuf (sans aucune saison) a au moins une saison sur laquelle
+-- season_for_date puisse se replier. Corps recopié à
 -- l'identique de teamnames.sql (version vivante, défauts 'Équipe
 -- Rouge'/'Équipe Bleue'), seul le paramètre season_id de l'INSERT est
 -- retiré : la colonne est désormais entièrement pilotée par le trigger.
