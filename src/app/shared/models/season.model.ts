@@ -4,6 +4,8 @@ export interface Season {
   name: string;
   started_at: string;
   ended_at: string | null;
+  start_date: string;
+  end_date: string | null;
   created_at: string;
 }
 

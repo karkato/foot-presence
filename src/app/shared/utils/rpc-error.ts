@@ -32,6 +32,9 @@ export function mapAuthRpcError(err: unknown, fallback: string): string {
   const message = rpcMessage(err);
   if (message.includes('not_admin')) return 'Action réservée aux administrateurs.';
   if (message.includes('not_allowed')) return 'Action non autorisée.';
+  if (message.includes('invalid_season_start')) {
+    return 'La nouvelle saison doit commencer après le début de la saison en cours.';
+  }
   return fallback;
 }
 

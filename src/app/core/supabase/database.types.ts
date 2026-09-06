@@ -70,6 +70,8 @@ export interface Database {
           name: string;
           started_at: string;
           ended_at: string | null;
+          start_date: string;
+          end_date: string | null;
           created_at: string;
         };
         Insert: {
@@ -78,6 +80,8 @@ export interface Database {
           name: string;
           started_at?: string;
           ended_at?: string | null;
+          start_date: string;
+          end_date?: string | null;
           created_at?: string;
         };
         Update: {
@@ -86,6 +90,8 @@ export interface Database {
           name?: string;
           started_at?: string;
           ended_at?: string | null;
+          start_date?: string;
+          end_date?: string | null;
           created_at?: string;
         };
         Relationships: [];
@@ -342,12 +348,13 @@ export interface Database {
         Returns: undefined;
       };
       start_new_season: {
-        Args: { p_actor_id: string; p_group_id: string; p_name?: string | null };
+        Args: {
+          p_actor_id: string;
+          p_group_id: string;
+          p_name?: string | null;
+          p_start_date?: string | null;
+        };
         Returns: Json;
-      };
-      set_match_season: {
-        Args: { p_actor_id: string; p_match_id: string; p_season_id: string };
-        Returns: undefined;
       };
     };
     Enums: Record<string, never>;
