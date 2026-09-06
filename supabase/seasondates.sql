@@ -246,6 +246,13 @@ DECLARE
   v_current_start date;
   result seasons%ROWTYPE;
 BEGIN
+  -- p_start_date = NULL explicite (champ vidé côté client, PostgREST
+  -- transmet NULL plutôt que d'omettre le paramètre) ne déclenche PAS le
+  -- DEFAULT current_date de la signature : un défaut ne s'applique qu'à
+  -- un paramètre omis. Sans ce COALESCE, un NULL explicite se propagerait
+  -- jusqu'à l'INSERT et violerait la contrainte NOT NULL de start_date.
+  p_start_date := COALESCE(p_start_date, current_date);
+
   PERFORM assert_group_admin(p_actor_id, p_group_id);
 
   -- Verrou sur la ligne du groupe : sérialise deux appels concurrents à

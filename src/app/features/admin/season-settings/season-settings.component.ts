@@ -31,7 +31,7 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
 
         <div class="field">
           <label>Date de début de la nouvelle saison</label>
-          <input type="date" [(ngModel)]="newSeasonStartDate" />
+          <input type="date" [(ngModel)]="newSeasonStartDate" required />
         </div>
 
         @if (error()) {
@@ -41,7 +41,7 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
           <p class="feedback-success">{{ success() }}</p>
         }
 
-        <button class="btn-warning" (click)="onStartNewSeason()" [disabled]="starting()">
+        <button class="btn-warning" (click)="onStartNewSeason()" [disabled]="starting() || !newSeasonStartDate">
           @if (starting()) { ... } @else { Démarrer une nouvelle saison }
         </button>
 
