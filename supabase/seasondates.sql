@@ -20,6 +20,10 @@
 -- FUNCTION IF EXISTS typé (voir security.sql pour le pourquoi : un
 -- CREATE OR REPLACE avec un paramètre supplémentaire crée une surcharge,
 -- il ne remplace rien).
+--
+-- Pré-vol (à exécuter séparément avant la migration, à titre de diagnostic) :
+-- SELECT group_id, started_at::date, count(*) FROM seasons
+-- GROUP BY group_id, started_at::date HAVING count(*) > 1;
 -- ============================================================
 
 BEGIN;
@@ -48,11 +52,17 @@ WITH ordered AS (
   FROM seasons
   WHERE start_date IS NULL
 )
+-- GREATEST ci-dessous : si deux saisons d'un même groupe partagent le même
+-- started_at::date (double-clic historique sur "démarrer une saison"),
+-- next_start_date - 1 serait antérieur à start_date, ce qui ferait
+-- échouer la contrainte seasons_end_after_start ajoutée juste après et
+-- donc toute la migration. On accepte à la place une saison dégénérée
+-- d'un jour plutôt qu'un échec bloquant de la migration.
 UPDATE seasons s SET
   start_date = o.computed_start_date,
   end_date = CASE
     WHEN s.ended_at IS NULL THEN NULL
-    WHEN o.next_start_date IS NOT NULL THEN o.next_start_date - 1
+    WHEN o.next_start_date IS NOT NULL THEN GREATEST(o.next_start_date - 1, o.computed_start_date)
     ELSE s.ended_at::date
   END
 FROM ordered o
