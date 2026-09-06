@@ -99,7 +99,7 @@ export class SeasonSettingsComponent implements OnInit {
   error = signal('');
   success = signal('');
   newSeasonName = '';
-  newSeasonStartDate = new Date().toISOString().slice(0, 10);
+  newSeasonStartDate = this.todayIso();
 
   seasons = signal<Season[]>([]);
   matchCounts = signal<Record<string, number>>({});
@@ -163,7 +163,7 @@ export class SeasonSettingsComponent implements OnInit {
         this.newSeasonStartDate,
       );
       this.newSeasonName = '';
-      this.newSeasonStartDate = new Date().toISOString().slice(0, 10);
+      this.newSeasonStartDate = this.todayIso();
       this.success.set(`${created.name} démarrée !`);
       await this.load();
       setTimeout(() => this.success.set(''), 3000);
@@ -176,5 +176,9 @@ export class SeasonSettingsComponent implements OnInit {
 
   formatDate(dateStr: string): string {
     return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  private todayIso(): string {
+    return new Date().toISOString().slice(0, 10);
   }
 }
