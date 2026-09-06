@@ -85,7 +85,10 @@ DROP FUNCTION IF EXISTS resync_group_seasons(uuid);
 -- saison connue du groupe), replie sur la saison la plus ancienne du
 -- groupe plutôt que de renvoyer NULL — matches.season_id est NOT NULL,
 -- un match ne doit jamais devenir orphelin faute de saison couvrant sa
--- date.
+-- date. ORDER BY start_date DESC : en cas de chevauchement entre deux
+-- saisons du même groupe (possible après le fallback de backfill de la
+-- section A, ou par anomalie de données), la saison la plus récente
+-- couvrant la date gagne plutôt qu'un résultat arbitraire.
 CREATE FUNCTION season_for_date(p_group_id uuid, p_date date)
 RETURNS uuid AS $$
   SELECT COALESCE(
@@ -94,6 +97,7 @@ RETURNS uuid AS $$
       WHERE group_id = p_group_id
         AND start_date <= p_date
         AND (end_date IS NULL OR p_date <= end_date)
+      ORDER BY start_date DESC
       LIMIT 1
     ),
     (
