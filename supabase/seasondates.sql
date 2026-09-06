@@ -256,6 +256,14 @@ BEGIN
   -- jusqu'à l'INSERT et violerait la contrainte NOT NULL de start_date.
   p_start_date := COALESCE(p_start_date, current_date);
 
+  -- Borne haute : une date dans le futur clôturerait la saison courante
+  -- avant son terme réel et verrouillerait les matchs à venir dans une
+  -- saison archivée (season_archived bloque la saisie de stats), sans
+  -- aucune RPC d'édition de saison pour rattraper l'erreur depuis l'app.
+  IF p_start_date > current_date THEN
+    RAISE EXCEPTION 'invalid_season_start';
+  END IF;
+
   PERFORM assert_group_admin(p_actor_id, p_group_id);
 
   -- Verrou sur la ligne du groupe : sérialise deux appels concurrents à

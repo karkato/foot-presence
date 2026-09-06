@@ -31,7 +31,7 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
 
         <div class="field">
           <label>Date de début de la nouvelle saison</label>
-          <input type="date" [(ngModel)]="newSeasonStartDate" required />
+          <input type="date" [(ngModel)]="newSeasonStartDate" [max]="todayIso()" required />
         </div>
 
         @if (error()) {
@@ -178,7 +178,7 @@ export class SeasonSettingsComponent implements OnInit {
     return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
   }
 
-  private todayIso(): string {
+  todayIso(): string {
     return new Date().toISOString().slice(0, 10);
   }
 }
