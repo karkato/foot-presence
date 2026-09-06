@@ -29,11 +29,17 @@ export class SeasonsService {
     return data;
   }
 
-  async startNewSeason(groupId: string, actorId: string, name?: string): Promise<Season> {
+  async startNewSeason(
+    groupId: string,
+    actorId: string,
+    name?: string,
+    startDate?: string,
+  ): Promise<Season> {
     const { data, error } = await this.supabase.rpc('start_new_season', {
       p_actor_id: actorId,
       p_group_id: groupId,
       p_name: name?.trim() || null,
+      p_start_date: startDate || null,
     });
     if (error) throw error;
     return data as unknown as Season;

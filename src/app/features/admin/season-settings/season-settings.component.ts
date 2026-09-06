@@ -19,7 +19,7 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
         @if (currentSeason(); as season) {
           <div class="card current-season">
             <span class="season-name">{{ season.name }}</span>
-            <span class="season-meta">depuis le {{ formatDate(season.started_at) }}</span>
+            <span class="season-meta">depuis le {{ formatDate(season.start_date) }}</span>
             <span class="season-meta">{{ matchCount(season.id) }} match(s)</span>
           </div>
         }
@@ -29,6 +29,11 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
           <input type="text" [(ngModel)]="newSeasonName" placeholder="Saison {{ nextSeasonNumber() }}" maxlength="40" />
         </div>
 
+        <div class="field">
+          <label>Date de début de la nouvelle saison</label>
+          <input type="date" [(ngModel)]="newSeasonStartDate" [max]="todayIso()" required />
+        </div>
+
         @if (error()) {
           <p class="feedback-error">{{ error() }}</p>
         }
@@ -36,7 +41,7 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
           <p class="feedback-success">{{ success() }}</p>
         }
 
-        <button class="btn-warning" (click)="onStartNewSeason()" [disabled]="starting()">
+        <button class="btn-warning" (click)="onStartNewSeason()" [disabled]="starting() || !newSeasonStartDate">
           @if (starting()) { ... } @else { Démarrer une nouvelle saison }
         </button>
 
@@ -47,7 +52,7 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
               <li class="archived-item">
                 <span class="archived-name">{{ season.name }}</span>
                 <span class="archived-range">
-                  {{ formatDate(season.started_at) }} → {{ formatDate(season.ended_at!) }}
+                  {{ formatDate(season.start_date) }} → {{ formatDate(season.end_date!) }}
                   · {{ matchCount(season.id) }} match(s)
                 </span>
               </li>
@@ -94,13 +99,14 @@ export class SeasonSettingsComponent implements OnInit {
   error = signal('');
   success = signal('');
   newSeasonName = '';
+  newSeasonStartDate = this.todayIso();
 
   seasons = signal<Season[]>([]);
   matchCounts = signal<Record<string, number>>({});
 
   currentSeason = computed(() => this.seasons().find(isCurrentSeason) ?? null);
   archivedSeasons = computed(() =>
-    this.seasons().filter(s => !isCurrentSeason(s)).sort((a, b) => b.started_at.localeCompare(a.started_at))
+    this.seasons().filter(s => !isCurrentSeason(s)).sort((a, b) => b.start_date.localeCompare(a.start_date))
   );
   nextSeasonNumber = computed(() => this.seasons().length + 1);
 
@@ -141,7 +147,8 @@ export class SeasonSettingsComponent implements OnInit {
     const current = this.currentSeason();
     const label = current ? `"${current.name}"` : 'la saison en cours';
     if (!confirm(
-      `Archiver ${label} et démarrer une nouvelle saison ? Les statistiques repartiront de zéro. ` +
+      `Archiver ${label} et démarrer une nouvelle saison à partir du ${this.formatDate(this.newSeasonStartDate)} ? ` +
+      `Les matchs se répartiront automatiquement selon leur date, et les statistiques repartiront de zéro. ` +
       `Aucun match ni aucune donnée n'est supprimé — les saisons passées restent consultables.`
     )) return;
 
@@ -149,8 +156,14 @@ export class SeasonSettingsComponent implements OnInit {
     this.error.set('');
     this.success.set('');
     try {
-      const created = await this.seasonsService.startNewSeason(this.groupId, player.id, this.newSeasonName);
+      const created = await this.seasonsService.startNewSeason(
+        this.groupId,
+        player.id,
+        this.newSeasonName,
+        this.newSeasonStartDate,
+      );
       this.newSeasonName = '';
+      this.newSeasonStartDate = this.todayIso();
       this.success.set(`${created.name} démarrée !`);
       await this.load();
       setTimeout(() => this.success.set(''), 3000);
@@ -163,5 +176,9 @@ export class SeasonSettingsComponent implements OnInit {
 
   formatDate(dateStr: string): string {
     return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  todayIso(): string {
+    return new Date().toISOString().slice(0, 10);
   }
 }
