@@ -107,8 +107,38 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- Redéfinition : seasons.start_date est NOT NULL depuis la section A
+-- ci-dessus, mais le corps historique (supabase/seasons.sql) insérait une
+-- nouvelle saison sans le renseigner. Sans ce correctif, un groupe tout
+-- neuf (aucune saison, aucun match) qui crée son premier match ferait
+-- échouer create_match : ensure_current_season lèverait une violation de
+-- contrainte NOT NULL sur l'INSERT. Logique inchangée par ailleurs,
+-- start_date = current_date (cohérent avec le défaut de start_new_season
+-- ci-dessous) et end_date = NULL (saison ouverte).
+DROP FUNCTION IF EXISTS ensure_current_season(uuid);
+
+CREATE FUNCTION ensure_current_season(p_group_id uuid)
+RETURNS uuid AS $$
+DECLARE
+  v_season_id uuid;
+  v_count int;
+BEGIN
+  v_season_id := current_season_id(p_group_id);
+  IF v_season_id IS NOT NULL THEN
+    RETURN v_season_id;
+  END IF;
+
+  SELECT count(*) INTO v_count FROM seasons WHERE group_id = p_group_id;
+  INSERT INTO seasons (group_id, name, start_date, end_date)
+  VALUES (p_group_id, 'Saison ' || (v_count + 1), current_date, NULL)
+  RETURNING id INTO v_season_id;
+  RETURN v_season_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 REVOKE EXECUTE ON FUNCTION season_for_date(uuid, date) FROM PUBLIC, anon, authenticated;
 REVOKE EXECUTE ON FUNCTION resync_group_seasons(uuid) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION ensure_current_season(uuid) FROM PUBLIC, anon, authenticated;
 
 -- ============================================================
 -- C. Trigger — recalcule season_id à chaque INSERT/UPDATE de match_date
@@ -132,10 +162,11 @@ CREATE TRIGGER set_match_season_trigger
 -- D. create_match — le trigger ci-dessus fait le vrai rattachement,
 -- ensure_current_season ne sert plus qu'à garantir qu'un groupe tout
 -- neuf (sans aucune saison) a au moins une saison sur laquelle
--- season_for_date puisse se replier. Corps recopié à
--- l'identique de teamnames.sql (version vivante, défauts 'Équipe
--- Rouge'/'Équipe Bleue'), seul le paramètre season_id de l'INSERT est
--- retiré : la colonne est désormais entièrement pilotée par le trigger.
+-- season_for_date puisse se replier. Signature et valeurs par défaut
+-- identiques à teamnames.sql (défauts 'Équipe Rouge'/'Équipe Bleue'),
+-- mais season_id n'est plus assigné en dur dans l'INSERT — c'est
+-- désormais le trigger set_match_season_trigger (section C) qui s'en
+-- charge.
 -- ============================================================
 
 DROP FUNCTION IF EXISTS create_match(uuid, uuid, text, date, time, int, timestamptz, text, text);
@@ -273,7 +304,7 @@ ORDER BY g.name, s.start_date;
 -- Une seule signature par fonction migrée/créée (détection de surcharge résiduelle)
 SELECT proname, pg_get_function_identity_arguments(oid) AS args FROM pg_proc
 WHERE proname IN (
-  'season_for_date', 'resync_group_seasons', 'create_match',
-  'start_new_season', 'set_match_season'
+  'season_for_date', 'resync_group_seasons', 'ensure_current_season',
+  'create_match', 'start_new_season', 'set_match_season'
 )
 ORDER BY proname;
