@@ -291,19 +291,36 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- ============================================================
 -- G. Resync global — corrige immédiatement les matchs déjà mal
 -- rattachés (créés avant le démarrage d'une saison mais joués après,
--- ou l'inverse), pour tous les groupes existants.
+-- ou l'inverse), pour tous les groupes existants. C'est ce resync qui
+-- corrige le cas réel ayant motivé cette migration (saison démarrée le
+-- 4/09, match créé le 3/09 joué le 6/09) : il DOIT s'exécuter dans la
+-- même transaction que le reste, avant le COMMIT, sinon la migration
+-- laisse les données historiques dans l'état incohérent qu'elle est
+-- censée corriger.
 -- ============================================================
+
+DO $$
+DECLARE
+  g record;
+BEGIN
+  FOR g IN SELECT id FROM groups LOOP
+    PERFORM resync_group_seasons(g.id);
+  END LOOP;
+END $$;
 
 COMMIT;
 
 -- ============================================================
--- Vérifications post-migration (SELECT non destructifs, hors transaction)
+-- Vérifications post-migration (SELECT non destructifs, hors transaction,
+-- exécutés après le COMMIT ci-dessus — le resync destructif est déjà
+-- appliqué à ce stade, ce qui suit ne fait que lire l'état final)
 -- ============================================================
 
-SELECT resync_group_seasons(id) FROM groups;
-
--- Aucun match orphelin (doit renvoyer 0)
-SELECT count(*) AS matches_without_season FROM matches WHERE season_id IS NULL;
+-- Aucun match rattaché à une saison qui ne couvre pas sa date (doit renvoyer 0)
+SELECT count(*) AS mismatched_matches
+FROM matches m JOIN seasons s ON s.id = m.season_id
+WHERE m.match_date < s.start_date
+   OR (s.end_date IS NOT NULL AND m.match_date > s.end_date);
 
 -- Aucune saison chevauchante par groupe (doit renvoyer 0 lignes) : pour
 -- chaque paire de saisons du même groupe, leurs intervalles ne doivent
