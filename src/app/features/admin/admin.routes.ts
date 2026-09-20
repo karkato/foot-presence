@@ -22,4 +22,10 @@ export const adminRoutes: Routes = [
     loadComponent: () =>
       import('./player-form/player-form.component').then((m) => m.PlayerFormComponent),
   },
+  {
+    path: 'admin/match/:id/stats',
+    canActivate: [authGuard, adminGuard],
+    loadComponent: () =>
+      import('./match-stats/match-stats.component').then((m) => m.MatchStatsComponent),
+  },
 ];
