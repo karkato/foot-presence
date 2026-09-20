@@ -426,6 +426,9 @@ export class AdminDashboardComponent implements OnInit {
       case 'reopen_match': return `${actor} a rouvert un match`;
       case 'create_player': return `${actor} a créé le joueur "${d['username'] ?? '...'}"`;
       case 'update_player': return `${actor} a mis à jour un profil`;
+      case 'set_player_admin': return d['is_admin']
+        ? `${actor} a promu ${d['player_name'] ?? '...'} administrateur`
+        : `${actor} a retiré les droits admin de ${d['player_name'] ?? '...'}`;
       case 'update_group_settings': return `${actor} a modifié les réglages du groupe`;
       case 'start_season': return `${actor} a démarré "${d['name'] ?? 'une nouvelle saison'}"`;
       case 'set_player_stats': return `${actor} a modifié des stats de match`;

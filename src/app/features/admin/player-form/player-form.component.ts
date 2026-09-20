@@ -141,6 +141,7 @@ export class PlayerFormComponent implements OnInit {
   saving = signal(false);
   error = signal('');
   playerId = '';
+  private initialIsAdmin = false;
 
   form = {
     username: '',
@@ -154,16 +155,19 @@ export class PlayerFormComponent implements OnInit {
     if (id && id !== 'new') {
       this.isEdit.set(true);
       this.playerId = id;
-      const { data } = await this.supabase
+      const { data, error } = await this.supabase
         .from('players')
-        .select('*')
+        .select('id, group_id, username, display_name, is_admin, created_at')
         .eq('id', id)
         .single();
-      if (data) {
+      if (error) {
+        this.error.set('Impossible de charger ce joueur.');
+      } else if (data) {
         this.form.display_name = data.display_name ?? data.username;
         this.form.is_admin = data.is_admin;
-        this.cdr.markForCheck();
+        this.initialIsAdmin = data.is_admin;
       }
+      this.cdr.markForCheck();
     }
   }
 
@@ -175,6 +179,24 @@ export class PlayerFormComponent implements OnInit {
 
     try {
       if (this.isEdit()) {
+        // set_player_admin AVANT update_player_profile : c'est l'appel le
+        // plus susceptible d'échouer (garde anti-lockout "last_admin"),
+        // et on ne veut pas laisser display_name/PIN déjà écrits en base
+        // pendant qu'un échec sur les droits admin affiche un message
+        // d'erreur trompeur (voir revue).
+        if (this.form.is_admin !== this.initialIsAdmin) {
+          const { error: adminError } = await this.supabase.rpc('set_player_admin', {
+            p_actor_id: currentPlayer.id,
+            p_player_id: this.playerId,
+            p_is_admin: this.form.is_admin,
+          });
+          if (adminError) throw adminError;
+
+          if (currentPlayer.id === this.playerId) {
+            this.auth.updateCurrentPlayer({ is_admin: this.form.is_admin });
+          }
+        }
+
         const { error } = await this.supabase.rpc('update_player_profile', {
           p_player_id: this.playerId,
           p_display_name: this.form.display_name.trim() || null,
@@ -182,12 +204,6 @@ export class PlayerFormComponent implements OnInit {
           p_actor_id: currentPlayer.id,
         });
         if (error) throw error;
-        if (this.form.is_admin !== undefined) {
-          await this.supabase
-            .from('players')
-            .update({ is_admin: this.form.is_admin })
-            .eq('id', this.playerId);
-        }
       } else {
         if (!this.form.username.trim() || !this.form.pin) {
           this.error.set('Pseudo et PIN requis');

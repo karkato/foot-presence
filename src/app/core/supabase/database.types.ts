@@ -356,6 +356,10 @@ export interface Database {
         };
         Returns: Json;
       };
+      set_player_admin: {
+        Args: { p_actor_id: string; p_player_id: string; p_is_admin: boolean };
+        Returns: Json;
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
