@@ -8,6 +8,7 @@ import { MatchesService, MatchHistoryEntry, PlayerStats } from '../matches/match
 import { Player, getDisplayName } from '../../shared/models/player.model';
 import { Season, isCurrentSeason } from '../../shared/models/season.model';
 import { mapAuthRpcError } from '../../shared/utils/rpc-error';
+import { validatePin } from '../../shared/utils/pin';
 import { SeasonPickerComponent } from '../../shared/components/season-picker/season-picker.component';
 import { TabBarComponent, TabItem } from '../../shared/components/tab-bar/tab-bar.component';
 import { MyStatsComponent } from './my-stats/my-stats.component';
@@ -392,7 +393,8 @@ export class ProfileComponent implements OnInit {
 
   async savePin(): Promise<void> {
     this.pinError.set('');
-    if (this.newPin.length < 4) { this.pinError.set('PIN de 4 chiffres minimum'); return; }
+    const formatError = validatePin(this.newPin);
+    if (formatError) { this.pinError.set(formatError); return; }
     if (this.newPin !== this.confirmPin) { this.pinError.set('Les PINs ne correspondent pas'); return; }
     const player = this.auth.currentPlayer();
     if (!player) return;
