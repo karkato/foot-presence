@@ -157,7 +157,7 @@ export class PlayerFormComponent implements OnInit {
       this.playerId = id;
       const { data, error } = await this.supabase
         .from('players')
-        .select('*')
+        .select('id, group_id, username, display_name, is_admin, created_at')
         .eq('id', id)
         .single();
       if (error) {
