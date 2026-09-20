@@ -23,10 +23,12 @@ export function rpcMessage(err: unknown): string {
  * (see supabase/security.sql: assert_group_admin / update_player_profile)
  * to a French user-facing message.
  *
- * This only covers the generic authorization vocabulary shared across
- * RPCs (`not_admin`, `not_allowed`). RPC-specific error codes (e.g. the
- * guest-limit errors in set_plus_ones) keep their own dedicated mapping
- * next to their call site.
+ * This mainly covers the generic authorization vocabulary shared across
+ * RPCs (`not_admin`, `not_allowed`), plus a couple of RPC-specific codes
+ * (`invalid_season_start`, `last_admin`) that were folded in here rather
+ * than duplicated at each call site. Other RPC-specific error codes
+ * (e.g. the guest-limit errors in set_plus_ones) keep their own
+ * dedicated mapping next to their call site.
  */
 export function mapAuthRpcError(err: unknown, fallback: string): string {
   const message = rpcMessage(err);
