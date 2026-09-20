@@ -35,6 +35,9 @@ export function mapAuthRpcError(err: unknown, fallback: string): string {
   if (message.includes('invalid_season_start')) {
     return 'La nouvelle saison doit commencer après le début de la saison en cours.';
   }
+  if (message.includes('last_admin')) {
+    return "Impossible de retirer les droits admin : c'est le dernier administrateur du groupe.";
+  }
   return fallback;
 }
 
