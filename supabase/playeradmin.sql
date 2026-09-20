@@ -45,6 +45,14 @@ DECLARE
   v_was_admin boolean;
   v_remaining_admins int;
 BEGIN
+  -- Convention partagée avec update_player_profile / set_plus_ones
+  -- (security.sql) : un acteur non déclaré n'est jamais un admin, donc
+  -- l'erreur générique "not_allowed" plutôt que "not_admin" (réservée au
+  -- cas où un acteur EST déclaré mais n'a pas les droits).
+  IF p_actor_id IS NULL THEN
+    RAISE EXCEPTION 'not_allowed';
+  END IF;
+
   SELECT group_id, is_admin INTO v_group_id, v_was_admin FROM players WHERE id = p_player_id;
   IF v_group_id IS NULL THEN
     RAISE EXCEPTION 'player_not_found';
