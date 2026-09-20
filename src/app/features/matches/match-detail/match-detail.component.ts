@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy, Component, computed, inject, OnDestroy, OnInit, signal,
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -14,7 +13,7 @@ import { Player, getDisplayName } from '../../../shared/models/player.model';
 import { Group } from '../../../shared/models/group.model';
 import { PlayerRowComponent } from './player-row/player-row.component';
 import { RegistrationModalComponent } from './registration-modal/registration-modal.component';
-import { mapAuthRpcError, mapMatchStatsError, rpcMessage } from '../../../shared/utils/rpc-error';
+import { mapAuthRpcError, rpcMessage } from '../../../shared/utils/rpc-error';
 import { TEAM_A_COLOR, TEAM_B_COLOR } from '../../../shared/constants/team-config';
 
 type PresentEntry =
@@ -25,7 +24,7 @@ type PresentEntry =
   selector: 'app-match-detail',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PlayerRowComponent, RegistrationModalComponent, FormsModule],
+  imports: [PlayerRowComponent, RegistrationModalComponent],
   template: `
     @if (loading()) {
       <div class="center-msg">Chargement...</div>
@@ -192,59 +191,9 @@ type PresentEntry =
               <button class="btn btn-stroked btn-full" (click)="toggleClose()" [disabled]="actionLoading()">
                 Rouvrir les inscriptions
               </button>
-            }
-          </div>
-        }
-
-        <!-- Admin : score -->
-        @if (isAdmin()) {
-          <div class="card admin-section">
-            <h3 class="section-label">Score principal</h3>
-            <div class="score-inputs">
-              <div class="score-input-group">
-                <label>{{ match()!.team_a_name }}</label>
-                <input type="number" min="0" [(ngModel)]="scoreA" class="score-input" />
-              </div>
-              <span class="score-sep-sm">–</span>
-              <div class="score-input-group">
-                <label>{{ match()!.team_b_name }}</label>
-                <input type="number" min="0" [(ngModel)]="scoreB" class="score-input" />
-              </div>
-              <button class="btn btn-primary" (click)="saveScore()" [disabled]="actionLoading()">
-                Enregistrer
+              <button class="btn btn-primary btn-full" (click)="goToStats()">
+                Saisir le résultat
               </button>
-            </div>
-            @if (scoreFeedback()) {
-              <p class="feedback-success">{{ scoreFeedback() }}</p>
-            }
-
-            @if (miniMatchEnabled()) {
-              <h3 class="section-label" style="margin-top:1rem">Mini-match</h3>
-              <div class="score-inputs">
-                <div class="score-input-group">
-                  <label>{{ match()!.team_a_name }}</label>
-                  <input type="number" min="0" [(ngModel)]="miniScoreA" class="score-input" />
-                </div>
-                <span class="score-sep-sm">–</span>
-                <div class="score-input-group">
-                  <label>{{ match()!.team_b_name }}</label>
-                  <input type="number" min="0" [(ngModel)]="miniScoreB" class="score-input" />
-                </div>
-                <div class="score-input-group">
-                  <label>1er à</label>
-                  <select [(ngModel)]="miniTarget" class="score-input">
-                    <option [ngValue]="3">3</option>
-                    <option [ngValue]="5">5</option>
-                    <option [ngValue]="7">7</option>
-                  </select>
-                </div>
-                <button class="btn btn-primary" (click)="saveMiniScore()" [disabled]="actionLoading()">
-                  Enregistrer
-                </button>
-              </div>
-              @if (miniScoreFeedback()) {
-                <p class="feedback-success">{{ miniScoreFeedback() }}</p>
-              }
             }
           </div>
         }
@@ -283,16 +232,6 @@ type PresentEntry =
                           <button class="team-btn team-btn-b" [class.active]="team === 1"
                             (click)="adminSetTeam(player.id, 1)">B</button>
                         </div>
-                        @if (team !== null && match()!.score_a !== null && statsDraft[player.id]) {
-                          <div class="stats-mini">
-                            <span class="stats-icon" title="Buts">⚽</span>
-                            <input type="number" min="0" class="stats-input"
-                              [(ngModel)]="statsDraft[player.id].goals" (change)="adminSaveStats(player.id)" />
-                            <span class="stats-icon" title="Passes décisives">🅰</span>
-                            <input type="number" min="0" class="stats-input"
-                              [(ngModel)]="statsDraft[player.id].assists" (change)="adminSaveStats(player.id)" />
-                          </div>
-                        }
                       </div>
                     }
                   </li>
@@ -364,20 +303,14 @@ type PresentEntry =
     .plus-ones-count { font-weight: 700; font-size: 1.1rem; min-width: 1.5rem; text-align: center; }
 
     /* Admin sections */
-    .admin-row { margin-top: 0.75rem; }
+    .admin-row { margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; }
     .admin-section { margin-top: 0.75rem; }
-    .score-inputs { display: flex; align-items: flex-end; gap: 0.75rem; flex-wrap: wrap; }
-    .score-input-group { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
-    .score-input-group label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
-    .score-input { width: 4rem; text-align: center; font-size: 1.1rem; font-weight: 700; padding: 0.5rem; border: var(--border-1); border-radius: 0.5rem; background: var(--card); color: var(--text); font-family: inherit; min-height: var(--tap-compact); }
-    .score-input:focus { outline: none; border-color: var(--primary); }
-    .score-name, .mini-score-name, .score-input-group label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+    .score-name, .mini-score-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
     .mini-match-display { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; margin-bottom: 0.75rem; padding: 0.75rem 1rem; }
     .mini-match-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); }
     .mini-match-score { display: flex; align-items: center; gap: 0.75rem; width: 100%; justify-content: center; }
     .mini-score-name { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); flex: 1 1 0; min-width: 0; }
     .mini-score-value { font-size: 1.4rem; font-weight: 900; color: var(--text); flex: 0 0 auto; }
-    .score-sep-sm { font-size: 1.25rem; font-weight: 700; color: var(--text-muted); padding-bottom: 0.5rem; }
     .presence-count { background: var(--primary); color: white; font-size: 0.75rem; font-weight: 700; padding: 0.15rem 0.6rem; border-radius: 1rem; }
     .presence-toggle { width: 100%; display: flex; align-items: center; justify-content: space-between; background: none; border: none; padding: 0; cursor: pointer; min-height: var(--tap); }
     .presence-toggle-right { display: flex; align-items: center; gap: 0.6rem; }
@@ -398,10 +331,6 @@ type PresentEntry =
     .team-btn { padding: 0.2rem 0.65rem; border: var(--border-1); border-radius: 0.35rem; font-size: 0.8rem; font-weight: 700; cursor: pointer; background: transparent; color: var(--text-muted); font-family: inherit; transition: all 0.1s; min-height: var(--tap-compact); }
     .team-btn-a.active { background: ${TEAM_A_COLOR}; color: white; border-color: ${TEAM_A_COLOR}; }
     .team-btn-b.active { background: ${TEAM_B_COLOR}; color: white; border-color: ${TEAM_B_COLOR}; }
-    .stats-mini { display: flex; align-items: center; gap: 0.25rem; }
-    .stats-icon { font-size: 0.8rem; }
-    .stats-input { width: 2.6rem; text-align: center; font-size: var(--fs-field); font-weight: 700; padding: 0.2rem; border: var(--border-1); border-radius: 0.35rem; background: var(--card); color: var(--text); font-family: inherit; min-height: var(--tap-compact); }
-    .stats-input:focus { outline: none; border-color: var(--primary); }
 
     @media (min-width: 768px) {
       .admin-player-controls { flex-basis: auto; }
@@ -429,14 +358,6 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
   showModal = signal(false);
   showAdminPanel = signal(false);
   copyFeedback = signal('');
-  scoreFeedback = signal('');
-  miniScoreFeedback = signal('');
-  scoreA = 0;
-  scoreB = 0;
-  miniScoreA = 0;
-  miniScoreB = 0;
-  miniTarget = 5;
-  statsDraft: Record<string, { goals: number; assists: number }> = {};
 
   private channel: RealtimeChannel | null = null;
   private feedbackTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -530,23 +451,13 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
 
   private async loadMatch(): Promise<void> {
     try {
-      const m = await this.matchesService.getMatch(this.matchId);
-      this.match.set(m);
-      this.scoreA = m.score_a ?? 0;
-      this.scoreB = m.score_b ?? 0;
-      this.miniScoreA = m.score_a2 ?? 0;
-      this.miniScoreB = m.score_b2 ?? 0;
-      this.miniTarget = m.mini_match_target ?? 5;
+      this.match.set(await this.matchesService.getMatch(this.matchId));
     } catch { this.match.set(null); }
   }
 
   private async loadRegistrations(): Promise<void> {
     try {
-      const regs = await this.matchesService.getRegistrations(this.matchId);
-      this.registrations.set(regs);
-      for (const r of regs) {
-        this.statsDraft[r.player_id] = { goals: r.goals, assists: r.assists };
-      }
+      this.registrations.set(await this.matchesService.getRegistrations(this.matchId));
     } catch { this.registrations.set([]); }
   }
 
@@ -623,34 +534,20 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
     if (!admin) return;
     const currentTeam = this.getPlayerTeam(playerId);
     if (currentTeam === team) return;
+    // assign_team resets goals/assists to 0 server-side on a real team
+    // change (supabase/playerstats.sql) -- warn before silently wiping
+    // declared stats, since this panel has no direct visibility into them.
+    const reg = this.registrations().find(r => r.player_id === playerId && !r.is_withdrawn);
+    if (reg && (reg.goals > 0 || reg.assists > 0)
+      && !confirm(`${getDisplayName(reg.player)} a déjà des buts/passes déclarés. Changer son équipe les remettra à 0. Continuer ?`)) {
+      return;
+    }
     this.actionError.set('');
     try {
       await this.matchesService.assignTeam(this.matchId, playerId, team, admin.id);
       await this.loadRegistrations();
     } catch (err) {
       this.actionError.set(mapAuthRpcError(err, "Impossible de modifier l'équipe"));
-      await this.loadRegistrations();
-    }
-  }
-
-  getPlayerGoals(playerId: string): number {
-    return this.registrations().find(r => r.player_id === playerId && !r.is_withdrawn)?.goals ?? 0;
-  }
-
-  getPlayerAssists(playerId: string): number {
-    return this.registrations().find(r => r.player_id === playerId && !r.is_withdrawn)?.assists ?? 0;
-  }
-
-  async adminSaveStats(playerId: string): Promise<void> {
-    const admin = this.auth.currentPlayer();
-    const draft = this.statsDraft[playerId];
-    if (!admin || !draft) return;
-    this.actionError.set('');
-    try {
-      await this.matchesService.setPlayerMatchStats(this.matchId, playerId, draft.goals, draft.assists, admin.id);
-      await this.loadRegistrations();
-    } catch (err) {
-      this.actionError.set(mapMatchStatsError(err, 'Erreur lors de la mise à jour des stats'));
       await this.loadRegistrations();
     }
   }
@@ -742,32 +639,8 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
     finally { this.actionLoading.set(false); }
   }
 
-  async saveMiniScore(): Promise<void> {
-    const player = this.auth.currentPlayer();
-    if (!player) return;
-    this.actionLoading.set(true);
-    try {
-      await this.matchesService.setMiniMatchScore(this.matchId, this.miniScoreA, this.miniScoreB, this.miniTarget, player.id);
-      await this.loadMatch();
-      this.miniScoreFeedback.set('Mini-match enregistré !');
-      setTimeout(() => this.miniScoreFeedback.set(''), 2500);
-    } catch (err) {
-      this.miniScoreFeedback.set(mapAuthRpcError(err, 'Erreur lors de l\'enregistrement'));
-    } finally { this.actionLoading.set(false); }
-  }
-
-  async saveScore(): Promise<void> {
-    const player = this.auth.currentPlayer();
-    if (!player) return;
-    this.actionLoading.set(true);
-    try {
-      await this.matchesService.setMatchScore(this.matchId, this.scoreA, this.scoreB, player.id);
-      await this.loadMatch();
-      this.scoreFeedback.set('Score enregistré !');
-      setTimeout(() => this.scoreFeedback.set(''), 2500);
-    } catch (err) {
-      this.scoreFeedback.set(mapMatchStatsError(err, 'Erreur lors de l\'enregistrement'));
-    } finally { this.actionLoading.set(false); }
+  goToStats(): void {
+    this.router.navigate([`/${this.groupSlug}/admin/match/${this.matchId}/stats`]);
   }
 
   copyMatchLink(): void {
