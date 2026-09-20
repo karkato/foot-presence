@@ -14,7 +14,7 @@ import { Group } from '../../../shared/models/group.model';
 import { PlayerRowComponent } from './player-row/player-row.component';
 import { RegistrationModalComponent } from './registration-modal/registration-modal.component';
 import { mapAuthRpcError, rpcMessage } from '../../../shared/utils/rpc-error';
-import { isMatchDateInFuture } from '../../../shared/utils/match-status';
+import { isMatchDateStrictlyInFuture } from '../../../shared/utils/match-status';
 import { confirmTeamReassignment } from '../../../shared/utils/team-assignment';
 import { TEAM_A_COLOR, TEAM_B_COLOR } from '../../../shared/constants/team-config';
 
@@ -431,13 +431,15 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
   });
 
   isFinished = computed(() => this.match()?.score_a !== null && this.match()?.score_a !== undefined);
-  // "upcoming" here mirrors deriveMatchStatus's first branch (future date +
-  // no score yet) without needing the season/team/stats aggregates that
-  // full status derivation requires -- this view only needs to know whether
-  // to offer the "Saisir le résultat" CTA at all.
+  // Gates the "Saisir le résultat" CTA. Deliberately uses the *strict*
+  // future check (date > today, not >=): a same-day match must let the
+  // admin enter the score the moment it's over, not just after local
+  // midnight -- unlike deriveMatchStatus's home-screen sections, which use
+  // >= on purpose to keep a same-day match "upcoming" until it's actually
+  // been played. See isMatchDateStrictlyInFuture's doc comment.
   isUpcoming = computed(() => {
     const m = this.match();
-    return !!m && m.score_a === null && isMatchDateInFuture(m.match_date);
+    return !!m && m.score_a === null && isMatchDateStrictlyInFuture(m.match_date);
   });
   isRegistered = computed(() => this.registrations().some(r => r.player_id === this.currentPlayerId()));
   isWithdrawn = computed(() => this.registrations().some(r => r.player_id === this.currentPlayerId() && r.is_withdrawn));

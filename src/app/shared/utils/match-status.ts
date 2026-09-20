@@ -64,6 +64,26 @@ export function isMatchDateInFuture(matchDate: string): boolean {
 }
 
 /**
+ * Same local-date comparison as isMatchDateInFuture, but strictly `>`
+ * instead of `>=`: a match dated *today* is not "still ahead of us" here.
+ *
+ * deriveMatchStatus deliberately wants `>=` (a same-day match must stay
+ * `upcoming` -- not flip to `awaiting_*` -- until it's actually been
+ * played), but match-detail.component.ts's "Saisir le résultat" CTA needs
+ * the opposite: it must be reachable the moment a same-day match is over,
+ * without waiting for local midnight. Two different questions ("is this
+ * match still ahead of today?" vs. "could this match's score plausibly be
+ * known yet?") that happen to share a date comparison -- kept as two
+ * functions rather than a boolean flag so each call site stays obviously
+ * correct on its own.
+ */
+export function isMatchDateStrictlyInFuture(matchDate: string): boolean {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return parseDateOnly(matchDate) > today;
+}
+
+/**
  * Pure, side-effect-free derivation -- no DB/service access here on purpose,
  * so it stays trivially testable and reusable across match-list (home
  * sections) and admin-dashboard (per-row badge) without either owning the
