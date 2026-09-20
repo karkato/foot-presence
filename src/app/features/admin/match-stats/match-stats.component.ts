@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -102,8 +102,8 @@ import { TEAM_A_COLOR, TEAM_B_COLOR } from '../../../shared/constants/team-confi
                   <li class="stats-player-row">
                     <span class="player-name">{{ getDisplayName(reg.player) }}</span>
                     <div class="team-btns">
-                      <button class="team-btn team-btn-a" (click)="setTeam(reg, 0)">A</button>
-                      <button class="team-btn team-btn-b" (click)="setTeam(reg, 1)">B</button>
+                      <button class="team-btn team-btn-a" [disabled]="actionLoading()" (click)="setTeam(reg, 0)">A</button>
+                      <button class="team-btn team-btn-b" [disabled]="actionLoading()" (click)="setTeam(reg, 1)">B</button>
                     </div>
                   </li>
                 }
@@ -124,8 +124,8 @@ import { TEAM_A_COLOR, TEAM_B_COLOR } from '../../../shared/constants/team-confi
                   <li class="stats-player-row">
                     <span class="player-name">{{ getDisplayName(reg.player) }}</span>
                     <div class="team-btns">
-                      <button class="team-btn team-btn-a" [class.active]="team === 0" (click)="setTeam(reg, 0)">A</button>
-                      <button class="team-btn team-btn-b" [class.active]="team === 1" (click)="setTeam(reg, 1)">B</button>
+                      <button class="team-btn team-btn-a" [class.active]="team === 0" [disabled]="actionLoading()" (click)="setTeam(reg, 0)">A</button>
+                      <button class="team-btn team-btn-b" [class.active]="team === 1" [disabled]="actionLoading()" (click)="setTeam(reg, 1)">B</button>
                     </div>
                     @if (match()!.score_a !== null) {
                       <div class="stats-steppers">
@@ -200,6 +200,7 @@ import { TEAM_A_COLOR, TEAM_B_COLOR } from '../../../shared/constants/team-confi
 
     .team-btns { display: flex; gap: 0.4rem; }
     .team-btn { padding: 0.2rem 0.65rem; border: var(--border-1); border-radius: 0.35rem; font-size: 0.8rem; font-weight: 700; cursor: pointer; background: transparent; color: var(--text-muted); font-family: inherit; transition: all 0.1s; min-height: var(--tap-compact); }
+    .team-btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .team-btn-a.active { background: ${TEAM_A_COLOR}; color: white; border-color: ${TEAM_A_COLOR}; }
     .team-btn-b.active { background: ${TEAM_B_COLOR}; color: white; border-color: ${TEAM_B_COLOR}; }
 
@@ -212,7 +213,7 @@ import { TEAM_A_COLOR, TEAM_B_COLOR } from '../../../shared/constants/team-confi
     }
   `,
 })
-export class MatchStatsComponent implements OnInit {
+export class MatchStatsComponent implements OnInit, OnDestroy {
   private readonly matchesService = inject(MatchesService);
   private readonly auth = inject(AuthService);
   private readonly groupsService = inject(GroupsService);
@@ -427,11 +428,19 @@ export class MatchStatsComponent implements OnInit {
     } finally { this.actionLoading.set(false); }
   }
 
-  private feedbackTimeout: ReturnType<typeof setTimeout> | null = null;
+  // Keyed by target signal so the score and mini-match feedback messages
+  // each get their own timer -- a single shared timeout meant saving both
+  // within 2.5s left whichever fired first stuck on screen forever.
+  private readonly feedbackTimeouts = new Map<typeof this.scoreFeedback, ReturnType<typeof setTimeout>>();
   private showFeedback(target: typeof this.scoreFeedback, msg: string): void {
     target.set(msg);
-    if (this.feedbackTimeout) clearTimeout(this.feedbackTimeout);
-    this.feedbackTimeout = setTimeout(() => target.set(''), 2500);
+    const existing = this.feedbackTimeouts.get(target);
+    if (existing) clearTimeout(existing);
+    this.feedbackTimeouts.set(target, setTimeout(() => target.set(''), 2500));
+  }
+
+  ngOnDestroy(): void {
+    for (const timeout of this.feedbackTimeouts.values()) clearTimeout(timeout);
   }
 
   goBack(): void {
