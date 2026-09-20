@@ -8,14 +8,20 @@ import {
 } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
-import { MatchesService, AuditEntry } from '../../matches/matches.service';
+import { MatchesService, AuditEntry, MatchWithCount } from '../../matches/matches.service';
+import { SeasonsService } from '../../../core/seasons/seasons.service';
 import { SupabaseService } from '../../../core/supabase/supabase.service';
-import { Match } from '../../../shared/models/match.model';
 import { Player, getDisplayName } from '../../../shared/models/player.model';
 import { GroupSettingsComponent } from '../group-settings/group-settings.component';
 import { SeasonSettingsComponent } from '../season-settings/season-settings.component';
 import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
 import { TabBarComponent, TabItem } from '../../../shared/components/tab-bar/tab-bar.component';
+import {
+  deriveMatchStatus,
+  matchStatusLabel,
+  seasonEndedAtLookup,
+  MatchCompletionStatus,
+} from '../../../shared/utils/match-status';
 
 type TopTab = 'management' | 'audit' | 'settings';
 type ManagementTab = 'matches' | 'players' | 'seasons';
@@ -75,11 +81,20 @@ function isManagementTab(tab: AdminTab): tab is ManagementTab {
                   <div class="item-actions">
                     @if (match.is_closed) {
                       <span class="badge badge-closed">Fermé</span>
+                    }
+                    @let status = matchStatusOf(match);
+                    @if (status !== 'upcoming') {
+                      <span class="badge" [class.badge-finished]="status === 'complete'" [class.badge-closed]="status !== 'complete'">
+                        {{ statusLabel(status) }}
+                      </span>
+                    }
+                    @if (match.is_closed) {
+                      <button class="btn-sm btn-edit" (click)="toggleClose(match)">Rouvrir</button>
                     } @else {
                       <button class="btn-sm btn-warning" (click)="toggleClose(match)">Fermer</button>
-                      <button class="btn-sm btn-edit" (click)="editMatch(match)">Modifier</button>
-                      <button class="btn-sm btn-danger" (click)="deleteMatch(match)">Supprimer</button>
                     }
+                    <button class="btn-sm btn-edit" (click)="editMatch(match)">Modifier</button>
+                    <button class="btn-sm btn-danger" (click)="deleteMatch(match)">Supprimer</button>
                   </div>
                 </li>
               }
@@ -250,6 +265,7 @@ function isManagementTab(tab: AdminTab): tab is ManagementTab {
 })
 export class AdminDashboardComponent implements OnInit {
   private readonly matchesService = inject(MatchesService);
+  private readonly seasonsService = inject(SeasonsService);
   private readonly supabase = inject(SupabaseService).client;
   private readonly auth = inject(AuthService);
   readonly router = inject(Router);
@@ -289,13 +305,21 @@ export class AdminDashboardComponent implements OnInit {
   // pour le restaurer quand on revient sur "Gestion" depuis un autre onglet top-level).
   private lastManagementTab = signal<ManagementTab>('matches');
 
-  matches = signal<Match[]>([]);
+  matches = signal<MatchWithCount[]>([]);
   players = signal<Player[]>([]);
   auditLog = signal<AuditEntry[]>([]);
   loadingMatches = signal(true);
   loadingPlayers = signal(true);
   loadingAudit = signal(true);
   actionError = signal('');
+
+  private seasonEndedAt = signal<(seasonId: string) => string | null>(() => null);
+
+  matchStatusOf(match: MatchWithCount): MatchCompletionStatus {
+    return deriveMatchStatus(match, match, this.seasonEndedAt()(match.season_id));
+  }
+
+  statusLabel = matchStatusLabel;
 
   async ngOnInit(): Promise<void> {
     const player = this.auth.currentPlayer();
@@ -309,7 +333,12 @@ export class AdminDashboardComponent implements OnInit {
 
   private async loadMatches(groupId: string): Promise<void> {
     try {
-      this.matches.set(await this.matchesService.getMatchesByGroup(groupId));
+      const [matches, seasons] = await Promise.all([
+        this.matchesService.getMatchesByGroup(groupId),
+        this.seasonsService.getSeasons(groupId),
+      ]);
+      this.seasonEndedAt.set(seasonEndedAtLookup(seasons));
+      this.matches.set(matches);
     } finally {
       this.loadingMatches.set(false);
     }
@@ -355,7 +384,7 @@ export class AdminDashboardComponent implements OnInit {
     this.activeTab.set(tab);
   }
 
-  editMatch(match: Match): void {
+  editMatch(match: MatchWithCount): void {
     this.router.navigate([`match/${match.id}`], { relativeTo: this.route });
   }
 
@@ -363,7 +392,7 @@ export class AdminDashboardComponent implements OnInit {
     this.router.navigate([`player/${player.id}`], { relativeTo: this.route });
   }
 
-  async toggleClose(match: Match): Promise<void> {
+  async toggleClose(match: MatchWithCount): Promise<void> {
     const player = this.auth.currentPlayer();
     if (!player) return;
     this.actionError.set('');
@@ -376,7 +405,7 @@ export class AdminDashboardComponent implements OnInit {
     }
   }
 
-  async deleteMatch(match: Match): Promise<void> {
+  async deleteMatch(match: MatchWithCount): Promise<void> {
     if (!confirm(`Supprimer "${match.title}" ?`)) return;
     const player = this.auth.currentPlayer();
     if (!player) return;

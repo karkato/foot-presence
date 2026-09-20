@@ -3,6 +3,7 @@ import { SupabaseService } from '../../core/supabase/supabase.service';
 import { Match } from '../../shared/models/match.model';
 import { Registration } from '../../shared/models/registration.model';
 import { Player } from '../../shared/models/player.model';
+import { MatchStatusAggregates } from '../../shared/utils/match-status';
 
 export interface PlayerStats {
   played: number;
@@ -43,7 +44,7 @@ export interface AuditEntry {
   actor_name: string;
 }
 
-export type MatchWithCount = Match & { registration_count: number };
+export type MatchWithCount = Match & { registration_count: number } & MatchStatusAggregates;
 
 export interface MatchInput {
   title: string;
@@ -62,18 +63,28 @@ export class MatchesService {
   async getMatchesByGroup(groupId: string): Promise<MatchWithCount[]> {
     const { data, error } = await this.supabase
       .from('matches')
-      .select('*, registrations(id, is_withdrawn, plus_ones)')
+      .select('*, registrations(id, is_withdrawn, plus_ones, team, goals, assists)')
       .eq('group_id', groupId)
       .order('match_date', { ascending: false })
       .order('match_time', { ascending: false });
 
     if (error) throw error;
     return (data ?? []).map(m => {
-      const regs = (m.registrations as unknown as { is_withdrawn: boolean; plus_ones: number }[] | null) ?? [];
+      const regs = (m.registrations as unknown as
+        { is_withdrawn: boolean; plus_ones: number; team: number | null; goals: number; assists: number }[] | null
+      ) ?? [];
       const { registrations: _, ...match } = m as typeof m & { registrations: unknown };
+      const present = regs.filter(r => !r.is_withdrawn);
       return {
         ...(match as Match),
-        registration_count: regs.filter(r => !r.is_withdrawn).reduce((sum, r) => sum + 1 + (r.plus_ones ?? 0), 0),
+        registration_count: present.reduce((sum, r) => sum + 1 + (r.plus_ones ?? 0), 0),
+        // Feeds deriveMatchStatus (shared/utils/match-status.ts): whether any
+        // present player still has no team, and each team's declared-goals
+        // total vs. the match score, to distinguish awaiting_teams /
+        // awaiting_score / awaiting_stats without a second round-trip.
+        hasUnassignedPresent: present.some(r => r.team === null),
+        teamAGoalsDeclared: present.filter(r => r.team === 0).reduce((sum, r) => sum + r.goals, 0),
+        teamBGoalsDeclared: present.filter(r => r.team === 1).reduce((sum, r) => sum + r.goals, 0),
       };
     });
   }
