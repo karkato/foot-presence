@@ -53,6 +53,16 @@ BEGIN
     RAISE EXCEPTION 'not_allowed';
   END IF;
 
+  -- is_admin est nullable en base (setup.sql) : un NULL explicite ne
+  -- doit jamais atteindre le UPDATE plus bas, car "p_is_admin = false"
+  -- s'évalue à NULL (donc ni vrai ni faux) quand p_is_admin est NULL —
+  -- la garde anti-lockout juste en dessous serait alors silencieusement
+  -- contournée et NULL écrit en base, même pour le dernier admin d'un
+  -- groupe. On rejette donc explicitement ce cas en amont.
+  IF p_is_admin IS NULL THEN
+    RAISE EXCEPTION 'invalid_is_admin';
+  END IF;
+
   SELECT group_id, is_admin INTO v_group_id, v_was_admin FROM players WHERE id = p_player_id;
   IF v_group_id IS NULL THEN
     RAISE EXCEPTION 'player_not_found';
@@ -63,8 +73,11 @@ BEGIN
   -- Garde anti-lockout : refuser de retirer le dernier admin d'un
   -- groupe. On ne bloque que le cas dégénéré (0 admin restant après
   -- l'opération) — l'auto-rétrogradation reste permise tant qu'il reste
-  -- au moins un autre admin dans le groupe.
-  IF p_is_admin = false AND v_was_admin = true THEN
+  -- au moins un autre admin dans le groupe. COALESCE(v_was_admin, false) :
+  -- une ligne historique avec is_admin NULL ne doit pas être traitée
+  -- comme "était admin" (ce qui déclencherait la garde à tort) ni comme
+  -- une valeur indéterminée qui saute la garde (ce qui la contournerait).
+  IF p_is_admin = false AND COALESCE(v_was_admin, false) = true THEN
     SELECT count(*) INTO v_remaining_admins FROM players
     WHERE group_id = v_group_id AND is_admin = true AND id <> p_player_id;
     IF v_remaining_admins = 0 THEN
