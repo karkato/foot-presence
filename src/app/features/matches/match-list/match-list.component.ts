@@ -80,7 +80,7 @@ import {
           </ul>
         }
 
-        @if (awaitingResultMatches().length > 0) {
+        @if (!isAdmin() && awaitingResultMatches().length > 0) {
           <div class="awaiting-panel">
             <h3 class="section-label">En attente de résultat ({{ awaitingResultMatches().length }})</h3>
             <ul class="match-list">
