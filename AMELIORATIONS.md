@@ -65,7 +65,7 @@ Durcissement pragmatique pour une app perso :
 - [x] `MatchesService.setMiniMatchScore()` écrivait en direct via `supabase.from(...).update()`. **Corrigé par `supabase/security.sql`** : nouvelle RPC `set_mini_match_score` avec garde admin scopée groupe, appelée par le service et par `match-detail.component.ts` (qui passe désormais l'acteur courant). `PlayerFormComponent` (toggle `is_admin`) écrivait de la même façon via `supabase.from('players').update(...)` — le bug silencieux s'y confirmait bien (RLS sur `players` sans policy d'écriture, erreur PostgREST jamais lue). **Corrigé par `supabase/playeradmin.sql`** : nouvelle RPC `set_player_admin`, garde admin scopée groupe systématique (jamais de branche self, contrairement à `update_player_profile`) et garde-fou anti-lockout empêchant de vider un groupe de tout admin.
 
 ### 6. Validation PIN absente à la création de joueur *(ajout audit 06/07/2026)*
-- [ ] `PlayerFormComponent` ne valide ni la longueur ni le format numérique du PIN, contrairement à `ProfileComponent.savePin()` qui exige ≥ 4 chiffres. Un admin peut créer un compte avec un PIN à 1 chiffre. Ajouter la même validation (PIN 4-6 chiffres numériques, username non vide) + messages d'erreur.
+- [x] **Corrigé** — helper partagé `validatePin()` (`src/app/shared/utils/pin.ts`, PIN 4-6 chiffres numériques) réutilisé par `PlayerFormComponent` (création), `ProfileComponent.savePin()` et le nouvel écran `PlayerResetPinComponent`. Voir aussi la RPC dédiée `admin_reset_player_pin` (`supabase/pinreset.sql`, à exécuter APRÈS `playeradmin.sql`) qui remplace le champ "Nouveau PIN" retiré du formulaire d'édition de joueur.
 
 ---
 
