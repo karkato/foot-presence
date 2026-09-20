@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../core/auth/auth.service';
 import { MatchesService, MatchHistoryEntry } from '../../matches/matches.service';
 import { mapMatchStatsError } from '../../../shared/utils/rpc-error';
+import { computeStatsRemaining } from '../../../shared/utils/match-stats';
 
 @Component({
   selector: 'app-my-stats',
@@ -120,12 +121,12 @@ export class MyStatsComponent implements OnChanges {
 
   maxGoals(entry: MatchHistoryEntry): number | null {
     if (entry.team_score === null) return null;
-    return Math.max(0, entry.team_score - entry.team_goals_other);
+    return computeStatsRemaining(entry.team_score, entry.team_goals_other);
   }
 
   maxAssists(entry: MatchHistoryEntry): number | null {
     if (entry.team_score === null) return null;
-    return Math.max(0, entry.team_score - entry.team_assists_other);
+    return computeStatsRemaining(entry.team_score, entry.team_assists_other);
   }
 
   remainingLabel(entry: MatchHistoryEntry): string {
