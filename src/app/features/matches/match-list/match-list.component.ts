@@ -11,8 +11,15 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { MatchesService } from '../matches.service';
 import { SupabaseService } from '../../../core/supabase/supabase.service';
+import { SeasonsService } from '../../../core/seasons/seasons.service';
 import { Match } from '../../../shared/models/match.model';
 import { MatchWithCount } from '../matches.service';
+import {
+  deriveMatchStatus,
+  matchStatusLabel,
+  seasonEndedAtLookup,
+  MatchCompletionStatus,
+} from '../../../shared/utils/match-status';
 
 @Component({
   selector: 'app-match-list',
@@ -27,6 +34,27 @@ import { MatchWithCount } from '../matches.service';
       } @else if (matches().length === 0) {
         <p class="muted empty">Aucun match prévu pour l'instant.</p>
       } @else {
+        @if (isAdmin() && awaitingResultMatches().length > 0) {
+          <div class="awaiting-panel admin-awaiting-panel">
+            <h3 class="section-label">À saisir ({{ awaitingResultMatches().length }})</h3>
+            <ul class="match-list">
+              @for (match of awaitingResultMatches(); track match.id) {
+                <li class="match-card" (click)="goToStats(match)">
+                  <div class="match-info">
+                    <span class="match-title">{{ match.title }}</span>
+                    <span class="match-date match-date-full">{{ formatDate(match.match_date) }} à {{ formatTime(match.match_time) }}</span>
+                    <span class="match-date match-date-short">{{ formatDateShort(match.match_date, match.match_time) }}</span>
+                  </div>
+                  <div class="match-meta">
+                    <span class="badge badge-closed">{{ statusLabel(match) }}</span>
+                    <span class="arrow">›</span>
+                  </div>
+                </li>
+              }
+            </ul>
+          </div>
+        }
+
         @if (upcomingMatches().length === 0) {
           <p class="muted empty">Aucun match à venir.</p>
         } @else {
@@ -50,6 +78,27 @@ import { MatchWithCount } from '../matches.service';
               </li>
             }
           </ul>
+        }
+
+        @if (awaitingResultMatches().length > 0) {
+          <div class="awaiting-panel">
+            <h3 class="section-label">En attente de résultat ({{ awaitingResultMatches().length }})</h3>
+            <ul class="match-list">
+              @for (match of awaitingResultMatches(); track match.id) {
+                <li class="match-card" (click)="openMatch(match)">
+                  <div class="match-info">
+                    <span class="match-title">{{ match.title }}</span>
+                    <span class="match-date match-date-full">{{ formatDate(match.match_date) }} à {{ formatTime(match.match_time) }}</span>
+                    <span class="match-date match-date-short">{{ formatDateShort(match.match_date, match.match_time) }}</span>
+                  </div>
+                  <div class="match-meta">
+                    <span class="badge badge-closed">{{ statusLabel(match) }}</span>
+                    <span class="arrow">›</span>
+                  </div>
+                </li>
+              }
+            </ul>
+          </div>
         }
 
         @if (finishedMatches().length > 0) {
@@ -132,6 +181,9 @@ import { MatchWithCount } from '../matches.service';
       color: #d97706;
     }
     .arrow { font-size: 1.5rem; color: var(--text-muted); line-height: 1; }
+    .awaiting-panel { margin-top: 1.5rem; }
+    .awaiting-panel .section-label { margin: 0 0 0.75rem; }
+    .admin-awaiting-panel { margin-top: 0; margin-bottom: 1.5rem; }
     .finished-panel { margin-top: 1.5rem; }
     .finished-toggle {
       width: 100%;
@@ -174,17 +226,31 @@ import { MatchWithCount } from '../matches.service';
 })
 export class MatchListComponent implements OnInit, OnDestroy {
   private readonly matchesService = inject(MatchesService);
+  private readonly seasonsService = inject(SeasonsService);
   private readonly supabase = inject(SupabaseService).client;
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
   matches = signal<MatchWithCount[]>([]);
+  private seasonEndedAt = signal<(seasonId: string) => string | null>(() => null);
   loading = signal(true);
   showFinished = signal(false);
 
-  upcomingMatches = computed(() => this.matches().filter(m => m.score_a === null));
-  finishedMatches = computed(() => this.matches().filter(m => m.score_a !== null));
+  isAdmin = computed(() => this.auth.isAdmin());
+
+  private statusOf = (match: MatchWithCount): MatchCompletionStatus =>
+    deriveMatchStatus(match, match, this.seasonEndedAt()(match.season_id));
+
+  upcomingMatches = computed(() => this.matches().filter(m => this.statusOf(m) === 'upcoming'));
+  awaitingResultMatches = computed(() => {
+    const awaiting: MatchCompletionStatus[] = ['awaiting_teams', 'awaiting_score', 'awaiting_stats'];
+    return this.matches().filter(m => awaiting.includes(this.statusOf(m)));
+  });
+  finishedMatches = computed(() => {
+    const done: MatchCompletionStatus[] = ['complete', 'archived'];
+    return this.matches().filter(m => done.includes(this.statusOf(m)));
+  });
 
   readonly groupSlug = this.route.snapshot.params['groupSlug'] as string;
 
@@ -205,15 +271,27 @@ export class MatchListComponent implements OnInit, OnDestroy {
     try {
       const player = this.auth.currentPlayer();
       if (!player) return;
-      const matches = await this.matchesService.getMatchesByGroup(player.group_id);
+      const [matches, seasons] = await Promise.all([
+        this.matchesService.getMatchesByGroup(player.group_id),
+        this.seasonsService.getSeasons(player.group_id),
+      ]);
+      this.seasonEndedAt.set(seasonEndedAtLookup(seasons));
       this.matches.set(matches);
     } finally {
       this.loading.set(false);
     }
   }
 
+  statusLabel(match: MatchWithCount): string {
+    return matchStatusLabel(this.statusOf(match));
+  }
+
   openMatch(match: Match): void {
     this.router.navigate([`/${this.groupSlug}/match/${match.id}`]);
+  }
+
+  goToStats(match: MatchWithCount): void {
+    this.router.navigate([`/${this.groupSlug}/admin/match/${match.id}/stats`]);
   }
 
   toggleFinished(): void {
