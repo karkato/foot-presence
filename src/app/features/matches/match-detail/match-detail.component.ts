@@ -14,6 +14,7 @@ import { Group } from '../../../shared/models/group.model';
 import { PlayerRowComponent } from './player-row/player-row.component';
 import { RegistrationModalComponent } from './registration-modal/registration-modal.component';
 import { mapAuthRpcError, rpcMessage } from '../../../shared/utils/rpc-error';
+import { isMatchDateInFuture } from '../../../shared/utils/match-status';
 import { TEAM_A_COLOR, TEAM_B_COLOR } from '../../../shared/constants/team-config';
 
 type PresentEntry =
@@ -191,10 +192,18 @@ type PresentEntry =
               <button class="btn btn-stroked btn-full" (click)="toggleClose()" [disabled]="actionLoading()">
                 Rouvrir les inscriptions
               </button>
-              <button class="btn btn-primary btn-full" (click)="goToStats()">
-                Saisir le résultat
-              </button>
             }
+          </div>
+        }
+
+        <!-- Admin : saisir/modifier le résultat -- indépendant de is_closed
+             et de isFinished() : c'est justement quand le score est déjà
+             saisi (awaiting_stats) qu'il reste le plus de travail ici. -->
+        @if (isAdmin() && !isUpcoming()) {
+          <div class="admin-row">
+            <button class="btn btn-primary btn-full" (click)="goToStats()">
+              {{ match()!.score_a === null ? 'Saisir le résultat' : 'Modifier le résultat' }}
+            </button>
           </div>
         }
 
@@ -421,6 +430,14 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
   });
 
   isFinished = computed(() => this.match()?.score_a !== null && this.match()?.score_a !== undefined);
+  // "upcoming" here mirrors deriveMatchStatus's first branch (future date +
+  // no score yet) without needing the season/team/stats aggregates that
+  // full status derivation requires -- this view only needs to know whether
+  // to offer the "Saisir le résultat" CTA at all.
+  isUpcoming = computed(() => {
+    const m = this.match();
+    return !!m && m.score_a === null && isMatchDateInFuture(m.match_date);
+  });
   isRegistered = computed(() => this.registrations().some(r => r.player_id === this.currentPlayerId()));
   isWithdrawn = computed(() => this.registrations().some(r => r.player_id === this.currentPlayerId() && r.is_withdrawn));
 

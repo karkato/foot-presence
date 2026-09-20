@@ -50,7 +50,14 @@ function parseDateOnly(dateStr: string): Date {
   return new Date(year, (month || 1) - 1, day || 1);
 }
 
-function isMatchDateInFuture(matchDate: string): boolean {
+/**
+ * Exported (not just used internally by deriveMatchStatus) so callers that
+ * only need the "is this match still ahead of us" check -- without the
+ * season/team/stats aggregates deriveMatchStatus requires -- don't have to
+ * re-implement the same local-date comparison (see match-detail.component.ts
+ * gating its "Saisir le résultat" CTA).
+ */
+export function isMatchDateInFuture(matchDate: string): boolean {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   return parseDateOnly(matchDate) >= today;
