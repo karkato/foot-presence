@@ -141,6 +141,7 @@ export class PlayerFormComponent implements OnInit {
   saving = signal(false);
   error = signal('');
   playerId = '';
+  private initialIsAdmin = false;
 
   form = {
     username: '',
@@ -154,16 +155,19 @@ export class PlayerFormComponent implements OnInit {
     if (id && id !== 'new') {
       this.isEdit.set(true);
       this.playerId = id;
-      const { data } = await this.supabase
+      const { data, error } = await this.supabase
         .from('players')
         .select('*')
         .eq('id', id)
         .single();
-      if (data) {
+      if (error) {
+        this.error.set('Impossible de charger ce joueur.');
+      } else if (data) {
         this.form.display_name = data.display_name ?? data.username;
         this.form.is_admin = data.is_admin;
-        this.cdr.markForCheck();
+        this.initialIsAdmin = data.is_admin;
       }
+      this.cdr.markForCheck();
     }
   }
 
@@ -182,11 +186,18 @@ export class PlayerFormComponent implements OnInit {
           p_actor_id: currentPlayer.id,
         });
         if (error) throw error;
-        if (this.form.is_admin !== undefined) {
-          await this.supabase
-            .from('players')
-            .update({ is_admin: this.form.is_admin })
-            .eq('id', this.playerId);
+
+        if (this.form.is_admin !== this.initialIsAdmin) {
+          const { error: adminError } = await this.supabase.rpc('set_player_admin', {
+            p_actor_id: currentPlayer.id,
+            p_player_id: this.playerId,
+            p_is_admin: this.form.is_admin,
+          });
+          if (adminError) throw adminError;
+
+          if (currentPlayer.id === this.playerId) {
+            this.auth.updateCurrentPlayer({ is_admin: this.form.is_admin });
+          }
         }
       } else {
         if (!this.form.username.trim() || !this.form.pin) {
