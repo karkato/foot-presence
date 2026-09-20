@@ -279,6 +279,33 @@ export class MatchStatsComponent implements OnInit {
     catch { this.group.set(null); }
   }
 
+  // Sorted once per registrations() change instead of re-filtering +
+  // re-sorting (Intl.Collator via localeCompare) on every template read --
+  // teamRegs/teamGoalsRemaining/canIncrementGoals/canIncrementAssists are
+  // all called multiple times per change-detection pass (up to ~2x per
+  // present player), which made the previous per-call filter+sort run
+  // dozens of times per pass on a full roster.
+  regsByTeam = computed<Record<0 | 1, Registration[]>>(() => {
+    const byTeam: Record<0 | 1, Registration[]> = { 0: [], 1: [] };
+    for (const reg of this.presentRegs()) {
+      if (reg.team === 0 || reg.team === 1) byTeam[reg.team].push(reg);
+    }
+    const byName = (a: Registration, b: Registration) => getDisplayName(a.player).localeCompare(getDisplayName(b.player));
+    byTeam[0].sort(byName);
+    byTeam[1].sort(byName);
+    return byTeam;
+  });
+
+  private teamGoalsTotal = computed<Record<0 | 1, number>>(() => ({
+    0: this.regsByTeam()[0].reduce((sum, r) => sum + r.goals, 0),
+    1: this.regsByTeam()[1].reduce((sum, r) => sum + r.goals, 0),
+  }));
+
+  private teamAssistsTotal = computed<Record<0 | 1, number>>(() => ({
+    0: this.regsByTeam()[0].reduce((sum, r) => sum + r.assists, 0),
+    1: this.regsByTeam()[1].reduce((sum, r) => sum + r.assists, 0),
+  }));
+
   teamName(team: 0 | 1): string {
     const m = this.match();
     if (!m) return '';
@@ -286,9 +313,7 @@ export class MatchStatsComponent implements OnInit {
   }
 
   teamRegs(team: 0 | 1): Registration[] {
-    return this.presentRegs()
-      .filter(r => r.team === team)
-      .sort((a, b) => getDisplayName(a.player).localeCompare(getDisplayName(b.player)));
+    return this.regsByTeam()[team];
   }
 
   private teamScore(team: 0 | 1): number {
@@ -298,29 +323,23 @@ export class MatchStatsComponent implements OnInit {
   }
 
   teamGoalsRemaining(team: 0 | 1): number {
-    const declared = this.teamRegs(team).reduce((sum, r) => sum + r.goals, 0);
-    return computeStatsRemaining(this.teamScore(team), declared);
+    return computeStatsRemaining(this.teamScore(team), this.teamGoalsTotal()[team]);
   }
 
   teamAssistsRemaining(team: 0 | 1): number {
-    const declared = this.teamRegs(team).reduce((sum, r) => sum + r.assists, 0);
-    return computeStatsRemaining(this.teamScore(team), declared);
+    return computeStatsRemaining(this.teamScore(team), this.teamAssistsTotal()[team]);
   }
 
   canIncrementGoals(reg: Registration): boolean {
-    if (reg.team === null) return false;
-    const otherTotal = this.teamRegs(reg.team as 0 | 1)
-      .filter(r => r.player_id !== reg.player_id)
-      .reduce((sum, r) => sum + r.goals, 0);
-    return reg.goals < computeStatsRemaining(this.teamScore(reg.team as 0 | 1), otherTotal);
+    if (reg.team !== 0 && reg.team !== 1) return false;
+    const otherTotal = this.teamGoalsTotal()[reg.team] - reg.goals;
+    return reg.goals < computeStatsRemaining(this.teamScore(reg.team), otherTotal);
   }
 
   canIncrementAssists(reg: Registration): boolean {
-    if (reg.team === null) return false;
-    const otherTotal = this.teamRegs(reg.team as 0 | 1)
-      .filter(r => r.player_id !== reg.player_id)
-      .reduce((sum, r) => sum + r.assists, 0);
-    return reg.assists < computeStatsRemaining(this.teamScore(reg.team as 0 | 1), otherTotal);
+    if (reg.team !== 0 && reg.team !== 1) return false;
+    const otherTotal = this.teamAssistsTotal()[reg.team] - reg.assists;
+    return reg.assists < computeStatsRemaining(this.teamScore(reg.team), otherTotal);
   }
 
   async adjustScore(team: 0 | 1, delta: number): Promise<void> {
