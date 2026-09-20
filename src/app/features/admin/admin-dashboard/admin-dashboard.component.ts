@@ -128,6 +128,7 @@ function isManagementTab(tab: AdminTab): tab is ManagementTab {
                   </div>
                   <div class="item-actions">
                     <button class="btn-sm btn-edit" (click)="editPlayer(player)">Modifier</button>
+                    <button class="btn-sm btn-edit" (click)="resetPlayerPin(player)">Réinitialiser le PIN</button>
                   </div>
                 </li>
               }
@@ -392,6 +393,10 @@ export class AdminDashboardComponent implements OnInit {
     this.router.navigate([`player/${player.id}`], { relativeTo: this.route });
   }
 
+  resetPlayerPin(player: Player): void {
+    this.router.navigate([`player/${player.id}/reset-pin`], { relativeTo: this.route });
+  }
+
   async toggleClose(match: MatchWithCount): Promise<void> {
     const player = this.auth.currentPlayer();
     if (!player) return;
@@ -458,6 +463,7 @@ export class AdminDashboardComponent implements OnInit {
       case 'set_player_admin': return d['is_admin']
         ? `${actor} a promu ${d['player_name'] ?? '...'} administrateur`
         : `${actor} a retiré les droits admin de ${d['player_name'] ?? '...'}`;
+      case 'reset_player_pin': return `${actor} a réinitialisé le PIN de ${d['player_name'] ?? '...'}`;
       case 'update_group_settings': return `${actor} a modifié les réglages du groupe`;
       case 'start_season': return `${actor} a démarré "${d['name'] ?? 'une nouvelle saison'}"`;
       case 'set_player_stats': return `${actor} a modifié des stats de match`;
