@@ -179,14 +179,11 @@ export class PlayerFormComponent implements OnInit {
 
     try {
       if (this.isEdit()) {
-        const { error } = await this.supabase.rpc('update_player_profile', {
-          p_player_id: this.playerId,
-          p_display_name: this.form.display_name.trim() || null,
-          p_new_pin: this.form.pin || null,
-          p_actor_id: currentPlayer.id,
-        });
-        if (error) throw error;
-
+        // set_player_admin AVANT update_player_profile : c'est l'appel le
+        // plus susceptible d'échouer (garde anti-lockout "last_admin"),
+        // et on ne veut pas laisser display_name/PIN déjà écrits en base
+        // pendant qu'un échec sur les droits admin affiche un message
+        // d'erreur trompeur (voir revue).
         if (this.form.is_admin !== this.initialIsAdmin) {
           const { error: adminError } = await this.supabase.rpc('set_player_admin', {
             p_actor_id: currentPlayer.id,
@@ -199,6 +196,14 @@ export class PlayerFormComponent implements OnInit {
             this.auth.updateCurrentPlayer({ is_admin: this.form.is_admin });
           }
         }
+
+        const { error } = await this.supabase.rpc('update_player_profile', {
+          p_player_id: this.playerId,
+          p_display_name: this.form.display_name.trim() || null,
+          p_new_pin: this.form.pin || null,
+          p_actor_id: currentPlayer.id,
+        });
+        if (error) throw error;
       } else {
         if (!this.form.username.trim() || !this.form.pin) {
           this.error.set('Pseudo et PIN requis');
