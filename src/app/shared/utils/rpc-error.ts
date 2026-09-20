@@ -46,7 +46,7 @@ export function mapAuthRpcError(err: unknown, fallback: string): string {
 /**
  * Maps errors raised by set_player_match_stats and set_match_score
  * (supabase/playerstats.sql) to a French user-facing message. Shared
- * between the profile's "Buts" tab and the match-detail admin panel —
+ * between the profile's "Buts" tab and the admin match-stats screen —
  * both call these RPCs and need to surface the same vocabulary.
  */
 export function mapMatchStatsError(err: unknown, fallback: string): string {
