@@ -10,6 +10,7 @@ import { Group } from '../../../shared/models/group.model';
 import { getDisplayName } from '../../../shared/models/player.model';
 import { mapAuthRpcError, mapMatchStatsError } from '../../../shared/utils/rpc-error';
 import { computeStatsRemaining } from '../../../shared/utils/match-stats';
+import { confirmTeamReassignment } from '../../../shared/utils/team-assignment';
 import { TEAM_A_COLOR, TEAM_B_COLOR } from '../../../shared/constants/team-config';
 
 @Component({
@@ -392,13 +393,7 @@ export class MatchStatsComponent implements OnInit {
     const admin = this.auth.currentPlayer();
     if (!admin) return;
     if (reg.team === team) return;
-    // assign_team resets goals/assists to 0 server-side on a real team
-    // change (supabase/playerstats.sql) -- warn before silently wiping
-    // declared stats.
-    if ((reg.goals > 0 || reg.assists > 0)
-      && !confirm(`${getDisplayName(reg.player)} a déjà des buts/passes déclarés. Changer son équipe les remettra à 0. Continuer ?`)) {
-      return;
-    }
+    if (!confirmTeamReassignment(reg)) return;
     this.actionLoading.set(true);
     this.teamsError.set('');
     try {

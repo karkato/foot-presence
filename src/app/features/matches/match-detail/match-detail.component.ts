@@ -15,6 +15,7 @@ import { PlayerRowComponent } from './player-row/player-row.component';
 import { RegistrationModalComponent } from './registration-modal/registration-modal.component';
 import { mapAuthRpcError, rpcMessage } from '../../../shared/utils/rpc-error';
 import { isMatchDateInFuture } from '../../../shared/utils/match-status';
+import { confirmTeamReassignment } from '../../../shared/utils/team-assignment';
 import { TEAM_A_COLOR, TEAM_B_COLOR } from '../../../shared/constants/team-config';
 
 type PresentEntry =
@@ -551,14 +552,8 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
     if (!admin) return;
     const currentTeam = this.getPlayerTeam(playerId);
     if (currentTeam === team) return;
-    // assign_team resets goals/assists to 0 server-side on a real team
-    // change (supabase/playerstats.sql) -- warn before silently wiping
-    // declared stats, since this panel has no direct visibility into them.
     const reg = this.registrations().find(r => r.player_id === playerId && !r.is_withdrawn);
-    if (reg && (reg.goals > 0 || reg.assists > 0)
-      && !confirm(`${getDisplayName(reg.player)} a déjà des buts/passes déclarés. Changer son équipe les remettra à 0. Continuer ?`)) {
-      return;
-    }
+    if (reg && !confirmTeamReassignment(reg)) return;
     this.actionError.set('');
     try {
       await this.matchesService.assignTeam(this.matchId, playerId, team, admin.id);
