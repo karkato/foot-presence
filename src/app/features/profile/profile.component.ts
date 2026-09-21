@@ -8,6 +8,7 @@ import { MatchesService, MatchHistoryEntry, PlayerStats } from '../matches/match
 import { Season, isCurrentSeason } from '../../shared/models/season.model';
 import { mapAuthRpcError } from '../../shared/utils/rpc-error';
 import { validatePin } from '../../shared/utils/pin';
+import { computeWinRate } from '../../shared/utils/leaderboard';
 import { SeasonPickerComponent } from '../../shared/components/season-picker/season-picker.component';
 import { TabBarComponent, TabItem } from '../../shared/components/tab-bar/tab-bar.component';
 import { MyStatsComponent } from './my-stats/my-stats.component';
@@ -262,8 +263,8 @@ export class ProfileComponent implements OnInit {
   groupSlug = computed(() => this.route.snapshot.params['groupSlug'] as string);
   winRatio = computed(() => {
     const s = this.stats();
-    if (!s || s.played === 0) return 0;
-    return Math.round((s.wins / s.played) * 100);
+    if (!s) return 0;
+    return computeWinRate(s.wins, s.played);
   });
 
   ngOnInit(): void {

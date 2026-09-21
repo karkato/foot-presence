@@ -7,6 +7,7 @@ import { getDisplayName } from '../../shared/models/player.model';
 import { Season, isCurrentSeason } from '../../shared/models/season.model';
 import { SeasonPickerComponent } from '../../shared/components/season-picker/season-picker.component';
 import { DEFAULT_TEAM_A_NAME, DEFAULT_TEAM_B_NAME } from '../../shared/constants/team-config';
+import { computeWinRate } from '../../shared/utils/leaderboard';
 
 type Filter = 'all' | 'win' | 'loss' | 'draw';
 
@@ -200,8 +201,8 @@ export class HistoryComponent implements OnInit {
 
   winRatio = computed(() => {
     const s = this.stats();
-    if (!s || s.played === 0) return 0;
-    return Math.round((s.wins / s.played) * 100);
+    if (!s) return 0;
+    return computeWinRate(s.wins, s.played);
   });
 
   winCount = computed(() => this.history().filter(e => e.result === 'win').length);
