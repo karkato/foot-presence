@@ -40,6 +40,12 @@ export function mapAuthRpcError(err: unknown, fallback: string): string {
   if (message.includes('last_admin')) {
     return "Impossible de retirer les droits admin : c'est le dernier administrateur du groupe.";
   }
+  if (message.includes('invalid_pin')) {
+    return 'Le PIN doit contenir entre 4 et 6 chiffres.';
+  }
+  if (message.includes('player_not_found')) {
+    return 'Ce joueur est introuvable.';
+  }
   return fallback;
 }
 

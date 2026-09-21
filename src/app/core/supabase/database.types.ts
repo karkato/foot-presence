@@ -360,6 +360,10 @@ export interface Database {
         Args: { p_actor_id: string; p_player_id: string; p_is_admin: boolean };
         Returns: Json;
       };
+      admin_reset_player_pin: {
+        Args: { p_actor_id: string; p_player_id: string; p_new_pin: string };
+        Returns: Json;
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

@@ -279,6 +279,15 @@ export class MatchesService {
     return (data as unknown as MatchHistoryEntry[]) ?? [];
   }
 
+  async resetPlayerPin(playerId: string, newPin: string, actorId: string): Promise<void> {
+    const { error } = await this.supabase.rpc('admin_reset_player_pin', {
+      p_actor_id: actorId,
+      p_player_id: playerId,
+      p_new_pin: newPin,
+    });
+    if (error) throw error;
+  }
+
   async getAuditLog(groupId: string): Promise<AuditEntry[]> {
     const { data, error } = await this.supabase.rpc('get_audit_log', {
       p_group_id: groupId,

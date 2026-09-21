@@ -12,6 +12,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { SupabaseService } from '../../../core/supabase/supabase.service';
 import { Player, getDisplayName } from '../../../shared/models/player.model';
 import { mapAuthRpcError, rpcMessage } from '../../../shared/utils/rpc-error';
+import { validatePin } from '../../../shared/utils/pin';
 
 @Component({
   selector: 'app-player-form',
@@ -36,7 +37,7 @@ import { mapAuthRpcError, rpcMessage } from '../../../shared/utils/rpc-error';
             />
           </div>
           <div class="field">
-            <label>PIN (4 chiffres min.)</label>
+            <label>PIN (4 à 6 chiffres)</label>
             <input
               type="password"
               [(ngModel)]="form.pin"
@@ -59,20 +60,6 @@ import { mapAuthRpcError, rpcMessage } from '../../../shared/utils/rpc-error';
             maxlength="30"
           />
         </div>
-
-        @if (isEdit()) {
-          <div class="field">
-            <label>Nouveau PIN (laisser vide pour ne pas changer)</label>
-            <input
-              type="password"
-              [(ngModel)]="form.pin"
-              name="pin"
-              inputmode="numeric"
-              maxlength="6"
-              placeholder="••••"
-            />
-          </div>
-        }
 
         <div class="field checkbox-field">
           <label>
@@ -181,7 +168,7 @@ export class PlayerFormComponent implements OnInit {
       if (this.isEdit()) {
         // set_player_admin AVANT update_player_profile : c'est l'appel le
         // plus susceptible d'échouer (garde anti-lockout "last_admin"),
-        // et on ne veut pas laisser display_name/PIN déjà écrits en base
+        // et on ne veut pas laisser display_name déjà écrit en base
         // pendant qu'un échec sur les droits admin affiche un message
         // d'erreur trompeur (voir revue).
         if (this.form.is_admin !== this.initialIsAdmin) {
@@ -200,13 +187,17 @@ export class PlayerFormComponent implements OnInit {
         const { error } = await this.supabase.rpc('update_player_profile', {
           p_player_id: this.playerId,
           p_display_name: this.form.display_name.trim() || null,
-          p_new_pin: this.form.pin || null,
           p_actor_id: currentPlayer.id,
         });
         if (error) throw error;
       } else {
         if (!this.form.username.trim() || !this.form.pin) {
           this.error.set('Pseudo et PIN requis');
+          return;
+        }
+        const pinError = validatePin(this.form.pin);
+        if (pinError) {
+          this.error.set(pinError);
           return;
         }
         const { error } = await this.supabase.rpc('create_player', {

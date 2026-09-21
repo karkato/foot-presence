@@ -28,4 +28,12 @@ export const adminRoutes: Routes = [
     loadComponent: () =>
       import('./match-stats/match-stats.component').then((m) => m.MatchStatsComponent),
   },
+  {
+    path: 'admin/player/:id/reset-pin',
+    canActivate: [authGuard, adminGuard],
+    loadComponent: () =>
+      import('./player-reset-pin/player-reset-pin.component').then(
+        (m) => m.PlayerResetPinComponent
+      ),
+  },
 ];
