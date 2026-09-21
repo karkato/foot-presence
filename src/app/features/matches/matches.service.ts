@@ -2,22 +2,16 @@ import { Injectable, inject } from '@angular/core';
 import { SupabaseService } from '../../core/supabase/supabase.service';
 import { Match } from '../../shared/models/match.model';
 import { Registration } from '../../shared/models/registration.model';
-import { Player } from '../../shared/models/player.model';
+import { Player, GroupPlayerStats } from '../../shared/models/player.model';
 import { MatchStatusAggregates } from '../../shared/utils/match-status';
+
+export type { GroupPlayerStats };
 
 export interface PlayerStats {
   played: number;
   wins: number;
   losses: number;
   draws: number;
-  goals: number;
-  assists: number;
-}
-
-export interface GroupPlayerStats {
-  player_id: string;
-  played: number;
-  wins: number;
   goals: number;
   assists: number;
 }

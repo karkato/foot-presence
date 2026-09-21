@@ -2,8 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } 
 import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { SeasonsService } from '../../core/seasons/seasons.service';
-import { MatchesService, GroupPlayerStats } from '../matches/matches.service';
-import { Player } from '../../shared/models/player.model';
+import { MatchesService } from '../matches/matches.service';
+import { Player, GroupPlayerStats } from '../../shared/models/player.model';
 import { Season, isCurrentSeason } from '../../shared/models/season.model';
 import { SeasonPickerComponent } from '../../shared/components/season-picker/season-picker.component';
 import { TabBarComponent, TabItem } from '../../shared/components/tab-bar/tab-bar.component';

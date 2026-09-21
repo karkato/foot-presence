@@ -1,5 +1,4 @@
-import { GroupPlayerStats } from '../../features/matches/matches.service';
-import { Player, getDisplayName } from '../models/player.model';
+import { Player, GroupPlayerStats, getDisplayName } from '../models/player.model';
 
 export type LeaderboardMetric = 'goals' | 'assists' | 'winRate';
 
