@@ -69,7 +69,14 @@ BEGIN
   -- peut réinitialiser le PIN d'un autre admin du groupe.
   PERFORM assert_group_admin(p_actor_id, v_group_id);
 
-  IF p_new_pin !~ '^[0-9]{4,6}$' THEN
+  -- p_new_pin est déclaré text (nullable) : un NULL explicite ne doit
+  -- jamais atteindre le UPDATE plus bas, car "p_new_pin !~ regex" s'évalue
+  -- à NULL (donc ni vrai ni faux) quand p_new_pin est NULL — la garde de
+  -- format serait alors silencieusement contournée, laissant passer
+  -- crypt(NULL, ...) jusqu'à la contrainte NOT NULL sur pin_hash (même
+  -- piège que invalid_is_admin dans set_player_admin, playeradmin.sql).
+  -- On rejette donc explicitement ce cas en amont, avant la regex.
+  IF p_new_pin IS NULL OR p_new_pin !~ '^[0-9]{4,6}$' THEN
     RAISE EXCEPTION 'invalid_pin';
   END IF;
 
