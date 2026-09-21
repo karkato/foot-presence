@@ -25,7 +25,7 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
 
         <form (ngSubmit)="onSubmit()" class="form">
           <div class="field">
-            <label>Nouveau PIN</label>
+            <label>Nouveau PIN (4 à 6 chiffres)</label>
             <input
               type="password"
               [(ngModel)]="newPin"
@@ -38,7 +38,7 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
             />
           </div>
           <div class="field">
-            <label>Confirmer le PIN</label>
+            <label>Confirmer le PIN (4 à 6 chiffres)</label>
             <input
               type="password"
               [(ngModel)]="confirmPin"
