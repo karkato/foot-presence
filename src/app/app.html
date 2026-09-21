@@ -8,6 +8,7 @@
     <!-- Navigation desktop -->
     <nav class="desktop-nav">
       <a [routerLink]="['/' + groupSlug() + '/matches']" routerLinkActive="active" class="desktop-nav-link">Matchs</a>
+      <a [routerLink]="['/' + groupSlug() + '/leaderboard']" routerLinkActive="active" class="desktop-nav-link">Classement</a>
       <a [routerLink]="['/' + groupSlug() + '/profile']" routerLinkActive="active" class="desktop-nav-link">{{ auth.displayName() }}</a>
       @if (auth.isAdmin()) {
         <a [routerLink]="['/' + groupSlug() + '/admin']" routerLinkActive="active" class="desktop-nav-link nav-admin">Admin</a>
@@ -29,6 +30,10 @@
     <a [routerLink]="['/' + groupSlug() + '/matches']" routerLinkActive="active" class="bottom-nav-item">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
       <span>Matchs</span>
+    </a>
+    <a [routerLink]="['/' + groupSlug() + '/leaderboard']" routerLinkActive="active" class="bottom-nav-item">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M17 5V3H7v2M17 5a5 5 0 0 1-5 5 5 5 0 0 1-5-5M17 5h3a3 3 0 0 1-3 3M7 5H4a3 3 0 0 0 3 3"/></svg>
+      <span>Classement</span>
     </a>
     <a [routerLink]="['/' + groupSlug() + '/profile']" routerLinkActive="active" class="bottom-nav-item">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>

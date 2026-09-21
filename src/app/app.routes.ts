@@ -29,6 +29,12 @@ export const routes: Routes = [
       import('./features/history/history.component').then((m) => m.HistoryComponent),
   },
   {
+    path: ':groupSlug/leaderboard',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/leaderboard/leaderboard.component').then((m) => m.LeaderboardComponent),
+  },
+  {
     path: ':groupSlug',
     children: [...matchesRoutes, ...adminRoutes],
   },

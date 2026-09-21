@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { SupabaseService } from '../../core/supabase/supabase.service';
 import { Match } from '../../shared/models/match.model';
 import { Registration } from '../../shared/models/registration.model';
-import { Player } from '../../shared/models/player.model';
+import { Player, GroupPlayerStats } from '../../shared/models/player.model';
 import { MatchStatusAggregates } from '../../shared/utils/match-status';
 
 export interface PlayerStats {
@@ -268,6 +268,15 @@ export class MatchesService {
     });
     if (error) throw error;
     return (data as unknown as PlayerStats) ?? { played: 0, wins: 0, losses: 0, draws: 0, goals: 0, assists: 0 };
+  }
+
+  async getGroupPlayerStats(groupId: string, seasonId?: string | null): Promise<GroupPlayerStats[]> {
+    const { data, error } = await this.supabase.rpc('get_group_player_stats', {
+      p_group_id: groupId,
+      p_season_id: seasonId ?? null,
+    });
+    if (error) throw error;
+    return (data as unknown as GroupPlayerStats[]) ?? [];
   }
 
   async getPlayerHistory(playerId: string, seasonId?: string | null): Promise<MatchHistoryEntry[]> {

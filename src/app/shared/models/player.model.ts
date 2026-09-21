@@ -10,3 +10,11 @@ export interface Player {
 export function getDisplayName(player: Pick<Player, 'display_name' | 'username'>): string {
   return player.display_name?.trim() || player.username;
 }
+
+export interface GroupPlayerStats {
+  player_id: string;
+  played: number;
+  wins: number;
+  goals: number;
+  assists: number;
+}
