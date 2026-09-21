@@ -112,7 +112,7 @@ CREATE INDEX IF NOT EXISTS idx_audit_group_date ON audit_log(group_id, created_a
 ```
 
 ### 15. Code mort côté SQL
-- [ ] La RPC `get_group_player_stats` (`features.sql`) et la vue `match_registrations_ranked` (`setup.sql`) ne sont utilisées nulle part côté front. Soit les exploiter (voir leaderboard ci-dessous), soit les supprimer.
+- [x] La RPC `get_group_player_stats` (`features.sql`) et la vue `match_registrations_ranked` (`setup.sql`) ne sont utilisées nulle part côté front. Soit les exploiter (voir leaderboard ci-dessous), soit les supprimer. → `get_group_player_stats` exploitée par la page `/leaderboard` ; `match_registrations_ranked` reste non utilisée.
 
 ### 16. Zéro test
 - [ ] Quelques tests sur la logique pure protégeraient les parties subtiles :
@@ -125,7 +125,7 @@ CREATE INDEX IF NOT EXISTS idx_audit_group_date ON audit_log(group_id, created_a
 ## 💡 Idées de nouveautés
 
 ### Quick wins (le SQL existe déjà en partie)
-- [ ] **Classement du groupe (leaderboard)** : `get_group_player_stats` est déjà écrit ! Page avec matchs joués, % victoires, série en cours.
+- [x] **Classement du groupe (leaderboard)** : `get_group_player_stats` est déjà écrit ! Page avec matchs joués, % victoires, série en cours. → livré (page `/leaderboard`, tri buts/passes/taux de victoire, saison individuelle) ; la « série en cours » (streak) n'est PAS incluse, hors scope de ce cycle.
 - [ ] **Badge ratio à côté des présents** : afficher le win-rate de chaque joueur dans la liste du match (intention initiale de cette RPC).
 - [ ] **Bouton « Ajouter au calendrier »** : générer un fichier `.ics` côté client (zéro dépendance).
 
