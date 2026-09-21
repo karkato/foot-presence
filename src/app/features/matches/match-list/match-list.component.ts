@@ -34,27 +34,6 @@ import {
       } @else if (matches().length === 0) {
         <p class="muted empty">Aucun match prévu pour l'instant.</p>
       } @else {
-        @if (isAdmin() && awaitingResultMatches().length > 0) {
-          <div class="awaiting-panel admin-awaiting-panel">
-            <h3 class="section-label">À saisir ({{ awaitingResultMatches().length }})</h3>
-            <ul class="match-list">
-              @for (match of awaitingResultMatches(); track match.id) {
-                <li class="match-card" (click)="goToStats(match)">
-                  <div class="match-info">
-                    <span class="match-title">{{ match.title }}</span>
-                    <span class="match-date match-date-full">{{ formatDate(match.match_date) }} à {{ formatTime(match.match_time) }}</span>
-                    <span class="match-date match-date-short">{{ formatDateShort(match.match_date, match.match_time) }}</span>
-                  </div>
-                  <div class="match-meta">
-                    <span class="badge badge-closed">{{ statusLabel(match) }}</span>
-                    <span class="arrow">›</span>
-                  </div>
-                </li>
-              }
-            </ul>
-          </div>
-        }
-
         @if (upcomingMatches().length === 0) {
           <p class="muted empty">Aucun match à venir.</p>
         } @else {
@@ -78,6 +57,37 @@ import {
               </li>
             }
           </ul>
+        }
+
+        @if (isAdmin() && awaitingResultMatches().length > 0) {
+          <div class="awaiting-panel">
+            <button
+              type="button"
+              class="panel-toggle"
+              (click)="toggleAwaiting()"
+              [attr.aria-expanded]="showAwaiting()"
+            >
+              <span>À saisir ({{ awaitingResultMatches().length }})</span>
+              <span class="chevron" [class.open]="showAwaiting()">›</span>
+            </button>
+            @if (showAwaiting()) {
+              <ul class="match-list panel-list">
+                @for (match of awaitingResultMatches(); track match.id) {
+                  <li class="match-card" (click)="goToStats(match)">
+                    <div class="match-info">
+                      <span class="match-title">{{ match.title }}</span>
+                      <span class="match-date match-date-full">{{ formatDate(match.match_date) }} à {{ formatTime(match.match_time) }}</span>
+                      <span class="match-date match-date-short">{{ formatDateShort(match.match_date, match.match_time) }}</span>
+                    </div>
+                    <div class="match-meta">
+                      <span class="badge badge-closed">{{ statusLabel(match) }}</span>
+                      <span class="arrow">›</span>
+                    </div>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
         }
 
         @if (!isAdmin() && awaitingResultMatches().length > 0) {
@@ -105,7 +115,7 @@ import {
           <div class="finished-panel">
             <button
               type="button"
-              class="finished-toggle"
+              class="panel-toggle"
               (click)="toggleFinished()"
               [attr.aria-expanded]="showFinished()"
             >
@@ -113,7 +123,7 @@ import {
               <span class="chevron" [class.open]="showFinished()">›</span>
             </button>
             @if (showFinished()) {
-              <ul class="match-list finished-list">
+              <ul class="match-list panel-list">
                 @for (match of finishedMatches(); track match.id) {
                   <li class="match-card" (click)="openMatch(match)">
                     <div class="match-info">
@@ -181,11 +191,9 @@ import {
       color: #d97706;
     }
     .arrow { font-size: 1.5rem; color: var(--text-muted); line-height: 1; }
-    .awaiting-panel { margin-top: 1.5rem; }
+    .awaiting-panel, .finished-panel { margin-top: 1.5rem; }
     .awaiting-panel .section-label { margin: 0 0 0.75rem; }
-    .admin-awaiting-panel { margin-top: 0; margin-bottom: 1.5rem; }
-    .finished-panel { margin-top: 1.5rem; }
-    .finished-toggle {
+    .panel-toggle {
       width: 100%;
       min-height: var(--tap);
       display: flex;
@@ -201,10 +209,10 @@ import {
       cursor: pointer;
       transition: border-color 0.15s;
     }
-    .finished-toggle:hover { border-color: var(--primary); }
+    .panel-toggle:hover { border-color: var(--primary); }
     .chevron { display: inline-block; transform: rotate(90deg); transition: transform 0.15s; }
     .chevron.open { transform: rotate(-90deg); }
-    .finished-list { margin-top: 0.75rem; }
+    .panel-list { margin-top: 0.75rem; }
 
     /* Exception to this chunk's usual mobile-first (min-width) pattern:
        here the compact format IS the mobile version, so it is opted into
@@ -236,6 +244,7 @@ export class MatchListComponent implements OnInit, OnDestroy {
   private seasonEndedAt = signal<(seasonId: string) => string | null>(() => null);
   loading = signal(true);
   showFinished = signal(false);
+  showAwaiting = signal(false);
 
   isAdmin = computed(() => this.auth.isAdmin());
 
@@ -296,6 +305,10 @@ export class MatchListComponent implements OnInit, OnDestroy {
 
   toggleFinished(): void {
     this.showFinished.update(v => !v);
+  }
+
+  toggleAwaiting(): void {
+    this.showAwaiting.update(v => !v);
   }
 
   formatDate(dateStr: string): string {
