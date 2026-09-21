@@ -168,7 +168,7 @@ export class PlayerFormComponent implements OnInit {
       if (this.isEdit()) {
         // set_player_admin AVANT update_player_profile : c'est l'appel le
         // plus susceptible d'échouer (garde anti-lockout "last_admin"),
-        // et on ne veut pas laisser display_name/PIN déjà écrits en base
+        // et on ne veut pas laisser display_name déjà écrit en base
         // pendant qu'un échec sur les droits admin affiche un message
         // d'erreur trompeur (voir revue).
         if (this.form.is_admin !== this.initialIsAdmin) {
