@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { SeasonsService } from '../../core/seasons/seasons.service';
 import { MatchesService } from '../matches/matches.service';
@@ -79,7 +78,6 @@ export class LeaderboardComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly matchesService = inject(MatchesService);
   private readonly seasonsService = inject(SeasonsService);
-  private readonly route = inject(ActivatedRoute);
 
   readonly metricTabs: readonly TabItem<LeaderboardMetric>[] = [
     { value: 'goals', label: 'Buts' },
@@ -114,29 +112,25 @@ export class LeaderboardComponent implements OnInit {
       const current = seasons.find(isCurrentSeason);
       this.selectedSeasonId.set(current?.id ?? seasons[0]?.id ?? null);
     } catch { /* non critique */ }
-    await this.loadData(player.group_id);
+    this.players.set(await this.matchesService.getGroupPlayers(player.group_id).catch(() => []));
+    await this.loadStats(player.group_id);
   }
 
   onSeasonChange(seasonId: string): void {
     this.selectedSeasonId.set(seasonId);
     const player = this.auth.currentPlayer();
     if (!player) return;
-    void this.loadData(player.group_id);
+    void this.loadStats(player.group_id);
   }
 
   metricValue(row: { goals: number; assists: number; winRate: number }): string {
-    const value = row[this.metric() === 'winRate' ? 'winRate' : this.metric()];
+    const value = row[this.metric()];
     return this.metric() === 'winRate' ? `${value}%` : `${value}`;
   }
 
-  private async loadData(groupId: string): Promise<void> {
+  private async loadStats(groupId: string): Promise<void> {
     this.loading.set(true);
-    const [stats, players] = await Promise.all([
-      this.matchesService.getGroupPlayerStats(groupId, this.selectedSeasonId()).catch(() => []),
-      this.matchesService.getGroupPlayers(groupId).catch(() => []),
-    ]);
-    this.stats.set(stats);
-    this.players.set(players);
+    this.stats.set(await this.matchesService.getGroupPlayerStats(groupId, this.selectedSeasonId()).catch(() => []));
     this.loading.set(false);
   }
 }
