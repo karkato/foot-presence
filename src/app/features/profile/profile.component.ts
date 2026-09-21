@@ -5,7 +5,6 @@ import { AuthService } from '../../core/auth/auth.service';
 import { SupabaseService } from '../../core/supabase/supabase.service';
 import { SeasonsService } from '../../core/seasons/seasons.service';
 import { MatchesService, MatchHistoryEntry, PlayerStats } from '../matches/matches.service';
-import { Player, getDisplayName } from '../../shared/models/player.model';
 import { Season, isCurrentSeason } from '../../shared/models/season.model';
 import { mapAuthRpcError } from '../../shared/utils/rpc-error';
 import { validatePin } from '../../shared/utils/pin';
@@ -13,7 +12,7 @@ import { SeasonPickerComponent } from '../../shared/components/season-picker/sea
 import { TabBarComponent, TabItem } from '../../shared/components/tab-bar/tab-bar.component';
 import { MyStatsComponent } from './my-stats/my-stats.component';
 
-type ProfileTab = 'stats' | 'goals' | 'players' | 'config';
+type ProfileTab = 'stats' | 'goals' | 'config';
 
 @Component({
   selector: 'app-profile',
@@ -167,30 +166,6 @@ type ProfileTab = 'stats' | 'goals' | 'players' | 'config';
           </div>
         }
 
-        <!-- Tab Joueurs -->
-        @if (activeTab() === 'players') {
-          <div id="panel-players" role="tabpanel" aria-labelledby="tab-players" class="card section">
-            @if (loadingPlayers()) {
-              <p class="muted">Chargement...</p>
-            } @else {
-              <ul class="player-list">
-                @for (p of groupPlayers(); track p.id) {
-                  <li class="player-row" [class.current-player]="p.id === player.id">
-                    <span class="player-name">{{ displayName(p) }}</span>
-                    <div class="player-badges">
-                      @if (p.id === player.id) {
-                        <span class="badge badge-primary">toi</span>
-                      }
-                      @if (p.is_admin) {
-                        <span class="badge badge-warning">admin</span>
-                      }
-                    </div>
-                  </li>
-                }
-              </ul>
-            }
-          </div>
-        }
       }
     </div>
   `,
@@ -249,16 +224,6 @@ type ProfileTab = 'stats' | 'goals' | 'players' | 'config';
     .btn-primary { padding: 0.65rem 1.25rem; white-space: nowrap; }
     .btn-danger { padding: 0.65rem 1.25rem; }
 
-    /* Players list */
-    .player-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.1rem; }
-    .player-row { display: flex; align-items: center; padding: 0.5rem 0.5rem; border-radius: 0.4rem; }
-    .player-row.current-player { background: var(--primary-light); font-weight: 700; }
-    .player-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9rem; }
-    .player-badges { display: flex; gap: 0.35rem; flex-shrink: 0; }
-    .badge { font-size: 0.7rem; font-weight: 700; padding: 0.1rem 0.45rem; border-radius: 0.3rem; }
-    .badge-primary { background: var(--primary); color: white; }
-    .badge-warning { background: var(--warning); color: white; }
-
     @media (min-width: 480px) {
       .stats-grid { grid-template-columns: repeat(3, 1fr); }
     }
@@ -279,7 +244,6 @@ export class ProfileComponent implements OnInit {
   readonly profileTabs: readonly TabItem<ProfileTab>[] = [
     { value: 'stats', label: 'Stats', panelId: 'panel-stats' },
     { value: 'goals', label: 'Buts', panelId: 'panel-goals' },
-    { value: 'players', label: 'Joueurs', panelId: 'panel-players' },
     { value: 'config', label: 'Config', panelId: 'panel-config' },
   ];
 
@@ -292,8 +256,6 @@ export class ProfileComponent implements OnInit {
   displayNameFeedback = signal('');
   pinFeedback = signal('');
   pinError = signal('');
-  groupPlayers = signal<Player[]>([]);
-  loadingPlayers = signal(true);
   stats = signal<PlayerStats | null>(null);
   recentHistory = signal<MatchHistoryEntry[]>([]);
 
@@ -308,7 +270,6 @@ export class ProfileComponent implements OnInit {
     const player = this.auth.currentPlayer();
     if (player) {
       this.newDisplayName = player.display_name ?? '';
-      this.loadPlayers(player.group_id);
       this.loadSeasons(player.group_id, player.id);
     }
   }
@@ -330,16 +291,6 @@ export class ProfileComponent implements OnInit {
     if (!player) return;
     this.loadStats(player.id);
     this.loadRecentHistory(player.id);
-  }
-
-  displayName(player: Player): string { return getDisplayName(player); }
-
-  private async loadPlayers(groupId: string): Promise<void> {
-    const { data } = await this.supabase
-      .from('players').select('id, group_id, username, display_name, is_admin, created_at')
-      .eq('group_id', groupId).order('username');
-    this.groupPlayers.set(data ?? []);
-    this.loadingPlayers.set(false);
   }
 
   private async loadStats(playerId: string): Promise<void> {
