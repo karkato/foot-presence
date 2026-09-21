@@ -112,8 +112,14 @@ export class LeaderboardComponent implements OnInit {
       const current = seasons.find(isCurrentSeason);
       this.selectedSeasonId.set(current?.id ?? seasons[0]?.id ?? null);
     } catch { /* non critique */ }
-    this.players.set(await this.matchesService.getGroupPlayers(player.group_id).catch(() => []));
-    await this.loadStats(player.group_id);
+    this.loading.set(true);
+    const [players, stats] = await Promise.all([
+      this.matchesService.getGroupPlayers(player.group_id).catch(() => []),
+      this.matchesService.getGroupPlayerStats(player.group_id, this.selectedSeasonId()).catch(() => []),
+    ]);
+    this.players.set(players);
+    this.stats.set(stats);
+    this.loading.set(false);
   }
 
   onSeasonChange(seasonId: string): void {

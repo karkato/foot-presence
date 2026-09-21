@@ -5,8 +5,6 @@ import { Registration } from '../../shared/models/registration.model';
 import { Player, GroupPlayerStats } from '../../shared/models/player.model';
 import { MatchStatusAggregates } from '../../shared/utils/match-status';
 
-export type { GroupPlayerStats };
-
 export interface PlayerStats {
   played: number;
   wins: number;
