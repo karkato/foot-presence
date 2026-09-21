@@ -14,6 +14,14 @@ export interface PlayerStats {
   assists: number;
 }
 
+export interface GroupPlayerStats {
+  player_id: string;
+  played: number;
+  wins: number;
+  goals: number;
+  assists: number;
+}
+
 export interface MatchHistoryEntry {
   id: string;
   title: string;
@@ -268,6 +276,15 @@ export class MatchesService {
     });
     if (error) throw error;
     return (data as unknown as PlayerStats) ?? { played: 0, wins: 0, losses: 0, draws: 0, goals: 0, assists: 0 };
+  }
+
+  async getGroupPlayerStats(groupId: string, seasonId?: string | null): Promise<GroupPlayerStats[]> {
+    const { data, error } = await this.supabase.rpc('get_group_player_stats', {
+      p_group_id: groupId,
+      p_season_id: seasonId ?? null,
+    });
+    if (error) throw error;
+    return (data as unknown as GroupPlayerStats[]) ?? [];
   }
 
   async getPlayerHistory(playerId: string, seasonId?: string | null): Promise<MatchHistoryEntry[]> {
