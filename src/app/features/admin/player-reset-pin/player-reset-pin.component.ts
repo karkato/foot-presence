@@ -106,6 +106,7 @@ export class PlayerResetPinComponent implements OnInit {
   private readonly cdr = inject(ChangeDetectorRef);
 
   private playerId = '';
+  private readonly groupSlug = this.route.snapshot.params['groupSlug'] as string;
 
   loading = signal(true);
   saving = signal(false);
@@ -161,6 +162,12 @@ export class PlayerResetPinComponent implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigate(['../../'], { relativeTo: this.route });
+    // Navigation absolue (et non relative) : cette route a 4 segments
+    // (admin/player/:id/reset-pin), contrairement à player-form.component.ts
+    // (admin/player/:id, 3 segments) dont le goBack relatif ['../../'] ne
+    // s'applique pas tel quel ici — même pattern que
+    // match-stats.component.ts:goBack, dont la route (admin/match/:id/stats)
+    // a la même profondeur.
+    this.router.navigate([`/${this.groupSlug}/admin`]);
   }
 }
