@@ -15,7 +15,7 @@ import { DEFAULT_TEAM_A_NAME, DEFAULT_TEAM_B_NAME } from '../../../shared/consta
     <div class="container-form">
       <h2>{{ isEdit() ? 'Modifier le match' : 'Nouveau match' }}</h2>
 
-      <form (ngSubmit)="onSubmit()" class="form">
+      <form (ngSubmit)="onSubmit()" #matchForm="ngForm" class="form">
         <div class="field">
           <label>Titre</label>
           <input type="text" [(ngModel)]="form.title" name="title" required placeholder="Match du dimanche" />
@@ -55,7 +55,7 @@ import { DEFAULT_TEAM_A_NAME, DEFAULT_TEAM_B_NAME } from '../../../shared/consta
 
         <div class="actions">
           <button type="button" class="btn-cancel" (click)="goBack()">Annuler</button>
-          <button type="submit" class="btn btn-primary" [disabled]="saving()">
+          <button type="submit" class="btn btn-primary" [disabled]="saving() || matchForm.invalid">
             @if (saving()) { ... } @else { Enregistrer }
           </button>
         </div>
