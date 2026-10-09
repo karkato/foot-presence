@@ -12,6 +12,11 @@
 -- (nombre de matchs de la saison déjà scorés, tous joueurs confondus) pour
 -- que le front calcule wins / season_matches à la place de wins / played.
 -- `played` est conservé tel quel : toujours affiché ("X matchs joués").
+--
+-- Au passage : seasons.sql (rebind matches/saisons) avait redéfini cette
+-- fonction sans reporter `goals`/`assists` présents dans la version de
+-- playerstats.sql -- régression silencieuse (le front recevait undefined
+-- pour les buts/passes du classement). Corrigé ici en les réintégrant.
 -- ============================================================
 
 BEGIN;
@@ -48,7 +53,15 @@ BEGIN
           WHERE r.is_withdrawn = false AND r.team IS NOT NULL AND m.score_a IS NOT NULL
             AND (v_season IS NULL OR m.season_id = v_season)
             AND ((r.team = 0 AND m.score_a > m.score_b) OR (r.team = 1 AND m.score_b > m.score_a))
-        ) AS wins
+        ) AS wins,
+        COALESCE(SUM(r.goals) FILTER (
+          WHERE r.is_withdrawn = false AND r.team IS NOT NULL AND m.score_a IS NOT NULL
+            AND (v_season IS NULL OR m.season_id = v_season)
+        ), 0) AS goals,
+        COALESCE(SUM(r.assists) FILTER (
+          WHERE r.is_withdrawn = false AND r.team IS NOT NULL AND m.score_a IS NOT NULL
+            AND (v_season IS NULL OR m.season_id = v_season)
+        ), 0) AS assists
       FROM players p
       LEFT JOIN registrations r ON r.player_id = p.id
       LEFT JOIN matches m ON m.id = r.match_id
