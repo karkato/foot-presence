@@ -13,6 +13,7 @@ export function getDisplayName(player: Pick<Player, 'display_name' | 'username'>
 
 export interface GroupPlayerStats {
   player_id: string;
+  season_matches: number;
   played: number;
   wins: number;
   goals: number;

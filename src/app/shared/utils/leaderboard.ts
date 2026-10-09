@@ -35,7 +35,9 @@ export function buildLeaderboardRows(stats: GroupPlayerStats[], players: Player[
       wins: s.wins,
       goals: s.goals,
       assists: s.assists,
-      winRate: computeWinRate(s.wins, s.played),
+      // Rapporté aux matchs déjà joués de la saison (season_matches), pas aux
+      // seuls matchs du joueur -- sinon 1 match joué et gagné affiche 100%.
+      winRate: computeWinRate(s.wins, s.season_matches),
     });
   }
   return rows;
