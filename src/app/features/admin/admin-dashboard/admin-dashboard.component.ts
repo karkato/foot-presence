@@ -3,15 +3,14 @@ import {
   Component,
   computed,
   inject,
-  OnInit,
+  resource,
   signal,
 } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { MatchesService, AuditEntry, MatchWithCount } from '../../matches/matches.service';
 import { SeasonsService } from '../../../core/seasons/seasons.service';
-import { SupabaseService } from '../../../core/supabase/supabase.service';
-import { Player, getDisplayName } from '../../../shared/models/player.model';
+import { getDisplayName, Player } from '../../../shared/models/player.model';
 import { GroupSettingsComponent } from '../group-settings/group-settings.component';
 import { SeasonSettingsComponent } from '../season-settings/season-settings.component';
 import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
@@ -264,10 +263,9 @@ function isManagementTab(tab: AdminTab): tab is ManagementTab {
     .audit-desc { color: var(--text); }
   `,
 })
-export class AdminDashboardComponent implements OnInit {
+export class AdminDashboardComponent {
   private readonly matchesService = inject(MatchesService);
   private readonly seasonsService = inject(SeasonsService);
-  private readonly supabase = inject(SupabaseService).client;
   private readonly auth = inject(AuthService);
   readonly router = inject(Router);
   readonly route = inject(ActivatedRoute);
@@ -306,15 +304,37 @@ export class AdminDashboardComponent implements OnInit {
   // pour le restaurer quand on revient sur "Gestion" depuis un autre onglet top-level).
   private lastManagementTab = signal<ManagementTab>('matches');
 
-  matches = signal<MatchWithCount[]>([]);
-  players = signal<Player[]>([]);
-  auditLog = signal<AuditEntry[]>([]);
-  loadingMatches = signal(true);
-  loadingPlayers = signal(true);
-  loadingAudit = signal(true);
   actionError = signal('');
 
-  private seasonEndedAt = signal<(seasonId: string) => string | null>(() => null);
+  private readonly groupId = computed(() => this.auth.currentPlayer()?.group_id ?? undefined);
+
+  private readonly matchesResource = resource({
+    params: () => this.groupId(),
+    loader: async ({ params }) => {
+      const [matches, seasons] = await Promise.all([
+        this.matchesService.getMatchesByGroup(params),
+        this.seasonsService.getSeasons(params),
+      ]);
+      return { matches, seasonEndedAt: seasonEndedAtLookup(seasons) };
+    },
+  });
+  matches = computed(() => this.matchesResource.value()?.matches ?? []);
+  private seasonEndedAt = computed(() => this.matchesResource.value()?.seasonEndedAt ?? (() => null));
+  loadingMatches = computed(() => this.matchesResource.isLoading());
+
+  private readonly playersResource = resource({
+    params: () => this.groupId(),
+    loader: ({ params }) => this.matchesService.getGroupPlayers(params),
+  });
+  players = computed(() => this.playersResource.value() ?? []);
+  loadingPlayers = computed(() => this.playersResource.isLoading());
+
+  private readonly auditResource = resource({
+    params: () => this.groupId(),
+    loader: ({ params }) => this.matchesService.getAuditLog(params),
+  });
+  auditLog = computed(() => this.auditResource.value() ?? []);
+  loadingAudit = computed(() => this.auditResource.isLoading());
 
   matchStatusOf(match: MatchWithCount): MatchCompletionStatus {
     return deriveMatchStatus(match, match, this.seasonEndedAt()(match.season_id));
@@ -322,50 +342,8 @@ export class AdminDashboardComponent implements OnInit {
 
   statusLabel = matchStatusLabel;
 
-  async ngOnInit(): Promise<void> {
-    const player = this.auth.currentPlayer();
-    if (!player) return;
-    await Promise.all([
-      this.loadMatches(player.group_id),
-      this.loadPlayers(player.group_id),
-      this.loadAudit(player.group_id),
-    ]);
-  }
-
-  private async loadMatches(groupId: string): Promise<void> {
-    try {
-      const [matches, seasons] = await Promise.all([
-        this.matchesService.getMatchesByGroup(groupId),
-        this.seasonsService.getSeasons(groupId),
-      ]);
-      this.seasonEndedAt.set(seasonEndedAtLookup(seasons));
-      this.matches.set(matches);
-    } finally {
-      this.loadingMatches.set(false);
-    }
-  }
-
-  private async loadPlayers(groupId: string): Promise<void> {
-    try {
-      this.players.set(await this.matchesService.getGroupPlayers(groupId));
-    } finally {
-      this.loadingPlayers.set(false);
-    }
-  }
-
-  private async loadAudit(groupId: string): Promise<void> {
-    try {
-      this.auditLog.set(await this.matchesService.getAuditLog(groupId));
-    } finally {
-      this.loadingAudit.set(false);
-    }
-  }
-
-  async reloadAudit(): Promise<void> {
-    const player = this.auth.currentPlayer();
-    if (!player) return;
-    this.loadingAudit.set(true);
-    await this.loadAudit(player.group_id);
+  reloadAudit(): void {
+    this.auditResource.reload();
   }
 
   openManagement(): void {
@@ -403,8 +381,8 @@ export class AdminDashboardComponent implements OnInit {
     this.actionError.set('');
     try {
       await this.matchesService.setMatchClosed(match.id, !match.is_closed, player.id);
-      await this.loadMatches(player.group_id);
-      await this.loadAudit(player.group_id);
+      this.matchesResource.reload();
+      this.auditResource.reload();
     } catch (err) {
       this.actionError.set(mapAuthRpcError(err, 'Erreur lors de la mise à jour du match'));
     }
@@ -417,8 +395,8 @@ export class AdminDashboardComponent implements OnInit {
     this.actionError.set('');
     try {
       await this.matchesService.deleteMatch(match.id, player.id);
-      await this.loadMatches(player.group_id);
-      await this.loadAudit(player.group_id);
+      this.matchesResource.reload();
+      this.auditResource.reload();
     } catch (err) {
       this.actionError.set(mapAuthRpcError(err, 'Erreur lors de la suppression du match'));
     }

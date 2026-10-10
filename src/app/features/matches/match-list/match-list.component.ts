@@ -4,13 +4,12 @@ import {
   computed,
   inject,
   OnDestroy,
-  OnInit,
+  resource,
   signal,
 } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { MatchesService } from '../matches.service';
-import { SupabaseService } from '../../../core/supabase/supabase.service';
 import { SeasonsService } from '../../../core/seasons/seasons.service';
 import { Match } from '../../../shared/models/match.model';
 import { MatchWithCount } from '../matches.service';
@@ -232,17 +231,28 @@ import {
     }
   `,
 })
-export class MatchListComponent implements OnInit, OnDestroy {
+export class MatchListComponent implements OnDestroy {
   private readonly matchesService = inject(MatchesService);
   private readonly seasonsService = inject(SeasonsService);
-  private readonly supabase = inject(SupabaseService).client;
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
-  matches = signal<MatchWithCount[]>([]);
-  private seasonEndedAt = signal<(seasonId: string) => string | null>(() => null);
-  loading = signal(true);
+  private readonly groupId = computed(() => this.auth.currentPlayer()?.group_id ?? undefined);
+
+  private readonly matchesResource = resource({
+    params: () => this.groupId(),
+    loader: async ({ params }) => {
+      const [matches, seasons] = await Promise.all([
+        this.matchesService.getMatchesByGroup(params),
+        this.seasonsService.getSeasons(params),
+      ]);
+      return { matches, seasonEndedAt: seasonEndedAtLookup(seasons) };
+    },
+  });
+  matches = computed(() => this.matchesResource.value()?.matches ?? []);
+  private seasonEndedAt = computed(() => this.matchesResource.value()?.seasonEndedAt ?? (() => null));
+  loading = computed(() => this.matchesResource.isLoading());
   showFinished = signal(false);
   showAwaiting = signal(false);
 
@@ -264,31 +274,15 @@ export class MatchListComponent implements OnInit, OnDestroy {
   readonly groupSlug = this.route.snapshot.params['groupSlug'] as string;
 
   private readonly visibilityHandler = () => {
-    if (document.visibilityState === 'visible') this.loadMatches();
+    if (document.visibilityState === 'visible') this.matchesResource.reload();
   };
 
-  async ngOnInit(): Promise<void> {
-    await this.loadMatches();
+  constructor() {
     document.addEventListener('visibilitychange', this.visibilityHandler);
   }
 
   ngOnDestroy(): void {
     document.removeEventListener('visibilitychange', this.visibilityHandler);
-  }
-
-  private async loadMatches(): Promise<void> {
-    try {
-      const player = this.auth.currentPlayer();
-      if (!player) return;
-      const [matches, seasons] = await Promise.all([
-        this.matchesService.getMatchesByGroup(player.group_id),
-        this.seasonsService.getSeasons(player.group_id),
-      ]);
-      this.seasonEndedAt.set(seasonEndedAtLookup(seasons));
-      this.matches.set(matches);
-    } finally {
-      this.loading.set(false);
-    }
   }
 
   statusLabel(match: MatchWithCount): string {

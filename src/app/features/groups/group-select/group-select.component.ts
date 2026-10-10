@@ -1,9 +1,10 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   inject,
   OnInit,
-  signal,
+  resource,
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -142,23 +143,31 @@ export class GroupSelectComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
-  groups = signal<Group[]>([]);
-  loading = signal(true);
   slugInput = '';
+
+  // Si une session est déjà active, on redirige sans jamais lancer le
+  // fetch des groupes -- évalué une fois à la construction, avant que
+  // ngOnInit ne déclenche la redirection elle-même.
+  private readonly skipLoad = computed(() => {
+    const savedSlug = this.auth.currentGroupSlug();
+    return !!savedSlug && this.auth.isLoggedIn();
+  });
+
+  private readonly groupsResource = resource({
+    params: () => (this.skipLoad() ? undefined : true),
+    loader: async () => {
+      const { data } = await this.supabase.from('groups').select('*').order('name');
+      return data ?? [];
+    },
+  });
+  groups = computed(() => this.groupsResource.value() ?? []);
+  loading = computed(() => this.groupsResource.isLoading());
 
   ngOnInit(): void {
     const savedSlug = this.auth.currentGroupSlug();
     if (savedSlug && this.auth.isLoggedIn()) {
       this.router.navigate([`/${savedSlug}/matches`]);
-      return;
     }
-    this.loadGroups();
-  }
-
-  private async loadGroups(): Promise<void> {
-    const { data } = await this.supabase.from('groups').select('*').order('name');
-    this.groups.set(data ?? []);
-    this.loading.set(false);
   }
 
   select(group: Group): void {
