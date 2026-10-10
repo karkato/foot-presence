@@ -3,14 +3,15 @@ import {
   Component,
   computed,
   inject,
+  input,
   OnDestroy,
-  OnInit,
+  resource,
   signal,
 } from '@angular/core';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router } from '@angular/router';
+import { DatePipe } from '@angular/common';
 import { AuthService } from '../../../core/auth/auth.service';
 import { MatchesService } from '../matches.service';
-import { SupabaseService } from '../../../core/supabase/supabase.service';
 import { SeasonsService } from '../../../core/seasons/seasons.service';
 import { Match } from '../../../shared/models/match.model';
 import { MatchWithCount } from '../matches.service';
@@ -25,6 +26,7 @@ import {
   selector: 'app-match-list',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [DatePipe],
   template: `
     <div class="container-md">
       <h2>Matchs</h2>
@@ -42,8 +44,8 @@ import {
               <li class="match-card" (click)="openMatch(match)">
                 <div class="match-info">
                   <span class="match-title">{{ match.title }}</span>
-                  <span class="match-date match-date-full">{{ formatDate(match.match_date) }} à {{ formatTime(match.match_time) }}</span>
-                  <span class="match-date match-date-short">{{ formatDateShort(match.match_date, match.match_time) }}</span>
+                  <span class="match-date match-date-full">{{ match.match_date | date:'EEEE d MMMM' }} à {{ formatTime(match.match_time) }}</span>
+                  <span class="match-date match-date-short">{{ match.match_date | date:'EEE d MMM' }} {{ formatTime(match.match_time) }}</span>
                 </div>
                 <div class="match-meta">
                   <span class="badge badge-count" [class.badge-full]="match.registration_count >= match.max_players">
@@ -76,8 +78,8 @@ import {
                   <li class="match-card" (click)="goToStats(match)">
                     <div class="match-info">
                       <span class="match-title">{{ match.title }}</span>
-                      <span class="match-date match-date-full">{{ formatDate(match.match_date) }} à {{ formatTime(match.match_time) }}</span>
-                      <span class="match-date match-date-short">{{ formatDateShort(match.match_date, match.match_time) }}</span>
+                      <span class="match-date match-date-full">{{ match.match_date | date:'EEEE d MMMM' }} à {{ formatTime(match.match_time) }}</span>
+                      <span class="match-date match-date-short">{{ match.match_date | date:'EEE d MMM' }} {{ formatTime(match.match_time) }}</span>
                     </div>
                     <div class="match-meta">
                       <span class="badge badge-closed">{{ statusLabel(match) }}</span>
@@ -98,8 +100,8 @@ import {
                 <li class="match-card" (click)="openMatch(match)">
                   <div class="match-info">
                     <span class="match-title">{{ match.title }}</span>
-                    <span class="match-date match-date-full">{{ formatDate(match.match_date) }} à {{ formatTime(match.match_time) }}</span>
-                    <span class="match-date match-date-short">{{ formatDateShort(match.match_date, match.match_time) }}</span>
+                    <span class="match-date match-date-full">{{ match.match_date | date:'EEEE d MMMM' }} à {{ formatTime(match.match_time) }}</span>
+                    <span class="match-date match-date-short">{{ match.match_date | date:'EEE d MMM' }} {{ formatTime(match.match_time) }}</span>
                   </div>
                   <div class="match-meta">
                     <span class="badge badge-closed">{{ statusLabel(match) }}</span>
@@ -128,8 +130,8 @@ import {
                   <li class="match-card" (click)="openMatch(match)">
                     <div class="match-info">
                       <span class="match-title">{{ match.title }}</span>
-                      <span class="match-date match-date-full">{{ formatDate(match.match_date) }} à {{ formatTime(match.match_time) }}</span>
-                      <span class="match-date match-date-short">{{ formatDateShort(match.match_date, match.match_time) }}</span>
+                      <span class="match-date match-date-full">{{ match.match_date | date:'EEEE d MMMM' }} à {{ formatTime(match.match_time) }}</span>
+                      <span class="match-date match-date-short">{{ match.match_date | date:'EEE d MMM' }} {{ formatTime(match.match_time) }}</span>
                     </div>
                     <div class="match-meta">
                       <span class="badge badge-count">
@@ -232,17 +234,27 @@ import {
     }
   `,
 })
-export class MatchListComponent implements OnInit, OnDestroy {
+export class MatchListComponent implements OnDestroy {
   private readonly matchesService = inject(MatchesService);
   private readonly seasonsService = inject(SeasonsService);
-  private readonly supabase = inject(SupabaseService).client;
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
 
-  matches = signal<MatchWithCount[]>([]);
-  private seasonEndedAt = signal<(seasonId: string) => string | null>(() => null);
-  loading = signal(true);
+  private readonly groupId = computed(() => this.auth.currentPlayer()?.group_id ?? undefined);
+
+  private readonly matchesResource = resource({
+    params: () => this.groupId(),
+    loader: async ({ params }) => {
+      const [matches, seasons] = await Promise.all([
+        this.matchesService.getMatchesByGroup(params),
+        this.seasonsService.getSeasons(params),
+      ]);
+      return { matches, seasonEndedAt: seasonEndedAtLookup(seasons) };
+    },
+  });
+  matches = computed(() => this.matchesResource.value()?.matches ?? []);
+  private seasonEndedAt = computed(() => this.matchesResource.value()?.seasonEndedAt ?? (() => null));
+  loading = computed(() => this.matchesResource.isLoading());
   showFinished = signal(false);
   showAwaiting = signal(false);
 
@@ -261,14 +273,13 @@ export class MatchListComponent implements OnInit, OnDestroy {
     return this.matches().filter(m => done.includes(this.statusOf(m)));
   });
 
-  readonly groupSlug = this.route.snapshot.params['groupSlug'] as string;
+  groupSlug = input.required<string>();
 
   private readonly visibilityHandler = () => {
-    if (document.visibilityState === 'visible') this.loadMatches();
+    if (document.visibilityState === 'visible') this.matchesResource.reload();
   };
 
-  async ngOnInit(): Promise<void> {
-    await this.loadMatches();
+  constructor() {
     document.addEventListener('visibilitychange', this.visibilityHandler);
   }
 
@@ -276,31 +287,16 @@ export class MatchListComponent implements OnInit, OnDestroy {
     document.removeEventListener('visibilitychange', this.visibilityHandler);
   }
 
-  private async loadMatches(): Promise<void> {
-    try {
-      const player = this.auth.currentPlayer();
-      if (!player) return;
-      const [matches, seasons] = await Promise.all([
-        this.matchesService.getMatchesByGroup(player.group_id),
-        this.seasonsService.getSeasons(player.group_id),
-      ]);
-      this.seasonEndedAt.set(seasonEndedAtLookup(seasons));
-      this.matches.set(matches);
-    } finally {
-      this.loading.set(false);
-    }
-  }
-
   statusLabel(match: MatchWithCount): string {
     return matchStatusLabel(this.statusOf(match));
   }
 
   openMatch(match: Match): void {
-    this.router.navigate([`/${this.groupSlug}/match/${match.id}`]);
+    this.router.navigate([`/${this.groupSlug()}/match/${match.id}`]);
   }
 
   goToStats(match: MatchWithCount): void {
-    this.router.navigate([`/${this.groupSlug}/admin/match/${match.id}/stats`]);
+    this.router.navigate([`/${this.groupSlug()}/admin/match/${match.id}/stats`]);
   }
 
   toggleFinished(): void {
@@ -311,24 +307,7 @@ export class MatchListComponent implements OnInit, OnDestroy {
     this.showAwaiting.update(v => !v);
   }
 
-  formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('fr-FR', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-    });
-  }
-
   formatTime(timeStr: string): string {
     return timeStr.slice(0, 5);
-  }
-
-  formatDateShort(dateStr: string, timeStr: string): string {
-    const shortDate = new Date(dateStr).toLocaleDateString('fr-FR', {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short',
-    });
-    return `${shortDate} ${this.formatTime(timeStr)}`;
   }
 }

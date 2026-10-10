@@ -1,11 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, resource, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { DatePipe } from '@angular/common';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { SupabaseService } from '../../core/supabase/supabase.service';
 import { SeasonsService } from '../../core/seasons/seasons.service';
-import { MatchesService, MatchHistoryEntry, PlayerStats } from '../matches/matches.service';
-import { Season, isCurrentSeason } from '../../shared/models/season.model';
+import { MatchesService } from '../matches/matches.service';
+import { isCurrentSeason } from '../../shared/models/season.model';
 import { mapAuthRpcError } from '../../shared/utils/rpc-error';
 import { validatePin } from '../../shared/utils/pin';
 import { computeWinRate } from '../../shared/utils/leaderboard';
@@ -19,7 +20,7 @@ type ProfileTab = 'stats' | 'goals' | 'config';
   selector: 'app-profile',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, RouterLink, SeasonPickerComponent, TabBarComponent, MyStatsComponent],
+  imports: [FormsModule, RouterLink, SeasonPickerComponent, TabBarComponent, MyStatsComponent, DatePipe],
   template: `
     <div class="container-form">
       <h2>Mon profil</h2>
@@ -92,7 +93,7 @@ type ProfileTab = 'stats' | 'goals' | 'config';
                   <a class="mini-card card" [routerLink]="['/' + groupSlug() + '/match/' + entry.id]">
                     <div class="mini-info">
                       <span class="mini-title">{{ entry.title }}</span>
-                      <span class="mini-date">{{ formatDate(entry.match_date) }}</span>
+                      <span class="mini-date">{{ entry.match_date | date:'d MMM' }}</span>
                     </div>
                     @if (entry.score_a !== null && entry.score_b !== null) {
                       <span class="mini-score">{{ entry.score_a }} – {{ entry.score_b }}</span>
@@ -230,15 +231,16 @@ type ProfileTab = 'stats' | 'goals' | 'config';
     }
   `,
 })
-export class ProfileComponent implements OnInit {
+export class ProfileComponent {
   readonly auth = inject(AuthService);
   private readonly supabase = inject(SupabaseService).client;
   private readonly matchesService = inject(MatchesService);
   private readonly seasonsService = inject(SeasonsService);
-  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
-  newDisplayName = '';
+  groupSlug = input.required<string>();
+
+  newDisplayName = this.auth.currentPlayer()?.display_name ?? '';
   newPin = '';
   confirmPin = '';
 
@@ -249,60 +251,48 @@ export class ProfileComponent implements OnInit {
   ];
 
   activeTab = signal<ProfileTab>('stats');
-  seasons = signal<Season[]>([]);
-  selectedSeasonId = signal<string | null>(null);
+
+  private readonly groupId = computed(() => this.auth.currentPlayer()?.group_id ?? undefined);
+  private readonly playerId = computed(() => this.auth.currentPlayer()?.id ?? undefined);
+
+  private readonly seasonsResource = resource({
+    params: () => this.groupId(),
+    loader: ({ params }) => this.seasonsService.getSeasons(params).catch(() => []),
+  });
+  seasons = computed(() => this.seasonsResource.value() ?? []);
+
+  selectedSeasonId = linkedSignal<string | null>(() => {
+    const seasons = this.seasons();
+    return seasons.find(isCurrentSeason)?.id ?? seasons[0]?.id ?? null;
+  });
+
+  private readonly statsResource = resource({
+    params: () => {
+      const playerId = this.playerId();
+      return playerId ? { playerId, seasonId: this.selectedSeasonId() } : undefined;
+    },
+    loader: ({ params }) => Promise.all([
+      this.matchesService.getPlayerStats(params.playerId, params.seasonId).catch(() => null),
+      this.matchesService.getPlayerHistory(params.playerId, params.seasonId).catch(() => []),
+    ]).then(([stats, history]) => ({ stats, recentHistory: history.slice(0, 3) })),
+  });
+  stats = computed(() => this.statsResource.value()?.stats ?? null);
+  recentHistory = computed(() => this.statsResource.value()?.recentHistory ?? []);
 
   saving = signal(false);
   savingPin = signal(false);
   displayNameFeedback = signal('');
   pinFeedback = signal('');
   pinError = signal('');
-  stats = signal<PlayerStats | null>(null);
-  recentHistory = signal<MatchHistoryEntry[]>([]);
 
-  groupSlug = computed(() => this.route.snapshot.params['groupSlug'] as string);
   winRatio = computed(() => {
     const s = this.stats();
     if (!s) return 0;
     return computeWinRate(s.wins, s.played);
   });
 
-  ngOnInit(): void {
-    const player = this.auth.currentPlayer();
-    if (player) {
-      this.newDisplayName = player.display_name ?? '';
-      this.loadSeasons(player.group_id, player.id);
-    }
-  }
-
-  private async loadSeasons(groupId: string, playerId: string): Promise<void> {
-    try {
-      const seasons = await this.seasonsService.getSeasons(groupId);
-      this.seasons.set(seasons);
-      const current = seasons.find(isCurrentSeason);
-      this.selectedSeasonId.set(current?.id ?? seasons[0]?.id ?? null);
-    } catch { /* non critique */ }
-    this.loadStats(playerId);
-    this.loadRecentHistory(playerId);
-  }
-
   onSeasonChange(seasonId: string): void {
     this.selectedSeasonId.set(seasonId);
-    const player = this.auth.currentPlayer();
-    if (!player) return;
-    this.loadStats(player.id);
-    this.loadRecentHistory(player.id);
-  }
-
-  private async loadStats(playerId: string): Promise<void> {
-    try { this.stats.set(await this.matchesService.getPlayerStats(playerId, this.selectedSeasonId())); } catch { /* non critique */ }
-  }
-
-  private async loadRecentHistory(playerId: string): Promise<void> {
-    try {
-      const history = await this.matchesService.getPlayerHistory(playerId, this.selectedSeasonId());
-      this.recentHistory.set(history.slice(0, 3));
-    } catch { /* non critique */ }
   }
 
   logout(): void {
@@ -315,10 +305,6 @@ export class ProfileComponent implements OnInit {
     if (result === 'loss') return 'D';
     if (result === 'draw') return 'N';
     return '—';
-  }
-
-  formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
   }
 
   async saveDisplayName(): Promise<void> {

@@ -1,10 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
-import { RouterLink, ActivatedRoute } from '@angular/router';
+import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, resource, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { DatePipe } from '@angular/common';
 import { AuthService } from '../../core/auth/auth.service';
 import { SeasonsService } from '../../core/seasons/seasons.service';
-import { MatchesService, MatchHistoryEntry, PlayerStats } from '../matches/matches.service';
+import { MatchesService } from '../matches/matches.service';
 import { getDisplayName } from '../../shared/models/player.model';
-import { Season, isCurrentSeason } from '../../shared/models/season.model';
+import { isCurrentSeason } from '../../shared/models/season.model';
 import { SeasonPickerComponent } from '../../shared/components/season-picker/season-picker.component';
 import { DEFAULT_TEAM_A_NAME, DEFAULT_TEAM_B_NAME } from '../../shared/constants/team-config';
 import { computeWinRate } from '../../shared/utils/leaderboard';
@@ -15,10 +16,10 @@ type Filter = 'all' | 'win' | 'loss' | 'draw';
   selector: 'app-history',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, SeasonPickerComponent],
+  imports: [RouterLink, SeasonPickerComponent, DatePipe],
   template: `
     <div class="container-form">
-      <a class="back-link" [routerLink]="['/' + groupSlug + '/profile']">← Profil</a>
+      <a class="back-link" [routerLink]="['/' + groupSlug() + '/profile']">← Profil</a>
 
       <h2>Historique de {{ playerName() }}</h2>
 
@@ -80,10 +81,10 @@ type Filter = 'all' | 'win' | 'loss' | 'draw';
         } @else {
           <div class="history-list">
             @for (entry of filteredHistory(); track entry.id) {
-              <a class="history-entry card" [routerLink]="['/' + groupSlug + '/match/' + entry.id]">
+              <a class="history-entry card" [routerLink]="['/' + groupSlug() + '/match/' + entry.id]">
                 <div class="entry-header">
                   <span class="entry-title">{{ entry.title }}</span>
-                  <span class="entry-date">{{ formatDate(entry.match_date) }}</span>
+                  <span class="entry-date">{{ entry.match_date | date:'d MMM' }}</span>
                 </div>
 
                 @if (entry.score_a !== null && entry.score_b !== null) {
@@ -177,22 +178,44 @@ type Filter = 'all' | 'win' | 'loss' | 'draw';
     }
   `,
 })
-export class HistoryComponent implements OnInit {
+export class HistoryComponent {
   private readonly auth = inject(AuthService);
   private readonly matchesService = inject(MatchesService);
   private readonly seasonsService = inject(SeasonsService);
-  private readonly route = inject(ActivatedRoute);
+  groupSlug = input.required<string>();
 
-  readonly groupSlug = this.route.snapshot.params['groupSlug'] as string;
   readonly defaultTeamAName = DEFAULT_TEAM_A_NAME;
   readonly defaultTeamBName = DEFAULT_TEAM_B_NAME;
 
-  history = signal<MatchHistoryEntry[]>([]);
-  stats = signal<PlayerStats | null>(null);
-  loading = signal(true);
   activeFilter = signal<Filter>('all');
-  seasons = signal<Season[]>([]);
-  selectedSeasonId = signal<string | null>(null);
+
+  private readonly groupId = computed(() => this.auth.currentPlayer()?.group_id ?? undefined);
+  private readonly playerId = computed(() => this.auth.currentPlayer()?.id ?? undefined);
+
+  private readonly seasonsResource = resource({
+    params: () => this.groupId(),
+    loader: ({ params }) => this.seasonsService.getSeasons(params).catch(() => []),
+  });
+  seasons = computed(() => this.seasonsResource.value() ?? []);
+
+  selectedSeasonId = linkedSignal<string | null>(() => {
+    const seasons = this.seasons();
+    return seasons.find(isCurrentSeason)?.id ?? seasons[0]?.id ?? null;
+  });
+
+  private readonly historyResource = resource({
+    params: () => {
+      const playerId = this.playerId();
+      return playerId ? { playerId, seasonId: this.selectedSeasonId() } : undefined;
+    },
+    loader: ({ params }) => Promise.all([
+      this.matchesService.getPlayerHistory(params.playerId, params.seasonId).catch(() => []),
+      this.matchesService.getPlayerStats(params.playerId, params.seasonId).catch(() => null),
+    ]).then(([history, stats]) => ({ history, stats })),
+  });
+  history = computed(() => this.historyResource.value()?.history ?? []);
+  stats = computed(() => this.historyResource.value()?.stats ?? null);
+  loading = computed(() => this.historyResource.isLoading());
 
   playerName = computed(() => {
     const p = this.auth.currentPlayer();
@@ -215,34 +238,8 @@ export class HistoryComponent implements OnInit {
     return this.history().filter(e => e.result === f);
   });
 
-  async ngOnInit(): Promise<void> {
-    const player = this.auth.currentPlayer();
-    if (!player) return;
-    try {
-      const seasons = await this.seasonsService.getSeasons(player.group_id);
-      this.seasons.set(seasons);
-      const current = seasons.find(isCurrentSeason);
-      this.selectedSeasonId.set(current?.id ?? seasons[0]?.id ?? null);
-    } catch { /* non critique */ }
-    await this.loadHistory(player.id);
-  }
-
-  private async loadHistory(playerId: string): Promise<void> {
-    this.loading.set(true);
-    const [history, stats] = await Promise.all([
-      this.matchesService.getPlayerHistory(playerId, this.selectedSeasonId()).catch(() => []),
-      this.matchesService.getPlayerStats(playerId, this.selectedSeasonId()).catch(() => null),
-    ]);
-    this.history.set(history);
-    this.stats.set(stats);
-    this.loading.set(false);
-  }
-
   onSeasonChange(seasonId: string): void {
     this.selectedSeasonId.set(seasonId);
-    const player = this.auth.currentPlayer();
-    if (!player) return;
-    this.loadHistory(player.id);
   }
 
   resultLabel(result: 'win' | 'loss' | 'draw' | null): string {
@@ -250,9 +247,5 @@ export class HistoryComponent implements OnInit {
     if (result === 'loss') return 'D';
     if (result === 'draw') return 'N';
     return '—';
-  }
-
-  formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
   }
 }

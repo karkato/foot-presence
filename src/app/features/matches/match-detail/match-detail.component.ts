@@ -1,7 +1,8 @@
 import {
-  ChangeDetectionStrategy, Component, computed, inject, OnDestroy, OnInit, signal,
+  ChangeDetectionStrategy, Component, computed, inject, input, OnDestroy, OnInit, signal,
 } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
+import { DatePipe } from '@angular/common';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { AuthService } from '../../../core/auth/auth.service';
 import { SupabaseService } from '../../../core/supabase/supabase.service';
@@ -13,20 +14,19 @@ import { Player, getDisplayName } from '../../../shared/models/player.model';
 import { Group } from '../../../shared/models/group.model';
 import { PlayerRowComponent } from './player-row/player-row.component';
 import { RegistrationModalComponent } from './registration-modal/registration-modal.component';
+import { PresencePanelComponent } from './presence-panel/presence-panel.component';
 import { mapAuthRpcError, rpcMessage } from '../../../shared/utils/rpc-error';
 import { isMatchDateStrictlyInFuture } from '../../../shared/utils/match-status';
-import { confirmTeamReassignment } from '../../../shared/utils/team-assignment';
-import { TEAM_A_COLOR, TEAM_B_COLOR } from '../../../shared/constants/team-config';
-
-type PresentEntry =
-  | { type: 'player'; reg: Registration; rank: number }
-  | { type: 'guest'; hostName: string; rank: number };
+import {
+  sortByRegisteredAt, expandPresence, splitStartersSubstitutes,
+  canWithdraw as canWithdrawPure, countActiveProxies,
+} from '../../../shared/utils/presence';
 
 @Component({
   selector: 'app-match-detail',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PlayerRowComponent, RegistrationModalComponent],
+  imports: [PlayerRowComponent, RegistrationModalComponent, PresencePanelComponent, DatePipe],
   template: `
     @if (loading()) {
       <div class="center-msg">Chargement...</div>
@@ -46,7 +46,7 @@ type PresentEntry =
             }
           </div>
           <p class="match-meta">
-            {{ formatDate(match()!.match_date) }} à {{ formatTime(match()!.match_time) }}
+            {{ match()!.match_date | date:'EEEE d MMMM' }} à {{ formatTime(match()!.match_time) }}
             &nbsp;·&nbsp;
             <strong [class.text-danger]="isFull()">{{ presentCount() }}/{{ match()!.max_players }}</strong>
           </p>
@@ -146,11 +146,14 @@ type PresentEntry =
         @if (!match()!.is_closed && !isFinished()) {
           <div class="player-actions">
             @if (!isRegistered()) {
-              <button class="btn btn-primary btn-full" (click)="onRegister()" [disabled]="actionLoading()">Je viens</button>
+              <button class="btn btn-primary btn-full" (click)="onRegister()" [disabled]="actionLoading() || registrationClosed()">Je viens</button>
             } @else if (!isWithdrawn()) {
               <button class="btn btn-danger btn-full" (click)="onWithdraw(currentPlayerId())" [disabled]="actionLoading()">Je me retire</button>
             } @else {
-              <button class="btn btn-primary btn-full" (click)="onRegister()" [disabled]="actionLoading()">Je reviens</button>
+              <button class="btn btn-primary btn-full" (click)="onRegister()" [disabled]="actionLoading() || registrationClosed()">Je reviens</button>
+            }
+            @if (registrationClosed() && !isRegistered()) {
+              <p class="muted">Inscriptions closes, la date limite est dépassée.</p>
             }
             @if (isRegistered() && !isWithdrawn()) {
               <div class="proxy-row">
@@ -208,50 +211,21 @@ type PresentEntry =
           </div>
         }
 
-        <!-- Admin : panneau présences -->
+        <!-- Admin : panneau présences -- @defer, invisible pour la grande
+             majorité des utilisateurs (non-admins) -->
         @if (isAdmin()) {
-          <div class="card admin-section">
-            <button class="presence-toggle" (click)="showAdminPanel.set(!showAdminPanel())">
-              <span class="section-label" style="margin:0">Gérer les présences</span>
-              <div class="presence-toggle-right">
-                <span class="presence-count">{{ presentCount() }}/{{ match()!.max_players }}</span>
-                <span class="toggle-icon">{{ showAdminPanel() ? '▲' : '▼' }}</span>
-              </div>
-            </button>
-            @if (showAdminPanel()) {
-              <ul class="admin-player-list">
-                @for (player of sortedPlayers(); track player.id) {
-                  @let present = isPlayerPresent(player.id);
-                  @let team = getPlayerTeam(player.id);
-                  <li class="admin-player-row" [class.is-present]="present">
-                    <label class="admin-player-check">
-                      <input type="checkbox" [checked]="present" (change)="adminToggle(player.id)" />
-                      <span class="player-name">{{ getDisplayName(player) }}</span>
-                    </label>
-                    @if (present) {
-                      <div class="admin-player-controls">
-                        <div class="plus-ones-mini">
-                          <button class="btn-mini" (click)="adminAdjustPlusOnes(player.id, -1)"
-                            [disabled]="getPlayerPlusOnes(player.id) === 0">−</button>
-                          <span class="plus-ones-mini-count">+{{ getPlayerPlusOnes(player.id) }}</span>
-                          <button class="btn-mini" (click)="adminAdjustPlusOnes(player.id, 1)">+</button>
-                        </div>
-                        <div class="team-btns">
-                          <button class="team-btn team-btn-a" [class.active]="team === 0"
-                            (click)="adminSetTeam(player.id, 0)">A</button>
-                          <button class="team-btn team-btn-b" [class.active]="team === 1"
-                            (click)="adminSetTeam(player.id, 1)">B</button>
-                        </div>
-                      </div>
-                    }
-                  </li>
-                }
-              </ul>
-            }
-            @if (actionError()) {
-              <p class="feedback-error">{{ actionError() }}</p>
-            }
-          </div>
+          @defer (on viewport) {
+            <app-presence-panel
+              [matchId]="matchId()"
+              [players]="allPlayers()"
+              [registrations]="registrations()"
+              [maxPlayers]="match()!.max_players"
+              [maxGuests]="maxGuests()"
+              (registrationsChanged)="loadRegistrations()"
+            />
+          } @placeholder {
+            <p class="muted">Chargement...</p>
+          }
         }
       </div>
 
@@ -314,37 +288,12 @@ type PresentEntry =
 
     /* Admin sections */
     .admin-row { margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; }
-    .admin-section { margin-top: 0.75rem; }
     .score-name, .mini-score-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
     .mini-match-display { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; margin-bottom: 0.75rem; padding: 0.75rem 1rem; }
     .mini-match-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); }
     .mini-match-score { display: flex; align-items: center; gap: 0.75rem; width: 100%; justify-content: center; }
     .mini-score-name { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); flex: 1 1 0; min-width: 0; }
     .mini-score-value { font-size: 1.4rem; font-weight: 900; color: var(--text); flex: 0 0 auto; }
-    .presence-count { background: var(--primary); color: white; font-size: 0.75rem; font-weight: 700; padding: 0.15rem 0.6rem; border-radius: 1rem; }
-    .presence-toggle { width: 100%; display: flex; align-items: center; justify-content: space-between; background: none; border: none; padding: 0; cursor: pointer; min-height: var(--tap); }
-    .presence-toggle-right { display: flex; align-items: center; gap: 0.6rem; }
-    .toggle-icon { font-size: 0.75rem; color: var(--text-muted); }
-    .admin-player-list { list-style: none; padding: 0; margin: 0.75rem 0 0; display: flex; flex-direction: column; gap: 0.15rem; }
-    .admin-player-row { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0.5rem; border-radius: 0.5rem; transition: background 0.1s; flex-wrap: wrap; row-gap: var(--sp-sm); }
-    .admin-player-row:hover { background: var(--bg); }
-    .admin-player-row.is-present { background: var(--primary-light); }
-    .admin-player-check { display: flex; align-items: center; gap: 0.6rem; cursor: pointer; flex: 1 1 auto; min-width: 0; min-height: var(--tap-compact); }
-    .admin-player-check input[type="checkbox"] { width: 1.25rem; height: 1.25rem; cursor: pointer; accent-color: var(--primary); flex-shrink: 0; }
-    .player-name { font-size: 0.95rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .admin-player-controls { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; justify-content: flex-end; flex-basis: 100%; }
-    .plus-ones-mini { display: flex; align-items: center; gap: 0.3rem; }
-    .plus-ones-mini-count { font-size: 0.8rem; font-weight: 700; min-width: 1.75rem; text-align: center; color: var(--text-muted); }
-    .btn-mini { width: var(--tap-compact); height: var(--tap-compact); border-radius: 50%; border: var(--border-1); background: var(--card); cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; font-family: inherit; line-height: 1; padding: 0; color: var(--text); }
-    .btn-mini:disabled { opacity: 0.35; cursor: not-allowed; }
-    .team-btns { display: flex; gap: 0.4rem; }
-    .team-btn { padding: 0.2rem 0.65rem; border: var(--border-1); border-radius: 0.35rem; font-size: 0.8rem; font-weight: 700; cursor: pointer; background: transparent; color: var(--text-muted); font-family: inherit; transition: all 0.1s; min-height: var(--tap-compact); }
-    .team-btn-a.active { background: ${TEAM_A_COLOR}; color: white; border-color: ${TEAM_A_COLOR}; }
-    .team-btn-b.active { background: ${TEAM_B_COLOR}; color: white; border-color: ${TEAM_B_COLOR}; }
-
-    @media (min-width: 768px) {
-      .admin-player-controls { flex-basis: auto; }
-    }
   `,
 })
 export class MatchDetailComponent implements OnInit, OnDestroy {
@@ -352,11 +301,9 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
   private readonly supabase = inject(SupabaseService).client;
   private readonly auth = inject(AuthService);
   private readonly groupsService = inject(GroupsService);
-  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
   readonly String = String;
-  readonly getDisplayName = getDisplayName;
 
   match = signal<Match | null>(null);
   registrations = signal<Registration[]>([]);
@@ -366,53 +313,34 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
   actionLoading = signal(false);
   actionError = signal('');
   showModal = signal(false);
-  showAdminPanel = signal(false);
   copyFeedback = signal('');
 
   private channel: RealtimeChannel | null = null;
   private feedbackTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  readonly matchId = this.route.snapshot.params['id'] as string;
-  readonly groupSlug = this.route.snapshot.params['groupSlug'] as string;
+  matchId = input.required<string>({ alias: 'id' });
+  groupSlug = input.required<string>();
 
   currentPlayerId = computed(() => this.auth.currentPlayer()?.id ?? '');
   isAdmin = computed(() => this.auth.isAdmin());
 
-  presentPlayers = computed(() =>
-    this.registrations().filter(r => !r.is_withdrawn)
-      .sort((a, b) => new Date(a.registered_at).getTime() - new Date(b.registered_at).getTime())
-  );
+  presentPlayers = computed(() => sortByRegisteredAt(this.registrations().filter(r => !r.is_withdrawn)));
 
-  withdrawnPlayers = computed(() =>
-    this.registrations().filter(r => r.is_withdrawn)
-      .sort((a, b) => new Date(a.registered_at).getTime() - new Date(b.registered_at).getTime())
-  );
+  withdrawnPlayers = computed(() => sortByRegisteredAt(this.registrations().filter(r => r.is_withdrawn)));
 
   presentCount = computed(() =>
     this.presentPlayers().reduce((sum, r) => sum + 1 + (r.plus_ones ?? 0), 0)
   );
 
-  expandedPresent = computed(() => {
-    let rank = 0;
-    const entries: PresentEntry[] = [];
-    for (const reg of this.presentPlayers()) {
-      entries.push({ type: 'player', reg, rank: ++rank });
-      for (let i = 0; i < (reg.plus_ones ?? 0); i++) {
-        entries.push({ type: 'guest', hostName: getDisplayName(reg.player), rank: ++rank });
-      }
-    }
-    return entries;
-  });
+  expandedPresent = computed(() => expandPresence(this.presentPlayers()));
 
-  starters = computed(() => {
-    const max = this.match()?.max_players ?? Infinity;
-    return this.expandedPresent().filter(e => e.rank <= max);
-  });
+  starters = computed(() =>
+    splitStartersSubstitutes(this.expandedPresent(), this.match()?.max_players ?? Infinity).starters
+  );
 
-  substitutes = computed(() => {
-    const max = this.match()?.max_players ?? Infinity;
-    return this.expandedPresent().filter(e => e.rank > max);
-  });
+  substitutes = computed(() =>
+    splitStartersSubstitutes(this.expandedPresent(), this.match()?.max_players ?? Infinity).substitutes
+  );
 
   myPlusOnes = computed(() =>
     this.registrations().find(r => r.player_id === this.currentPlayerId() && !r.is_withdrawn)?.plus_ones ?? 0
@@ -444,40 +372,49 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
   isRegistered = computed(() => this.registrations().some(r => r.player_id === this.currentPlayerId()));
   isWithdrawn = computed(() => this.registrations().some(r => r.player_id === this.currentPlayerId() && r.is_withdrawn));
 
-  proxyCount = computed(() =>
-    this.registrations().filter(r => !r.is_withdrawn && r.registered_by === this.currentPlayerId() && r.player_id !== this.currentPlayerId()).length
-  );
-  canAddProxy = computed(() => this.proxyCount() < 2);
+  proxyCount = computed(() => countActiveProxies(this.registrations(), this.currentPlayerId()));
+  canAddProxy = computed(() => this.proxyCount() < 2 && !this.registrationClosed());
 
-  sortedPlayers = computed(() => {
-    const presentIds = new Set(this.presentPlayers().map(r => r.player_id));
-    return [...this.allPlayers()].sort((a, b) => {
-      const diff = (presentIds.has(a.id) ? 0 : 1) - (presentIds.has(b.id) ? 0 : 1);
-      return diff !== 0 ? diff : a.username.localeCompare(b.username);
-    });
+  registrationClosed = computed(() => {
+    const deadline = this.match()?.registration_deadline;
+    return !!deadline && new Date(deadline) < new Date();
   });
+
+  private readonly visibilityHandler = () => {
+    // Le channel Supabase meurt souvent quand l'app passe en arrière-plan
+    // (mobile surtout) -- on le referme et s'y réabonne au retour, et on
+    // recharge au passage pour rattraper ce qui a pu être manqué pendant
+    // la coupure.
+    if (document.visibilityState === 'visible') {
+      this.channel?.unsubscribe();
+      this.subscribeToRealtime();
+      void this.loadRegistrations();
+    }
+  };
 
   async ngOnInit(): Promise<void> {
     await Promise.all([this.loadMatch(), this.loadRegistrations()]);
     await Promise.all([this.loadPlayers(), this.loadGroup()]);
     this.loading.set(false);
     this.subscribeToRealtime();
+    document.addEventListener('visibilitychange', this.visibilityHandler);
   }
 
   ngOnDestroy(): void {
+    document.removeEventListener('visibilitychange', this.visibilityHandler);
     this.channel?.unsubscribe();
     if (this.feedbackTimeout) clearTimeout(this.feedbackTimeout);
   }
 
   private async loadMatch(): Promise<void> {
     try {
-      this.match.set(await this.matchesService.getMatch(this.matchId));
+      this.match.set(await this.matchesService.getMatch(this.matchId()));
     } catch { this.match.set(null); }
   }
 
-  private async loadRegistrations(): Promise<void> {
+  async loadRegistrations(): Promise<void> {
     try {
-      this.registrations.set(await this.matchesService.getRegistrations(this.matchId));
+      this.registrations.set(await this.matchesService.getRegistrations(this.matchId()));
     } catch { this.registrations.set([]); }
   }
 
@@ -496,8 +433,8 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
   }
 
   private subscribeToRealtime(): void {
-    this.channel = this.supabase.channel(`match-${this.matchId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'registrations', filter: `match_id=eq.${this.matchId}` },
+    this.channel = this.supabase.channel(`match-${this.matchId()}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'registrations', filter: `match_id=eq.${this.matchId()}` },
         () => this.loadRegistrations())
       .subscribe();
   }
@@ -505,65 +442,9 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
   isCurrentPlayer(reg: Registration): boolean { return reg.player_id === this.currentPlayerId(); }
 
   canWithdraw(reg: Registration): boolean {
-    const currentId = this.currentPlayerId();
     const m = this.match();
-    if (!m || m.is_closed || reg.is_withdrawn) return false;
-    return reg.player_id === currentId || reg.registered_by === currentId;
-  }
-
-  isPlayerPresent(playerId: string): boolean {
-    return this.registrations().some(r => r.player_id === playerId && !r.is_withdrawn);
-  }
-
-  getPlayerTeam(playerId: string): number | null {
-    return this.registrations().find(r => r.player_id === playerId && !r.is_withdrawn)?.team ?? null;
-  }
-
-  getPlayerPlusOnes(playerId: string): number {
-    return this.registrations().find(r => r.player_id === playerId && !r.is_withdrawn)?.plus_ones ?? 0;
-  }
-
-  async adminAdjustPlusOnes(playerId: string, delta: number): Promise<void> {
-    const admin = this.auth.currentPlayer();
-    if (!admin) return;
-    const newCount = Math.max(0, this.getPlayerPlusOnes(playerId) + delta);
-    this.actionError.set('');
-    try {
-      await this.matchesService.setPlusOnes(this.matchId, playerId, newCount, admin.id);
-      await this.loadRegistrations();
-    } catch (err) {
-      this.actionError.set(this.mapPlusOnesError(err));
-    }
-  }
-
-  async adminToggle(playerId: string): Promise<void> {
-    const admin = this.auth.currentPlayer();
-    if (!admin) return;
-    try {
-      if (this.isPlayerPresent(playerId)) {
-        await this.matchesService.adminRemoveRegistration(admin.id, this.matchId, playerId);
-      } else {
-        await this.matchesService.registerPlayer(this.matchId, playerId, admin.id);
-      }
-      await this.loadRegistrations();
-    } catch { /* silently fail */ }
-  }
-
-  async adminSetTeam(playerId: string, team: number): Promise<void> {
-    const admin = this.auth.currentPlayer();
-    if (!admin) return;
-    const currentTeam = this.getPlayerTeam(playerId);
-    if (currentTeam === team) return;
-    const reg = this.registrations().find(r => r.player_id === playerId && !r.is_withdrawn);
-    if (reg && !confirmTeamReassignment(reg)) return;
-    this.actionError.set('');
-    try {
-      await this.matchesService.assignTeam(this.matchId, playerId, team, admin.id);
-      await this.loadRegistrations();
-    } catch (err) {
-      this.actionError.set(mapAuthRpcError(err, "Impossible de modifier l'équipe"));
-      await this.loadRegistrations();
-    }
+    if (!m) return false;
+    return canWithdrawPure(reg, this.currentPlayerId(), m.is_closed);
   }
 
   async onRegister(): Promise<void> {
@@ -572,9 +453,12 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
     this.actionLoading.set(true);
     this.actionError.set('');
     try {
-      await this.matchesService.registerPlayer(this.matchId, player.id, player.id);
+      await this.matchesService.registerPlayer(this.matchId(), player.id, player.id);
       await this.loadRegistrations();
-    } catch { this.actionError.set('Erreur lors de l\'inscription'); }
+    } catch (err) {
+      this.actionError.set(rpcMessage(err).includes('deadline_passed')
+        ? 'La date limite d\'inscription est dépassée' : 'Erreur lors de l\'inscription');
+    }
     finally { this.actionLoading.set(false); }
   }
 
@@ -584,7 +468,7 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
     this.actionLoading.set(true);
     this.actionError.set('');
     try {
-      await this.matchesService.withdrawPlayer(this.matchId, playerId, currentPlayer.id);
+      await this.matchesService.withdrawPlayer(this.matchId(), playerId, currentPlayer.id);
       await this.loadRegistrations();
     } catch { this.actionError.set('Erreur lors du retrait'); }
     finally { this.actionLoading.set(false); }
@@ -595,11 +479,15 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
     if (!currentPlayer) return;
     this.actionError.set('');
     try {
-      await this.matchesService.registerPlayer(this.matchId, playerId, currentPlayer.id);
+      await this.matchesService.registerPlayer(this.matchId(), playerId, currentPlayer.id);
       await this.loadRegistrations();
     } catch (err) {
-      this.actionError.set(rpcMessage(err).includes('proxy_limit_reached')
-        ? 'Limite de 2 procurations atteinte' : 'Erreur lors de l\'inscription');
+      const message = rpcMessage(err);
+      this.actionError.set(
+        message.includes('proxy_limit_reached') ? 'Limite de 2 procurations atteinte' :
+        message.includes('deadline_passed') ? 'La date limite d\'inscription est dépassée' :
+        'Erreur lors de l\'inscription'
+      );
     }
   }
 
@@ -610,7 +498,7 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
     this.actionLoading.set(true);
     this.actionError.set('');
     try {
-      await this.matchesService.setPlusOnes(this.matchId, player.id, newCount, player.id);
+      await this.matchesService.setPlusOnes(this.matchId(), player.id, newCount, player.id);
       await this.loadRegistrations();
     } catch (err) {
       this.actionError.set(this.mapPlusOnesError(err));
@@ -647,18 +535,18 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
     if (!admin) return;
     this.actionLoading.set(true);
     try {
-      await this.matchesService.adminRemoveRegistration(admin.id, this.matchId, playerId);
+      await this.matchesService.adminRemoveRegistration(admin.id, this.matchId(), playerId);
       await this.loadRegistrations();
     } catch { this.actionError.set('Erreur lors de la suppression'); }
     finally { this.actionLoading.set(false); }
   }
 
   goToStats(): void {
-    this.router.navigate([`/${this.groupSlug}/admin/match/${this.matchId}/stats`]);
+    this.router.navigate([`/${this.groupSlug()}/admin/match/${this.matchId()}/stats`]);
   }
 
   copyMatchLink(): void {
-    const url = `${window.location.origin}/${this.groupSlug}/match/${this.matchId}`;
+    const url = `${window.location.origin}/${this.groupSlug()}/match/${this.matchId()}`;
     navigator.clipboard.writeText(url).then(() => this.showFeedback('Lien copié !'));
   }
 
@@ -682,8 +570,5 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
     this.feedbackTimeout = setTimeout(() => this.copyFeedback.set(''), 2500);
   }
 
-  formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
-  }
   formatTime(timeStr: string): string { return timeStr.slice(0, 5); }
 }

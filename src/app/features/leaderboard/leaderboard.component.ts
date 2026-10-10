@@ -1,9 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, resource, signal } from '@angular/core';
 import { AuthService } from '../../core/auth/auth.service';
 import { SeasonsService } from '../../core/seasons/seasons.service';
 import { MatchesService } from '../matches/matches.service';
-import { Player, GroupPlayerStats } from '../../shared/models/player.model';
-import { Season, isCurrentSeason } from '../../shared/models/season.model';
+import { isCurrentSeason } from '../../shared/models/season.model';
 import { SeasonPickerComponent } from '../../shared/components/season-picker/season-picker.component';
 import { TabBarComponent, TabItem } from '../../shared/components/tab-bar/tab-bar.component';
 import { LeaderboardMetric, buildLeaderboardRows, sortLeaderboard, assignRanks } from '../../shared/utils/leaderboard';
@@ -22,6 +21,9 @@ import { LeaderboardMetric, buildLeaderboardRows, sortLeaderboard, assignRanks }
         [selectedSeasonId]="selectedSeasonId()"
         (seasonChange)="onSeasonChange($event)"
       />
+      @if (!loading()) {
+        <p class="muted season-total">{{ seasonMatchesCount() }} match{{ seasonMatchesCount() > 1 ? 's' : '' }} joué{{ seasonMatchesCount() > 1 ? 's' : '' }} cette saison</p>
+      }
 
       <app-tab-bar
         [tabs]="metricTabs"
@@ -54,6 +56,7 @@ import { LeaderboardMetric, buildLeaderboardRows, sortLeaderboard, assignRanks }
   styles: `
     h2 { margin-top: 0; }
     .muted { font-size: 0.9rem; }
+    .season-total { margin: 0.35rem 0 1rem; }
     .row-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
     .row {
       display: grid;
@@ -74,7 +77,7 @@ import { LeaderboardMetric, buildLeaderboardRows, sortLeaderboard, assignRanks }
     }
   `,
 })
-export class LeaderboardComponent implements OnInit {
+export class LeaderboardComponent {
   private readonly auth = inject(AuthService);
   private readonly matchesService = inject(MatchesService);
   private readonly seasonsService = inject(SeasonsService);
@@ -85,12 +88,43 @@ export class LeaderboardComponent implements OnInit {
     { value: 'winRate', label: 'Taux de victoire' },
   ];
 
-  loading = signal(true);
-  seasons = signal<Season[]>([]);
-  selectedSeasonId = signal<string | null>(null);
   metric = signal<LeaderboardMetric>('goals');
-  stats = signal<GroupPlayerStats[]>([]);
-  players = signal<Player[]>([]);
+
+  private readonly groupId = computed(() => this.auth.currentPlayer()?.group_id ?? undefined);
+
+  private readonly seasonsResource = resource({
+    params: () => this.groupId(),
+    loader: ({ params }) => this.seasonsService.getSeasons(params).catch(() => []),
+  });
+  seasons = computed(() => this.seasonsResource.value() ?? []);
+
+  // Défaut = saison courante, mais reste modifiable via onSeasonChange tant
+  // que seasons() ne change pas (linkedSignal : dérivé, mais overridable).
+  selectedSeasonId = linkedSignal<string | null>(() => {
+    const seasons = this.seasons();
+    return seasons.find(isCurrentSeason)?.id ?? seasons[0]?.id ?? null;
+  });
+
+  private readonly playersResource = resource({
+    params: () => this.groupId(),
+    loader: ({ params }) => this.matchesService.getGroupPlayers(params).catch(() => []),
+  });
+  players = computed(() => this.playersResource.value() ?? []);
+
+  private readonly statsResource = resource({
+    params: () => {
+      const groupId = this.groupId();
+      return groupId ? { groupId, seasonId: this.selectedSeasonId() } : undefined;
+    },
+    loader: ({ params }) => this.matchesService.getGroupPlayerStats(params.groupId, params.seasonId).catch(() => []),
+  });
+  stats = computed(() => this.statsResource.value() ?? []);
+
+  loading = computed(() => this.playersResource.isLoading() || this.statsResource.isLoading());
+
+  // season_matches est le même pour toutes les lignes (total de la
+  // saison, pas une stat par joueur) -- n'importe laquelle suffit.
+  seasonMatchesCount = computed(() => this.stats()[0]?.season_matches ?? 0);
 
   currentPlayerId = computed(() => this.auth.currentPlayer()?.id ?? null);
 
@@ -103,40 +137,12 @@ export class LeaderboardComponent implements OnInit {
     return assignRanks(sorted, this.metric());
   });
 
-  async ngOnInit(): Promise<void> {
-    const player = this.auth.currentPlayer();
-    if (!player) return;
-    try {
-      const seasons = await this.seasonsService.getSeasons(player.group_id);
-      this.seasons.set(seasons);
-      const current = seasons.find(isCurrentSeason);
-      this.selectedSeasonId.set(current?.id ?? seasons[0]?.id ?? null);
-    } catch { /* non critique */ }
-    this.loading.set(true);
-    const [players, stats] = await Promise.all([
-      this.matchesService.getGroupPlayers(player.group_id).catch(() => []),
-      this.matchesService.getGroupPlayerStats(player.group_id, this.selectedSeasonId()).catch(() => []),
-    ]);
-    this.players.set(players);
-    this.stats.set(stats);
-    this.loading.set(false);
-  }
-
   onSeasonChange(seasonId: string): void {
     this.selectedSeasonId.set(seasonId);
-    const player = this.auth.currentPlayer();
-    if (!player) return;
-    void this.loadStats(player.group_id);
   }
 
   metricValue(row: { goals: number; assists: number; winRate: number }): string {
     const value = row[this.metric()];
     return this.metric() === 'winRate' ? `${value}%` : `${value}`;
-  }
-
-  private async loadStats(groupId: string): Promise<void> {
-    this.loading.set(true);
-    this.stats.set(await this.matchesService.getGroupPlayerStats(groupId, this.selectedSeasonId()).catch(() => []));
-    this.loading.set(false);
   }
 }

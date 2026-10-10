@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { DatePipe } from '@angular/common';
+import { Router } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { GroupsService } from '../../../core/groups/groups.service';
 import { MatchesService } from '../../matches/matches.service';
@@ -17,7 +18,7 @@ import { TEAM_A_COLOR, TEAM_B_COLOR } from '../../../shared/constants/team-confi
   selector: 'app-match-stats',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule],
+  imports: [FormsModule, DatePipe],
   template: `
     @if (loading()) {
       <div class="center-msg">Chargement...</div>
@@ -28,7 +29,7 @@ import { TEAM_A_COLOR, TEAM_B_COLOR } from '../../../shared/constants/team-confi
         <div class="header">
           <button type="button" class="btn-back" (click)="goBack()">‹ Retour au match</button>
           <h2>{{ match()!.title }}</h2>
-          <p class="match-meta">{{ formatDate(match()!.match_date) }} à {{ formatTime(match()!.match_time) }}</p>
+          <p class="match-meta">{{ match()!.match_date | date:'EEEE d MMMM' }} à {{ formatTime(match()!.match_time) }}</p>
         </div>
 
         <!-- Score principal -->
@@ -217,8 +218,10 @@ export class MatchStatsComponent implements OnInit, OnDestroy {
   private readonly matchesService = inject(MatchesService);
   private readonly auth = inject(AuthService);
   private readonly groupsService = inject(GroupsService);
-  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+
+  matchId = input.required<string>({ alias: 'id' });
+  groupSlug = input.required<string>();
 
   readonly getDisplayName = getDisplayName;
   readonly teams = [0, 1] as const;
@@ -242,9 +245,6 @@ export class MatchStatsComponent implements OnInit, OnDestroy {
   teamsError = signal('');
   statsError = signal('');
 
-  readonly matchId = this.route.snapshot.params['id'] as string;
-  readonly groupSlug = this.route.snapshot.params['groupSlug'] as string;
-
   miniMatchEnabled = computed(() => this.group()?.mini_match_enabled ?? false);
 
   presentRegs = computed(() => this.registrations().filter(r => !r.is_withdrawn));
@@ -258,7 +258,7 @@ export class MatchStatsComponent implements OnInit, OnDestroy {
 
   private async loadMatch(): Promise<void> {
     try {
-      const m = await this.matchesService.getMatch(this.matchId);
+      const m = await this.matchesService.getMatch(this.matchId());
       this.match.set(m);
       this.scoreA.set(m.score_a ?? 0);
       this.scoreB.set(m.score_b ?? 0);
@@ -270,7 +270,7 @@ export class MatchStatsComponent implements OnInit, OnDestroy {
 
   private async loadRegistrations(): Promise<void> {
     try {
-      this.registrations.set(await this.matchesService.getRegistrations(this.matchId));
+      this.registrations.set(await this.matchesService.getRegistrations(this.matchId()));
     } catch { this.registrations.set([]); }
   }
 
@@ -352,7 +352,7 @@ export class MatchStatsComponent implements OnInit, OnDestroy {
     this.actionLoading.set(true);
     this.scoreError.set('');
     try {
-      await this.matchesService.setMatchScore(this.matchId, nextA, nextB, admin.id);
+      await this.matchesService.setMatchScore(this.matchId(), nextA, nextB, admin.id);
       this.scoreA.set(nextA);
       this.scoreB.set(nextB);
       await Promise.all([this.loadMatch(), this.loadRegistrations()]);
@@ -380,7 +380,7 @@ export class MatchStatsComponent implements OnInit, OnDestroy {
     this.actionLoading.set(true);
     this.miniScoreError.set('');
     try {
-      await this.matchesService.setMiniMatchScore(this.matchId, scoreA2, scoreB2, target, admin.id);
+      await this.matchesService.setMiniMatchScore(this.matchId(), scoreA2, scoreB2, target, admin.id);
       this.miniScoreA.set(scoreA2);
       this.miniScoreB.set(scoreB2);
       this.miniTarget.set(target);
@@ -398,7 +398,7 @@ export class MatchStatsComponent implements OnInit, OnDestroy {
     this.actionLoading.set(true);
     this.teamsError.set('');
     try {
-      await this.matchesService.assignTeam(this.matchId, reg.player_id, team, admin.id);
+      await this.matchesService.assignTeam(this.matchId(), reg.player_id, team, admin.id);
       await this.loadRegistrations();
     } catch (err) {
       this.teamsError.set(mapAuthRpcError(err, "Impossible de modifier l'équipe"));
@@ -421,7 +421,7 @@ export class MatchStatsComponent implements OnInit, OnDestroy {
     this.actionLoading.set(true);
     this.statsError.set('');
     try {
-      await this.matchesService.setPlayerMatchStats(this.matchId, reg.player_id, goals, assists, admin.id);
+      await this.matchesService.setPlayerMatchStats(this.matchId(), reg.player_id, goals, assists, admin.id);
       await this.loadRegistrations();
     } catch (err) {
       this.statsError.set(mapMatchStatsError(err, 'Erreur lors de la mise à jour des stats'));
@@ -444,11 +444,8 @@ export class MatchStatsComponent implements OnInit, OnDestroy {
   }
 
   goBack(): void {
-    this.router.navigate([`/${this.groupSlug}/match/${this.matchId}`]);
+    this.router.navigate([`/${this.groupSlug()}/match/${this.matchId()}`]);
   }
 
-  formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
-  }
   formatTime(timeStr: string): string { return timeStr.slice(0, 5); }
 }

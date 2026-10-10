@@ -1,6 +1,6 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, input, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { SupabaseService } from '../../../core/supabase/supabase.service';
 import { MatchesService } from '../../matches/matches.service';
@@ -102,11 +102,10 @@ export class PlayerResetPinComponent implements OnInit {
   private readonly matchesService = inject(MatchesService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
   private readonly cdr = inject(ChangeDetectorRef);
 
-  private playerId = '';
-  private readonly groupSlug = this.route.snapshot.params['groupSlug'] as string;
+  id = input.required<string>();
+  groupSlug = input.required<string>();
 
   loading = signal(true);
   saving = signal(false);
@@ -118,11 +117,10 @@ export class PlayerResetPinComponent implements OnInit {
   confirmPin = '';
 
   async ngOnInit(): Promise<void> {
-    this.playerId = this.route.snapshot.params['id'];
     const { data, error } = await this.supabase
       .from('players')
       .select('id, group_id, username, display_name, is_admin, created_at')
-      .eq('id', this.playerId)
+      .eq('id', this.id())
       .single();
     if (!error && data) {
       this.playerName.set(getDisplayName(data));
@@ -150,7 +148,7 @@ export class PlayerResetPinComponent implements OnInit {
 
     this.saving.set(true);
     try {
-      await this.matchesService.resetPlayerPin(this.playerId, this.newPin, actor.id);
+      await this.matchesService.resetPlayerPin(this.id(), this.newPin, actor.id);
       this.newPin = '';
       this.confirmPin = '';
       this.feedback.set('Le nouveau PIN a été appliqué.');
@@ -168,6 +166,6 @@ export class PlayerResetPinComponent implements OnInit {
     // s'applique pas tel quel ici — même pattern que
     // match-stats.component.ts:goBack, dont la route (admin/match/:id/stats)
     // a la même profondeur.
-    this.router.navigate([`/${this.groupSlug}/admin`]);
+    this.router.navigate([`/${this.groupSlug()}/admin`]);
   }
 }

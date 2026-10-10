@@ -2,10 +2,11 @@ import {
   ChangeDetectionStrategy,
   Component,
   inject,
+  input,
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 
 @Component({
@@ -18,7 +19,7 @@ import { AuthService } from '../../../core/auth/auth.service';
       <div class="login-card">
         <div class="login-logo">⚽</div>
         <h1>Foot Présence</h1>
-        <p class="login-group">{{ groupSlug }}</p>
+        <p class="login-group">{{ groupSlug() }}</p>
 
         <form (ngSubmit)="onSubmit()" #f="ngForm">
           <div class="field">
@@ -118,9 +119,8 @@ import { AuthService } from '../../../core/auth/auth.service';
 export class LoginComponent {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
 
-  readonly groupSlug = this.route.snapshot.params['groupSlug'] as string;
+  groupSlug = input.required<string>();
 
   username = '';
   pin = '';
@@ -133,8 +133,8 @@ export class LoginComponent {
     this.error.set('');
 
     try {
-      await this.auth.login(this.groupSlug, this.username, this.pin);
-      this.router.navigate([`/${this.groupSlug}/matches`]);
+      await this.auth.login(this.groupSlug(), this.username, this.pin);
+      this.router.navigate([`/${this.groupSlug()}/matches`]);
     } catch (err) {
       this.error.set(err instanceof Error ? err.message : 'Erreur de connexion');
     } finally {
