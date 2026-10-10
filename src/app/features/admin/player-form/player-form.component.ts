@@ -2,7 +2,9 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  computed,
   inject,
+  input,
   OnInit,
   signal,
 } from '@angular/core';
@@ -124,10 +126,11 @@ export class PlayerFormComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly cdr = inject(ChangeDetectorRef);
 
-  isEdit = signal(false);
+  id = input.required<string>();
+  isEdit = computed(() => this.id() !== 'new');
+
   saving = signal(false);
   error = signal('');
-  playerId = '';
   private initialIsAdmin = false;
 
   form = {
@@ -138,24 +141,20 @@ export class PlayerFormComponent implements OnInit {
   };
 
   async ngOnInit(): Promise<void> {
-    const id = this.route.snapshot.params['id'];
-    if (id && id !== 'new') {
-      this.isEdit.set(true);
-      this.playerId = id;
-      const { data, error } = await this.supabase
-        .from('players')
-        .select('id, group_id, username, display_name, is_admin, created_at')
-        .eq('id', id)
-        .single();
-      if (error) {
-        this.error.set('Impossible de charger ce joueur.');
-      } else if (data) {
-        this.form.display_name = data.display_name ?? data.username;
-        this.form.is_admin = data.is_admin;
-        this.initialIsAdmin = data.is_admin;
-      }
-      this.cdr.markForCheck();
+    if (!this.isEdit()) return;
+    const { data, error } = await this.supabase
+      .from('players')
+      .select('id, group_id, username, display_name, is_admin, created_at')
+      .eq('id', this.id())
+      .single();
+    if (error) {
+      this.error.set('Impossible de charger ce joueur.');
+    } else if (data) {
+      this.form.display_name = data.display_name ?? data.username;
+      this.form.is_admin = data.is_admin;
+      this.initialIsAdmin = data.is_admin;
     }
+    this.cdr.markForCheck();
   }
 
   async onSubmit(): Promise<void> {
@@ -174,18 +173,18 @@ export class PlayerFormComponent implements OnInit {
         if (this.form.is_admin !== this.initialIsAdmin) {
           const { error: adminError } = await this.supabase.rpc('set_player_admin', {
             p_actor_id: currentPlayer.id,
-            p_player_id: this.playerId,
+            p_player_id: this.id(),
             p_is_admin: this.form.is_admin,
           });
           if (adminError) throw adminError;
 
-          if (currentPlayer.id === this.playerId) {
+          if (currentPlayer.id === this.id()) {
             this.auth.updateCurrentPlayer({ is_admin: this.form.is_admin });
           }
         }
 
         const { error } = await this.supabase.rpc('update_player_profile', {
-          p_player_id: this.playerId,
+          p_player_id: this.id(),
           p_display_name: this.form.display_name.trim() || null,
           p_actor_id: currentPlayer.id,
         });

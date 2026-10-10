@@ -1,6 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, resource, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, resource, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { SupabaseService } from '../../core/supabase/supabase.service';
 import { SeasonsService } from '../../core/seasons/seasons.service';
@@ -235,8 +235,9 @@ export class ProfileComponent {
   private readonly supabase = inject(SupabaseService).client;
   private readonly matchesService = inject(MatchesService);
   private readonly seasonsService = inject(SeasonsService);
-  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+
+  groupSlug = input.required<string>();
 
   newDisplayName = this.auth.currentPlayer()?.display_name ?? '';
   newPin = '';
@@ -283,7 +284,6 @@ export class ProfileComponent {
   pinFeedback = signal('');
   pinError = signal('');
 
-  groupSlug = computed(() => this.route.snapshot.params['groupSlug'] as string);
   winRatio = computed(() => {
     const s = this.stats();
     if (!s) return 0;

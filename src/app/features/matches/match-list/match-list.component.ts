@@ -3,11 +3,12 @@ import {
   Component,
   computed,
   inject,
+  input,
   OnDestroy,
   resource,
   signal,
 } from '@angular/core';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { MatchesService } from '../matches.service';
 import { SeasonsService } from '../../../core/seasons/seasons.service';
@@ -236,7 +237,6 @@ export class MatchListComponent implements OnDestroy {
   private readonly seasonsService = inject(SeasonsService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
 
   private readonly groupId = computed(() => this.auth.currentPlayer()?.group_id ?? undefined);
 
@@ -271,7 +271,7 @@ export class MatchListComponent implements OnDestroy {
     return this.matches().filter(m => done.includes(this.statusOf(m)));
   });
 
-  readonly groupSlug = this.route.snapshot.params['groupSlug'] as string;
+  groupSlug = input.required<string>();
 
   private readonly visibilityHandler = () => {
     if (document.visibilityState === 'visible') this.matchesResource.reload();
@@ -290,11 +290,11 @@ export class MatchListComponent implements OnDestroy {
   }
 
   openMatch(match: Match): void {
-    this.router.navigate([`/${this.groupSlug}/match/${match.id}`]);
+    this.router.navigate([`/${this.groupSlug()}/match/${match.id}`]);
   }
 
   goToStats(match: MatchWithCount): void {
-    this.router.navigate([`/${this.groupSlug}/admin/match/${match.id}/stats`]);
+    this.router.navigate([`/${this.groupSlug()}/admin/match/${match.id}/stats`]);
   }
 
   toggleFinished(): void {

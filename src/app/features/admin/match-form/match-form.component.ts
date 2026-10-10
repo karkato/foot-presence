@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, inject, input, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -96,10 +96,11 @@ export class MatchFormComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly cdr = inject(ChangeDetectorRef);
 
-  isEdit = signal(false);
+  id = input.required<string>();
+  isEdit = computed(() => this.id() !== 'new');
+
   saving = signal(false);
   error = signal('');
-  matchId = '';
 
   readonly defaultTeamAName = DEFAULT_TEAM_A_NAME;
   readonly defaultTeamBName = DEFAULT_TEAM_B_NAME;
@@ -110,20 +111,16 @@ export class MatchFormComponent implements OnInit {
   };
 
   async ngOnInit(): Promise<void> {
-    const id = this.route.snapshot.params['id'];
-    if (id && id !== 'new') {
-      this.isEdit.set(true);
-      this.matchId = id;
-      const match = await this.matchesService.getMatch(id);
-      this.form = {
-        title: match.title, match_date: match.match_date, match_time: match.match_time,
-        max_players: match.max_players,
-        registration_deadline: match.registration_deadline ? match.registration_deadline.slice(0, 16) : '',
-        team_a_name: match.team_a_name ?? DEFAULT_TEAM_A_NAME,
-        team_b_name: match.team_b_name ?? DEFAULT_TEAM_B_NAME,
-      };
-      this.cdr.markForCheck();
-    }
+    if (!this.isEdit()) return;
+    const match = await this.matchesService.getMatch(this.id());
+    this.form = {
+      title: match.title, match_date: match.match_date, match_time: match.match_time,
+      max_players: match.max_players,
+      registration_deadline: match.registration_deadline ? match.registration_deadline.slice(0, 16) : '',
+      team_a_name: match.team_a_name ?? DEFAULT_TEAM_A_NAME,
+      team_b_name: match.team_b_name ?? DEFAULT_TEAM_B_NAME,
+    };
+    this.cdr.markForCheck();
   }
 
   async onSubmit(): Promise<void> {
@@ -141,7 +138,7 @@ export class MatchFormComponent implements OnInit {
     };
     try {
       if (this.isEdit()) {
-        await this.matchesService.updateMatch(this.matchId, payload, player.id);
+        await this.matchesService.updateMatch(this.id(), payload, player.id);
       } else {
         await this.matchesService.createMatch(payload, player.group_id, player.id);
       }

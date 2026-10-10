@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, resource, signal } from '@angular/core';
-import { RouterLink, ActivatedRoute } from '@angular/router';
+import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, resource, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { SeasonsService } from '../../core/seasons/seasons.service';
 import { MatchesService } from '../matches/matches.service';
@@ -18,7 +18,7 @@ type Filter = 'all' | 'win' | 'loss' | 'draw';
   imports: [RouterLink, SeasonPickerComponent],
   template: `
     <div class="container-form">
-      <a class="back-link" [routerLink]="['/' + groupSlug + '/profile']">← Profil</a>
+      <a class="back-link" [routerLink]="['/' + groupSlug() + '/profile']">← Profil</a>
 
       <h2>Historique de {{ playerName() }}</h2>
 
@@ -80,7 +80,7 @@ type Filter = 'all' | 'win' | 'loss' | 'draw';
         } @else {
           <div class="history-list">
             @for (entry of filteredHistory(); track entry.id) {
-              <a class="history-entry card" [routerLink]="['/' + groupSlug + '/match/' + entry.id]">
+              <a class="history-entry card" [routerLink]="['/' + groupSlug() + '/match/' + entry.id]">
                 <div class="entry-header">
                   <span class="entry-title">{{ entry.title }}</span>
                   <span class="entry-date">{{ formatDate(entry.match_date) }}</span>
@@ -181,9 +181,8 @@ export class HistoryComponent {
   private readonly auth = inject(AuthService);
   private readonly matchesService = inject(MatchesService);
   private readonly seasonsService = inject(SeasonsService);
-  private readonly route = inject(ActivatedRoute);
+  groupSlug = input.required<string>();
 
-  readonly groupSlug = this.route.snapshot.params['groupSlug'] as string;
   readonly defaultTeamAName = DEFAULT_TEAM_A_NAME;
   readonly defaultTeamBName = DEFAULT_TEAM_B_NAME;
 

@@ -1,7 +1,7 @@
 import {
-  ChangeDetectionStrategy, Component, computed, inject, OnDestroy, OnInit, signal,
+  ChangeDetectionStrategy, Component, computed, inject, input, OnDestroy, OnInit, signal,
 } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { AuthService } from '../../../core/auth/auth.service';
 import { SupabaseService } from '../../../core/supabase/supabase.service';
@@ -355,7 +355,6 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
   private readonly supabase = inject(SupabaseService).client;
   private readonly auth = inject(AuthService);
   private readonly groupsService = inject(GroupsService);
-  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
   readonly String = String;
@@ -375,8 +374,8 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
   private channel: RealtimeChannel | null = null;
   private feedbackTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  readonly matchId = this.route.snapshot.params['id'] as string;
-  readonly groupSlug = this.route.snapshot.params['groupSlug'] as string;
+  matchId = input.required<string>({ alias: 'id' });
+  groupSlug = input.required<string>();
 
   currentPlayerId = computed(() => this.auth.currentPlayer()?.id ?? '');
   isAdmin = computed(() => this.auth.isAdmin());
@@ -479,13 +478,13 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
 
   private async loadMatch(): Promise<void> {
     try {
-      this.match.set(await this.matchesService.getMatch(this.matchId));
+      this.match.set(await this.matchesService.getMatch(this.matchId()));
     } catch { this.match.set(null); }
   }
 
   private async loadRegistrations(): Promise<void> {
     try {
-      this.registrations.set(await this.matchesService.getRegistrations(this.matchId));
+      this.registrations.set(await this.matchesService.getRegistrations(this.matchId()));
     } catch { this.registrations.set([]); }
   }
 
@@ -504,8 +503,8 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
   }
 
   private subscribeToRealtime(): void {
-    this.channel = this.supabase.channel(`match-${this.matchId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'registrations', filter: `match_id=eq.${this.matchId}` },
+    this.channel = this.supabase.channel(`match-${this.matchId()}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'registrations', filter: `match_id=eq.${this.matchId()}` },
         () => this.loadRegistrations())
       .subscribe();
   }
@@ -537,7 +536,7 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
     const newCount = Math.max(0, this.getPlayerPlusOnes(playerId) + delta);
     this.actionError.set('');
     try {
-      await this.matchesService.setPlusOnes(this.matchId, playerId, newCount, admin.id);
+      await this.matchesService.setPlusOnes(this.matchId(), playerId, newCount, admin.id);
       await this.loadRegistrations();
     } catch (err) {
       this.actionError.set(this.mapPlusOnesError(err));
@@ -549,9 +548,9 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
     if (!admin) return;
     try {
       if (this.isPlayerPresent(playerId)) {
-        await this.matchesService.adminRemoveRegistration(admin.id, this.matchId, playerId);
+        await this.matchesService.adminRemoveRegistration(admin.id, this.matchId(), playerId);
       } else {
-        await this.matchesService.registerPlayer(this.matchId, playerId, admin.id);
+        await this.matchesService.registerPlayer(this.matchId(), playerId, admin.id);
       }
       await this.loadRegistrations();
     } catch { /* silently fail */ }
@@ -566,7 +565,7 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
     if (reg && !confirmTeamReassignment(reg)) return;
     this.actionError.set('');
     try {
-      await this.matchesService.assignTeam(this.matchId, playerId, team, admin.id);
+      await this.matchesService.assignTeam(this.matchId(), playerId, team, admin.id);
       await this.loadRegistrations();
     } catch (err) {
       this.actionError.set(mapAuthRpcError(err, "Impossible de modifier l'équipe"));
@@ -580,7 +579,7 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
     this.actionLoading.set(true);
     this.actionError.set('');
     try {
-      await this.matchesService.registerPlayer(this.matchId, player.id, player.id);
+      await this.matchesService.registerPlayer(this.matchId(), player.id, player.id);
       await this.loadRegistrations();
     } catch (err) {
       this.actionError.set(rpcMessage(err).includes('deadline_passed')
@@ -595,7 +594,7 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
     this.actionLoading.set(true);
     this.actionError.set('');
     try {
-      await this.matchesService.withdrawPlayer(this.matchId, playerId, currentPlayer.id);
+      await this.matchesService.withdrawPlayer(this.matchId(), playerId, currentPlayer.id);
       await this.loadRegistrations();
     } catch { this.actionError.set('Erreur lors du retrait'); }
     finally { this.actionLoading.set(false); }
@@ -606,7 +605,7 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
     if (!currentPlayer) return;
     this.actionError.set('');
     try {
-      await this.matchesService.registerPlayer(this.matchId, playerId, currentPlayer.id);
+      await this.matchesService.registerPlayer(this.matchId(), playerId, currentPlayer.id);
       await this.loadRegistrations();
     } catch (err) {
       const message = rpcMessage(err);
@@ -625,7 +624,7 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
     this.actionLoading.set(true);
     this.actionError.set('');
     try {
-      await this.matchesService.setPlusOnes(this.matchId, player.id, newCount, player.id);
+      await this.matchesService.setPlusOnes(this.matchId(), player.id, newCount, player.id);
       await this.loadRegistrations();
     } catch (err) {
       this.actionError.set(this.mapPlusOnesError(err));
@@ -662,18 +661,18 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
     if (!admin) return;
     this.actionLoading.set(true);
     try {
-      await this.matchesService.adminRemoveRegistration(admin.id, this.matchId, playerId);
+      await this.matchesService.adminRemoveRegistration(admin.id, this.matchId(), playerId);
       await this.loadRegistrations();
     } catch { this.actionError.set('Erreur lors de la suppression'); }
     finally { this.actionLoading.set(false); }
   }
 
   goToStats(): void {
-    this.router.navigate([`/${this.groupSlug}/admin/match/${this.matchId}/stats`]);
+    this.router.navigate([`/${this.groupSlug()}/admin/match/${this.matchId()}/stats`]);
   }
 
   copyMatchLink(): void {
-    const url = `${window.location.origin}/${this.groupSlug}/match/${this.matchId}`;
+    const url = `${window.location.origin}/${this.groupSlug()}/match/${this.matchId()}`;
     navigator.clipboard.writeText(url).then(() => this.showFeedback('Lien copié !'));
   }
 
