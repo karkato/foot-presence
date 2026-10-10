@@ -21,6 +21,9 @@ import { LeaderboardMetric, buildLeaderboardRows, sortLeaderboard, assignRanks }
         [selectedSeasonId]="selectedSeasonId()"
         (seasonChange)="onSeasonChange($event)"
       />
+      @if (!loading()) {
+        <p class="muted season-total">{{ seasonMatchesCount() }} match{{ seasonMatchesCount() > 1 ? 's' : '' }} joué{{ seasonMatchesCount() > 1 ? 's' : '' }} cette saison</p>
+      }
 
       <app-tab-bar
         [tabs]="metricTabs"
@@ -53,6 +56,7 @@ import { LeaderboardMetric, buildLeaderboardRows, sortLeaderboard, assignRanks }
   styles: `
     h2 { margin-top: 0; }
     .muted { font-size: 0.9rem; }
+    .season-total { margin: 0.35rem 0 1rem; }
     .row-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
     .row {
       display: grid;
@@ -117,6 +121,10 @@ export class LeaderboardComponent {
   stats = computed(() => this.statsResource.value() ?? []);
 
   loading = computed(() => this.playersResource.isLoading() || this.statsResource.isLoading());
+
+  // season_matches est le même pour toutes les lignes (total de la
+  // saison, pas une stat par joueur) -- n'importe laquelle suffit.
+  seasonMatchesCount = computed(() => this.stats()[0]?.season_matches ?? 0);
 
   currentPlayerId = computed(() => this.auth.currentPlayer()?.id ?? null);
 
