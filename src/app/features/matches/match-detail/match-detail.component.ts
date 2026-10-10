@@ -17,10 +17,10 @@ import { RegistrationModalComponent } from './registration-modal/registration-mo
 import { PresencePanelComponent } from './presence-panel/presence-panel.component';
 import { mapAuthRpcError, rpcMessage } from '../../../shared/utils/rpc-error';
 import { isMatchDateStrictlyInFuture } from '../../../shared/utils/match-status';
-
-type PresentEntry =
-  | { type: 'player'; reg: Registration; rank: number }
-  | { type: 'guest'; hostName: string; rank: number };
+import {
+  sortByRegisteredAt, expandPresence, splitStartersSubstitutes,
+  canWithdraw as canWithdrawPure, countActiveProxies,
+} from '../../../shared/utils/presence';
 
 @Component({
   selector: 'app-match-detail',
@@ -324,41 +324,23 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
   currentPlayerId = computed(() => this.auth.currentPlayer()?.id ?? '');
   isAdmin = computed(() => this.auth.isAdmin());
 
-  presentPlayers = computed(() =>
-    this.registrations().filter(r => !r.is_withdrawn)
-      .sort((a, b) => new Date(a.registered_at).getTime() - new Date(b.registered_at).getTime())
-  );
+  presentPlayers = computed(() => sortByRegisteredAt(this.registrations().filter(r => !r.is_withdrawn)));
 
-  withdrawnPlayers = computed(() =>
-    this.registrations().filter(r => r.is_withdrawn)
-      .sort((a, b) => new Date(a.registered_at).getTime() - new Date(b.registered_at).getTime())
-  );
+  withdrawnPlayers = computed(() => sortByRegisteredAt(this.registrations().filter(r => r.is_withdrawn)));
 
   presentCount = computed(() =>
     this.presentPlayers().reduce((sum, r) => sum + 1 + (r.plus_ones ?? 0), 0)
   );
 
-  expandedPresent = computed(() => {
-    let rank = 0;
-    const entries: PresentEntry[] = [];
-    for (const reg of this.presentPlayers()) {
-      entries.push({ type: 'player', reg, rank: ++rank });
-      for (let i = 0; i < (reg.plus_ones ?? 0); i++) {
-        entries.push({ type: 'guest', hostName: getDisplayName(reg.player), rank: ++rank });
-      }
-    }
-    return entries;
-  });
+  expandedPresent = computed(() => expandPresence(this.presentPlayers()));
 
-  starters = computed(() => {
-    const max = this.match()?.max_players ?? Infinity;
-    return this.expandedPresent().filter(e => e.rank <= max);
-  });
+  starters = computed(() =>
+    splitStartersSubstitutes(this.expandedPresent(), this.match()?.max_players ?? Infinity).starters
+  );
 
-  substitutes = computed(() => {
-    const max = this.match()?.max_players ?? Infinity;
-    return this.expandedPresent().filter(e => e.rank > max);
-  });
+  substitutes = computed(() =>
+    splitStartersSubstitutes(this.expandedPresent(), this.match()?.max_players ?? Infinity).substitutes
+  );
 
   myPlusOnes = computed(() =>
     this.registrations().find(r => r.player_id === this.currentPlayerId() && !r.is_withdrawn)?.plus_ones ?? 0
@@ -390,9 +372,7 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
   isRegistered = computed(() => this.registrations().some(r => r.player_id === this.currentPlayerId()));
   isWithdrawn = computed(() => this.registrations().some(r => r.player_id === this.currentPlayerId() && r.is_withdrawn));
 
-  proxyCount = computed(() =>
-    this.registrations().filter(r => !r.is_withdrawn && r.registered_by === this.currentPlayerId() && r.player_id !== this.currentPlayerId()).length
-  );
+  proxyCount = computed(() => countActiveProxies(this.registrations(), this.currentPlayerId()));
   canAddProxy = computed(() => this.proxyCount() < 2 && !this.registrationClosed());
 
   registrationClosed = computed(() => {
@@ -462,10 +442,9 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
   isCurrentPlayer(reg: Registration): boolean { return reg.player_id === this.currentPlayerId(); }
 
   canWithdraw(reg: Registration): boolean {
-    const currentId = this.currentPlayerId();
     const m = this.match();
-    if (!m || m.is_closed || reg.is_withdrawn) return false;
-    return reg.player_id === currentId || reg.registered_by === currentId;
+    if (!m) return false;
+    return canWithdrawPure(reg, this.currentPlayerId(), m.is_closed);
   }
 
   async onRegister(): Promise<void> {
