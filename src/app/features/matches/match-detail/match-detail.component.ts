@@ -146,11 +146,14 @@ type PresentEntry =
         @if (!match()!.is_closed && !isFinished()) {
           <div class="player-actions">
             @if (!isRegistered()) {
-              <button class="btn btn-primary btn-full" (click)="onRegister()" [disabled]="actionLoading()">Je viens</button>
+              <button class="btn btn-primary btn-full" (click)="onRegister()" [disabled]="actionLoading() || registrationClosed()">Je viens</button>
             } @else if (!isWithdrawn()) {
               <button class="btn btn-danger btn-full" (click)="onWithdraw(currentPlayerId())" [disabled]="actionLoading()">Je me retire</button>
             } @else {
-              <button class="btn btn-primary btn-full" (click)="onRegister()" [disabled]="actionLoading()">Je reviens</button>
+              <button class="btn btn-primary btn-full" (click)="onRegister()" [disabled]="actionLoading() || registrationClosed()">Je reviens</button>
+            }
+            @if (registrationClosed() && !isRegistered()) {
+              <p class="muted">Inscriptions closes, la date limite est dépassée.</p>
             }
             @if (isRegistered() && !isWithdrawn()) {
               <div class="proxy-row">
@@ -447,7 +450,12 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
   proxyCount = computed(() =>
     this.registrations().filter(r => !r.is_withdrawn && r.registered_by === this.currentPlayerId() && r.player_id !== this.currentPlayerId()).length
   );
-  canAddProxy = computed(() => this.proxyCount() < 2);
+  canAddProxy = computed(() => this.proxyCount() < 2 && !this.registrationClosed());
+
+  registrationClosed = computed(() => {
+    const deadline = this.match()?.registration_deadline;
+    return !!deadline && new Date(deadline) < new Date();
+  });
 
   sortedPlayers = computed(() => {
     const presentIds = new Set(this.presentPlayers().map(r => r.player_id));
@@ -574,7 +582,10 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
     try {
       await this.matchesService.registerPlayer(this.matchId, player.id, player.id);
       await this.loadRegistrations();
-    } catch { this.actionError.set('Erreur lors de l\'inscription'); }
+    } catch (err) {
+      this.actionError.set(rpcMessage(err).includes('deadline_passed')
+        ? 'La date limite d\'inscription est dépassée' : 'Erreur lors de l\'inscription');
+    }
     finally { this.actionLoading.set(false); }
   }
 
@@ -598,8 +609,12 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
       await this.matchesService.registerPlayer(this.matchId, playerId, currentPlayer.id);
       await this.loadRegistrations();
     } catch (err) {
-      this.actionError.set(rpcMessage(err).includes('proxy_limit_reached')
-        ? 'Limite de 2 procurations atteinte' : 'Erreur lors de l\'inscription');
+      const message = rpcMessage(err);
+      this.actionError.set(
+        message.includes('proxy_limit_reached') ? 'Limite de 2 procurations atteinte' :
+        message.includes('deadline_passed') ? 'La date limite d\'inscription est dépassée' :
+        'Erreur lors de l\'inscription'
+      );
     }
   }
 
