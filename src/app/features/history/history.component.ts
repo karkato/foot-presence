@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, resource, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { DatePipe } from '@angular/common';
 import { AuthService } from '../../core/auth/auth.service';
 import { SeasonsService } from '../../core/seasons/seasons.service';
 import { MatchesService } from '../matches/matches.service';
@@ -15,7 +16,7 @@ type Filter = 'all' | 'win' | 'loss' | 'draw';
   selector: 'app-history',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, SeasonPickerComponent],
+  imports: [RouterLink, SeasonPickerComponent, DatePipe],
   template: `
     <div class="container-form">
       <a class="back-link" [routerLink]="['/' + groupSlug() + '/profile']">← Profil</a>
@@ -83,7 +84,7 @@ type Filter = 'all' | 'win' | 'loss' | 'draw';
               <a class="history-entry card" [routerLink]="['/' + groupSlug() + '/match/' + entry.id]">
                 <div class="entry-header">
                   <span class="entry-title">{{ entry.title }}</span>
-                  <span class="entry-date">{{ formatDate(entry.match_date) }}</span>
+                  <span class="entry-date">{{ entry.match_date | date:'d MMM' }}</span>
                 </div>
 
                 @if (entry.score_a !== null && entry.score_b !== null) {
@@ -246,9 +247,5 @@ export class HistoryComponent {
     if (result === 'loss') return 'D';
     if (result === 'draw') return 'N';
     return '—';
-  }
-
-  formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
   }
 }

@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { GroupsService } from '../../../core/groups/groups.service';
@@ -17,7 +18,7 @@ import { TEAM_A_COLOR, TEAM_B_COLOR } from '../../../shared/constants/team-confi
   selector: 'app-match-stats',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule],
+  imports: [FormsModule, DatePipe],
   template: `
     @if (loading()) {
       <div class="center-msg">Chargement...</div>
@@ -28,7 +29,7 @@ import { TEAM_A_COLOR, TEAM_B_COLOR } from '../../../shared/constants/team-confi
         <div class="header">
           <button type="button" class="btn-back" (click)="goBack()">‹ Retour au match</button>
           <h2>{{ match()!.title }}</h2>
-          <p class="match-meta">{{ formatDate(match()!.match_date) }} à {{ formatTime(match()!.match_time) }}</p>
+          <p class="match-meta">{{ match()!.match_date | date:'EEEE d MMMM' }} à {{ formatTime(match()!.match_time) }}</p>
         </div>
 
         <!-- Score principal -->
@@ -446,8 +447,5 @@ export class MatchStatsComponent implements OnInit, OnDestroy {
     this.router.navigate([`/${this.groupSlug()}/match/${this.matchId()}`]);
   }
 
-  formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
-  }
   formatTime(timeStr: string): string { return timeStr.slice(0, 5); }
 }

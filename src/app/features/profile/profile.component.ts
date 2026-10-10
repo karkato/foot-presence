@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, resource, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { DatePipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { SupabaseService } from '../../core/supabase/supabase.service';
@@ -19,7 +20,7 @@ type ProfileTab = 'stats' | 'goals' | 'config';
   selector: 'app-profile',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, RouterLink, SeasonPickerComponent, TabBarComponent, MyStatsComponent],
+  imports: [FormsModule, RouterLink, SeasonPickerComponent, TabBarComponent, MyStatsComponent, DatePipe],
   template: `
     <div class="container-form">
       <h2>Mon profil</h2>
@@ -92,7 +93,7 @@ type ProfileTab = 'stats' | 'goals' | 'config';
                   <a class="mini-card card" [routerLink]="['/' + groupSlug() + '/match/' + entry.id]">
                     <div class="mini-info">
                       <span class="mini-title">{{ entry.title }}</span>
-                      <span class="mini-date">{{ formatDate(entry.match_date) }}</span>
+                      <span class="mini-date">{{ entry.match_date | date:'d MMM' }}</span>
                     </div>
                     @if (entry.score_a !== null && entry.score_b !== null) {
                       <span class="mini-score">{{ entry.score_a }} – {{ entry.score_b }}</span>
@@ -304,10 +305,6 @@ export class ProfileComponent {
     if (result === 'loss') return 'D';
     if (result === 'draw') return 'N';
     return '—';
-  }
-
-  formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
   }
 
   async saveDisplayName(): Promise<void> {

@@ -7,6 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
+import { DatePipe } from '@angular/common';
 import { AuthService } from '../../../core/auth/auth.service';
 import { MatchesService, AuditEntry, MatchWithCount } from '../../matches/matches.service';
 import { SeasonsService } from '../../../core/seasons/seasons.service';
@@ -34,7 +35,7 @@ function isManagementTab(tab: AdminTab): tab is ManagementTab {
   selector: 'app-admin-dashboard',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [GroupSettingsComponent, SeasonSettingsComponent, TabBarComponent],
+  imports: [GroupSettingsComponent, SeasonSettingsComponent, TabBarComponent, DatePipe],
   template: `
     <div class="container-wide">
       <h2>Administration</h2>
@@ -75,7 +76,7 @@ function isManagementTab(tab: AdminTab): tab is ManagementTab {
                 <li class="item-card">
                   <div class="item-info">
                     <span class="item-title">{{ match.title }}</span>
-                    <span class="item-sub">{{ formatDate(match.match_date) }} · {{ formatTime(match.match_time) }}</span>
+                    <span class="item-sub">{{ match.match_date | date:'EEE d MMM' }} · {{ formatTime(match.match_time) }}</span>
                   </div>
                   <div class="item-actions">
                     @if (match.is_closed) {
@@ -402,11 +403,6 @@ export class AdminDashboardComponent {
     }
   }
 
-  formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('fr-FR', {
-      weekday: 'short', day: 'numeric', month: 'short',
-    });
-  }
 
   formatTime(timeStr: string): string { return timeStr.slice(0, 5); }
 

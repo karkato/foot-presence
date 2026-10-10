@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy, Component, computed, inject, input, OnDestroy, OnInit, signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
+import { DatePipe } from '@angular/common';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { AuthService } from '../../../core/auth/auth.service';
 import { SupabaseService } from '../../../core/supabase/supabase.service';
@@ -25,7 +26,7 @@ type PresentEntry =
   selector: 'app-match-detail',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PlayerRowComponent, RegistrationModalComponent, PresencePanelComponent],
+  imports: [PlayerRowComponent, RegistrationModalComponent, PresencePanelComponent, DatePipe],
   template: `
     @if (loading()) {
       <div class="center-msg">Chargement...</div>
@@ -45,7 +46,7 @@ type PresentEntry =
             }
           </div>
           <p class="match-meta">
-            {{ formatDate(match()!.match_date) }} à {{ formatTime(match()!.match_time) }}
+            {{ match()!.match_date | date:'EEEE d MMMM' }} à {{ formatTime(match()!.match_time) }}
             &nbsp;·&nbsp;
             <strong [class.text-danger]="isFull()">{{ presentCount() }}/{{ match()!.max_players }}</strong>
           </p>
@@ -576,8 +577,5 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
     this.feedbackTimeout = setTimeout(() => this.copyFeedback.set(''), 2500);
   }
 
-  formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
-  }
   formatTime(timeStr: string): string { return timeStr.slice(0, 5); }
 }

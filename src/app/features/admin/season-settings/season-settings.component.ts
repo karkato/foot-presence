@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { DatePipe } from '@angular/common';
 import { AuthService } from '../../../core/auth/auth.service';
 import { SeasonsService } from '../../../core/seasons/seasons.service';
 import { MatchesService } from '../../matches/matches.service';
@@ -10,7 +11,7 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
   selector: 'app-season-settings',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule],
+  imports: [FormsModule, DatePipe],
   template: `
     <div class="container">
       @if (loading()) {
@@ -19,7 +20,7 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
         @if (currentSeason(); as season) {
           <div class="card current-season">
             <span class="season-name">{{ season.name }}</span>
-            <span class="season-meta">depuis le {{ formatDate(season.start_date) }}</span>
+            <span class="season-meta">depuis le {{ season.start_date | date:'d MMM y' }}</span>
             <span class="season-meta">{{ matchCount(season.id) }} match(s)</span>
           </div>
         }
@@ -52,7 +53,7 @@ import { mapAuthRpcError } from '../../../shared/utils/rpc-error';
               <li class="archived-item">
                 <span class="archived-name">{{ season.name }}</span>
                 <span class="archived-range">
-                  {{ formatDate(season.start_date) }} → {{ formatDate(season.end_date!) }}
+                  {{ season.start_date | date:'d MMM y' }} → {{ season.end_date! | date:'d MMM y' }}
                   · {{ matchCount(season.id) }} match(s)
                 </span>
               </li>
@@ -93,6 +94,7 @@ export class SeasonSettingsComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly seasonsService = inject(SeasonsService);
   private readonly matchesService = inject(MatchesService);
+  private readonly datePipe = new DatePipe('fr-FR');
 
   loading = signal(true);
   starting = signal(false);
@@ -147,7 +149,7 @@ export class SeasonSettingsComponent implements OnInit {
     const current = this.currentSeason();
     const label = current ? `"${current.name}"` : 'la saison en cours';
     if (!confirm(
-      `Archiver ${label} et démarrer une nouvelle saison à partir du ${this.formatDate(this.newSeasonStartDate)} ? ` +
+      `Archiver ${label} et démarrer une nouvelle saison à partir du ${this.datePipe.transform(this.newSeasonStartDate, 'd MMM y')} ? ` +
       `Les matchs se répartiront automatiquement selon leur date, et les statistiques repartiront de zéro. ` +
       `Aucun match ni aucune donnée n'est supprimé — les saisons passées restent consultables.`
     )) return;
@@ -172,10 +174,6 @@ export class SeasonSettingsComponent implements OnInit {
     } finally {
       this.starting.set(false);
     }
-  }
-
-  formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
   }
 
   todayIso(): string {

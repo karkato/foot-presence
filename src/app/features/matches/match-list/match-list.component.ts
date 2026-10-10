@@ -9,6 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
+import { DatePipe } from '@angular/common';
 import { AuthService } from '../../../core/auth/auth.service';
 import { MatchesService } from '../matches.service';
 import { SeasonsService } from '../../../core/seasons/seasons.service';
@@ -25,6 +26,7 @@ import {
   selector: 'app-match-list',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [DatePipe],
   template: `
     <div class="container-md">
       <h2>Matchs</h2>
@@ -42,8 +44,8 @@ import {
               <li class="match-card" (click)="openMatch(match)">
                 <div class="match-info">
                   <span class="match-title">{{ match.title }}</span>
-                  <span class="match-date match-date-full">{{ formatDate(match.match_date) }} à {{ formatTime(match.match_time) }}</span>
-                  <span class="match-date match-date-short">{{ formatDateShort(match.match_date, match.match_time) }}</span>
+                  <span class="match-date match-date-full">{{ match.match_date | date:'EEEE d MMMM' }} à {{ formatTime(match.match_time) }}</span>
+                  <span class="match-date match-date-short">{{ match.match_date | date:'EEE d MMM' }} {{ formatTime(match.match_time) }}</span>
                 </div>
                 <div class="match-meta">
                   <span class="badge badge-count" [class.badge-full]="match.registration_count >= match.max_players">
@@ -76,8 +78,8 @@ import {
                   <li class="match-card" (click)="goToStats(match)">
                     <div class="match-info">
                       <span class="match-title">{{ match.title }}</span>
-                      <span class="match-date match-date-full">{{ formatDate(match.match_date) }} à {{ formatTime(match.match_time) }}</span>
-                      <span class="match-date match-date-short">{{ formatDateShort(match.match_date, match.match_time) }}</span>
+                      <span class="match-date match-date-full">{{ match.match_date | date:'EEEE d MMMM' }} à {{ formatTime(match.match_time) }}</span>
+                      <span class="match-date match-date-short">{{ match.match_date | date:'EEE d MMM' }} {{ formatTime(match.match_time) }}</span>
                     </div>
                     <div class="match-meta">
                       <span class="badge badge-closed">{{ statusLabel(match) }}</span>
@@ -98,8 +100,8 @@ import {
                 <li class="match-card" (click)="openMatch(match)">
                   <div class="match-info">
                     <span class="match-title">{{ match.title }}</span>
-                    <span class="match-date match-date-full">{{ formatDate(match.match_date) }} à {{ formatTime(match.match_time) }}</span>
-                    <span class="match-date match-date-short">{{ formatDateShort(match.match_date, match.match_time) }}</span>
+                    <span class="match-date match-date-full">{{ match.match_date | date:'EEEE d MMMM' }} à {{ formatTime(match.match_time) }}</span>
+                    <span class="match-date match-date-short">{{ match.match_date | date:'EEE d MMM' }} {{ formatTime(match.match_time) }}</span>
                   </div>
                   <div class="match-meta">
                     <span class="badge badge-closed">{{ statusLabel(match) }}</span>
@@ -128,8 +130,8 @@ import {
                   <li class="match-card" (click)="openMatch(match)">
                     <div class="match-info">
                       <span class="match-title">{{ match.title }}</span>
-                      <span class="match-date match-date-full">{{ formatDate(match.match_date) }} à {{ formatTime(match.match_time) }}</span>
-                      <span class="match-date match-date-short">{{ formatDateShort(match.match_date, match.match_time) }}</span>
+                      <span class="match-date match-date-full">{{ match.match_date | date:'EEEE d MMMM' }} à {{ formatTime(match.match_time) }}</span>
+                      <span class="match-date match-date-short">{{ match.match_date | date:'EEE d MMM' }} {{ formatTime(match.match_time) }}</span>
                     </div>
                     <div class="match-meta">
                       <span class="badge badge-count">
@@ -305,24 +307,7 @@ export class MatchListComponent implements OnDestroy {
     this.showAwaiting.update(v => !v);
   }
 
-  formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('fr-FR', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-    });
-  }
-
   formatTime(timeStr: string): string {
     return timeStr.slice(0, 5);
-  }
-
-  formatDateShort(dateStr: string, timeStr: string): string {
-    const shortDate = new Date(dateStr).toLocaleDateString('fr-FR', {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short',
-    });
-    return `${shortDate} ${this.formatTime(timeStr)}`;
   }
 }

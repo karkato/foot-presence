@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, input, OnChanges, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { DatePipe } from '@angular/common';
 import { AuthService } from '../../../core/auth/auth.service';
 import { MatchesService, MatchHistoryEntry } from '../../matches/matches.service';
 import { mapMatchStatsError } from '../../../shared/utils/rpc-error';
@@ -9,7 +10,7 @@ import { computeStatsRemaining } from '../../../shared/utils/match-stats';
   selector: 'app-my-stats',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule],
+  imports: [FormsModule, DatePipe],
   template: `
     <div class="container">
       @if (loading()) {
@@ -22,7 +23,7 @@ import { computeStatsRemaining } from '../../../shared/utils/match-stats';
             <div class="card entry">
               <div class="entry-header">
                 <span class="entry-title">{{ entry.title }}</span>
-                <span class="entry-date">{{ formatDate(entry.match_date) }}</span>
+                <span class="entry-date">{{ entry.match_date | date:'d MMM' }}</span>
                 @if (entry.score_a !== null && entry.score_b !== null) {
                   <span class="entry-score">
                     {{ entry.team === 0 ? entry.team_a_name : entry.team_b_name }}
@@ -164,9 +165,5 @@ export class MyStatsComponent implements OnChanges {
     } finally {
       this.saving.update(s => ({ ...s, [entry.id]: false }));
     }
-  }
-
-  formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
   }
 }
