@@ -102,28 +102,35 @@ export class PresencePanelComponent {
   showPanel = signal(false);
   actionError = signal('');
 
+  // Un seul passage sur registrations() par rendu au lieu d'un find()/some()
+  // par joueur affiché -- sortedPlayers()/isPlayerPresent()/getPlayerTeam()/
+  // getPlayerPlusOnes() sont tous appelés une fois par ligne du @for.
+  private readonly activeRegistrationByPlayer = computed(() =>
+    new Map(this.registrations().filter(r => !r.is_withdrawn).map(r => [r.player_id, r]))
+  );
+
   presentCount = computed(() =>
-    this.registrations().filter(r => !r.is_withdrawn).reduce((sum, r) => sum + 1 + (r.plus_ones ?? 0), 0)
+    Array.from(this.activeRegistrationByPlayer().values()).reduce((sum, r) => sum + 1 + (r.plus_ones ?? 0), 0)
   );
 
   sortedPlayers = computed(() => {
-    const presentIds = new Set(this.registrations().filter(r => !r.is_withdrawn).map(r => r.player_id));
+    const present = this.activeRegistrationByPlayer();
     return [...this.players()].sort((a, b) => {
-      const diff = (presentIds.has(a.id) ? 0 : 1) - (presentIds.has(b.id) ? 0 : 1);
+      const diff = (present.has(a.id) ? 0 : 1) - (present.has(b.id) ? 0 : 1);
       return diff !== 0 ? diff : a.username.localeCompare(b.username);
     });
   });
 
   isPlayerPresent(playerId: string): boolean {
-    return this.registrations().some(r => r.player_id === playerId && !r.is_withdrawn);
+    return this.activeRegistrationByPlayer().has(playerId);
   }
 
   getPlayerTeam(playerId: string): number | null {
-    return this.registrations().find(r => r.player_id === playerId && !r.is_withdrawn)?.team ?? null;
+    return this.activeRegistrationByPlayer().get(playerId)?.team ?? null;
   }
 
   getPlayerPlusOnes(playerId: string): number {
-    return this.registrations().find(r => r.player_id === playerId && !r.is_withdrawn)?.plus_ones ?? 0;
+    return this.activeRegistrationByPlayer().get(playerId)?.plus_ones ?? 0;
   }
 
   async adminAdjustPlusOnes(playerId: string, delta: number): Promise<void> {
@@ -157,7 +164,7 @@ export class PresencePanelComponent {
     if (!admin) return;
     const currentTeam = this.getPlayerTeam(playerId);
     if (currentTeam === team) return;
-    const reg = this.registrations().find(r => r.player_id === playerId && !r.is_withdrawn);
+    const reg = this.activeRegistrationByPlayer().get(playerId);
     if (reg && !confirmTeamReassignment(reg)) return;
     this.actionError.set('');
     try {
