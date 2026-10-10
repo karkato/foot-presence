@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 import { AuthService } from '../../../../core/auth/auth.service';
+import { ToastService } from '../../../../core/toast/toast.service';
 import { MatchesService } from '../../matches.service';
 import { Player, getDisplayName } from '../../../../shared/models/player.model';
 import { Registration } from '../../../../shared/models/registration.model';
@@ -88,6 +89,7 @@ import { TEAM_A_COLOR, TEAM_B_COLOR } from '../../../../shared/constants/team-co
 export class PresencePanelComponent {
   private readonly auth = inject(AuthService);
   private readonly matchesService = inject(MatchesService);
+  private readonly toast = inject(ToastService);
 
   matchId = input.required<string>();
   players = input.required<Player[]>();
@@ -156,7 +158,10 @@ export class PresencePanelComponent {
         await this.matchesService.registerPlayer(this.matchId(), playerId, admin.id);
       }
       this.registrationsChanged.emit();
-    } catch { /* silently fail */ }
+    } catch (err) {
+      this.toast.show(rpcMessage(err).includes('deadline_passed')
+        ? "La date limite d'inscription est dépassée" : "Erreur lors de la mise à jour de la présence");
+    }
   }
 
   async adminSetTeam(playerId: string, team: number): Promise<void> {
