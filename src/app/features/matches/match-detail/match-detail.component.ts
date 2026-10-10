@@ -400,14 +400,28 @@ export class MatchDetailComponent implements OnInit, OnDestroy {
     return !!deadline && new Date(deadline) < new Date();
   });
 
+  private readonly visibilityHandler = () => {
+    // Le channel Supabase meurt souvent quand l'app passe en arrière-plan
+    // (mobile surtout) -- on le referme et s'y réabonne au retour, et on
+    // recharge au passage pour rattraper ce qui a pu être manqué pendant
+    // la coupure.
+    if (document.visibilityState === 'visible') {
+      this.channel?.unsubscribe();
+      this.subscribeToRealtime();
+      void this.loadRegistrations();
+    }
+  };
+
   async ngOnInit(): Promise<void> {
     await Promise.all([this.loadMatch(), this.loadRegistrations()]);
     await Promise.all([this.loadPlayers(), this.loadGroup()]);
     this.loading.set(false);
     this.subscribeToRealtime();
+    document.addEventListener('visibilitychange', this.visibilityHandler);
   }
 
   ngOnDestroy(): void {
+    document.removeEventListener('visibilitychange', this.visibilityHandler);
     this.channel?.unsubscribe();
     if (this.feedbackTimeout) clearTimeout(this.feedbackTimeout);
   }
